@@ -9,6 +9,18 @@
   const STORAGE_KEY = 'pickyhack_project_state';
 
   const defaultState = {
+    target: '',
+    scope: '',
+    objectives: '',
+    constraints: '',
+    assets: [],
+    findings: [],
+    attackChains: [],
+    failedTests: [],
+    notes: ''
+  };
+
+  const sampleDemoState = {
     target: 'vpn.megacorp.internal',
     scope: '198.51.100.0/24, *.megacorp.internal (Excl: hr-portal.megacorp.internal)',
     objectives: 'Perimeter penetration, internal network pivot, Active Directory domain compromise.',
@@ -130,6 +142,18 @@
       if (!this.state || !this.state.findings) return;
       this.state.findings = this.state.findings.filter(f => f.id !== id);
       this.save();
+    },
+
+    loadSampleData() {
+      this.state = JSON.parse(JSON.stringify(sampleDemoState));
+      this.save();
+      return this.state;
+    },
+
+    clearAllData() {
+      this.state = JSON.parse(JSON.stringify(defaultState));
+      this.save();
+      return this.state;
     },
 
     onChange(fn) {

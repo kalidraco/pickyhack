@@ -11,6 +11,7 @@ const testFiles = [
   'tests/unit/validator.test.js',
   'tests/unit/providers.test.js',
   'tests/unit/context-engine.test.js',
+  'tests/unit/response-ux-state.test.js',
   'tests/integration/deliverable.test.js',
   'tests/integration/simulation.test.js'
 ];

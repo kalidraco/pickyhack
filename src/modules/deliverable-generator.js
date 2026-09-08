@@ -32,6 +32,10 @@
       const s = state || (root.ProjectState ? root.ProjectState.get() : root.pentestState) || {};
       const now = new Date().toISOString().split('T')[0];
 
+      if (!s.target && (!s.findings || s.findings.length === 0)) {
+        return "# Penetration Testing Formal Deliverable\n\n*No findings recorded yet. Define scope or ingest security scans to compile deliverables.*";
+      }
+
       let md = `# Penetration Testing Formal Deliverable\n\n`;
       md += `**Target:** ${s.target || 'N/A'}\n`;
       md += `**Scope:** ${s.scope || 'N/A'}\n`;
@@ -82,6 +86,20 @@
 
       const s = (root.ProjectState ? root.ProjectState.get() : root.pentestState) || {};
       const findings = s.findings || [];
+
+      if (findings.length === 0) {
+        preview.innerHTML = `
+          <div class="report-page-preview" style="text-align: center; padding: 48px 16px;">
+            <div style="font-size: 32px; margin-bottom: 8px;">📑</div>
+            <h3 style="color: #000080; margin-bottom: 6px;">No deliverable content yet.</h3>
+            <p style="font-size: 11.5px; color: #666; max-width: 420px; margin: 0 auto; line-height: 1.5;">
+              No verified findings have been recorded. Ingest scanner XML/JSON reports via the Burp/ZAP Bridge, or convert notes into findings to generate executive deliverables.
+            </p>
+          </div>
+        `;
+        return;
+      }
+
       const criticals = findings.filter(f => f.severity && f.severity.toLowerCase() === 'critical').length;
       const highs = findings.filter(f => f.severity && f.severity.toLowerCase() === 'high').length;
       const mediums = findings.filter(f => f.severity && f.severity.toLowerCase() === 'medium').length;

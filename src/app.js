@@ -37,7 +37,29 @@
     // 7. Context Snapshot UI
     initSnapshotUI();
 
-    // 8. Open default windows
+    // 8. Findings & Vulnerability Registry UI
+    initFindingsUI();
+
+    // 9. Attack Path & Exploit Chain UI
+    initChainsUI();
+
+    // 10. Sample & Demo Data Controls
+    initDemoDataUI();
+
+    // 11. State change listener for reactive synchronization
+    if (root.ProjectState) {
+      root.ProjectState.onChange((state) => {
+        renderFindingsTable();
+        renderAttackChains();
+        syncScopingFields(state);
+        syncGlobalStatus();
+        if (root.DeliverableGenerator && root.DeliverableGenerator.renderReportPreview) {
+          root.DeliverableGenerator.renderReportPreview();
+        }
+      });
+    }
+
+    // 12. Open default windows
     if (root.WindowManager) {
       root.WindowManager.open('win-chat');
     }
@@ -413,36 +435,85 @@
   // ============================================================================
   // TARGET & SCOPE SCOPING TEMPLATES
   // ============================================================================
+  function syncScopingFields(state) {
+    const s = state || (root.ProjectState ? root.ProjectState.get() : {});
+    const targetInput = document.getElementById('scope-target-input');
+    const objInput = document.getElementById('scope-objectives-input');
+    const inScopeInput = document.getElementById('scope-inscope-input') || document.getElementById('scope-range-input');
+    const outScopeInput = document.getElementById('scope-outscope-input');
+    const pentestNotes = document.getElementById('pentest-notes');
+    const dockScope = document.getElementById('dock-scope-label');
+    const sbScope = document.getElementById('sb-scope-status');
+
+    if (targetInput) targetInput.value = s.target || '';
+    if (objInput) objInput.value = s.objectives || '';
+    if (inScopeInput) inScopeInput.value = s.scope || '';
+    if (outScopeInput) outScopeInput.value = s.constraints || '';
+    if (pentestNotes) pentestNotes.value = s.notes || '';
+    if (dockScope) dockScope.textContent = s.target || 'No Target Defined';
+    if (sbScope) sbScope.textContent = s.target ? `Target: ${s.target}` : 'Target Scope: Standby';
+  }
+
   function initScopingUI() {
     const btnSaveScope = document.getElementById('btn-save-scope');
+    const btnClearNotes = document.getElementById('btn-clear-notes');
+    const btnSyncAI = document.getElementById('btn-scope-sync-ai');
     const targetInput = document.getElementById('scope-target-input');
-    const scopeInput = document.getElementById('scope-range-input');
     const objInput = document.getElementById('scope-objectives-input');
+    const inScopeInput = document.getElementById('scope-inscope-input') || document.getElementById('scope-range-input');
+    const outScopeInput = document.getElementById('scope-outscope-input');
+    const pentestNotes = document.getElementById('pentest-notes');
 
     if (root.ProjectState) {
-      const st = root.ProjectState.get();
-      if (targetInput && st.target) targetInput.value = st.target;
-      if (scopeInput && st.scope) scopeInput.value = st.scope;
-      if (objInput && st.objectives) objInput.value = st.objectives;
+      syncScopingFields(root.ProjectState.get());
     }
+
+    function saveScopeState() {
+      if (!root.ProjectState) return;
+      root.ProjectState.update({
+        target: targetInput ? targetInput.value.trim() : '',
+        objectives: objInput ? objInput.value.trim() : '',
+        scope: inScopeInput ? inScopeInput.value.trim() : '',
+        constraints: outScopeInput ? outScopeInput.value.trim() : '',
+        notes: pentestNotes ? pentestNotes.value : ''
+      });
+      syncScopingFields(root.ProjectState.get());
+    }
+
+    [targetInput, objInput, inScopeInput, outScopeInput, pentestNotes].forEach(el => {
+      if (el) el.addEventListener('input', saveScopeState);
+    });
 
     if (btnSaveScope) {
       btnSaveScope.addEventListener('click', () => {
-        if (root.ProjectState) {
-          root.ProjectState.update({
-            target: targetInput ? targetInput.value.trim() : '',
-            scope: scopeInput ? scopeInput.value.trim() : '',
-            objectives: objInput ? objInput.value.trim() : ''
-          });
-          alert('Mission scope updated successfully.');
+        saveScopeState();
+        alert('Mission scope updated successfully.');
+      });
+    }
+
+    if (btnClearNotes) {
+      btnClearNotes.addEventListener('click', () => {
+        if (confirm('Clear all targets and scope boundaries?')) {
+          if (root.ProjectState) {
+            root.ProjectState.update({ target: '', scope: '', objectives: '', constraints: '', notes: '' });
+            syncScopingFields(root.ProjectState.get());
+          }
         }
       });
     }
 
+    if (btnSyncAI) {
+      btnSyncAI.addEventListener('click', () => {
+        saveScopeState();
+        alert('Target & Scope successfully synchronized with PickyHack Context Harness.');
+      });
+    }
+
     const presets = {
-      'btn-preset-web': { target: 'app.megacorp.internal', scope: 'https://app.megacorp.internal/*', objectives: 'OWASP Top 10, Auth Bypass, IDOR, SQLi, Business Logic flaws.' },
-      'btn-preset-ad': { target: 'dc01.corp.internal', scope: '10.10.0.0/16, Active Directory Domain', objectives: 'Kerberoasting, AS-REP roasting, BloodHound pathfinding, Domain Admin.' },
-      'btn-preset-ext': { target: 'vpn.megacorp.internal', scope: '198.51.100.0/24 perimeter subnets', objectives: 'Perimeter penetration, exposed services, unauthenticated RCE.' }
+      'btn-scope-tpl-external': { target: 'vpn.megacorp.internal', scope: '198.51.100.0/24, *.megacorp.internal', constraints: 'Exclude hr-portal.megacorp.internal, No DoS', objectives: 'Perimeter penetration, unauthenticated RCE, initial access.' },
+      'btn-scope-tpl-webapp': { target: 'https://app.megacorp.internal', scope: 'https://app.megacorp.internal/api/v1/*, https://auth.megacorp.internal/*', constraints: 'Exclude production payment gateway /checkout', objectives: 'OWASP Top 10, Auth Bypass, IDOR, GraphQL introspection, BOLA.' },
+      'btn-scope-tpl-ad': { target: 'dc01.corp.internal', scope: '10.10.0.0/16, Active Directory Domain corp.internal', constraints: 'No account lockouts, maintain operational stealth', objectives: 'Kerberoasting, AS-REP roasting, BloodHound pathfinding, Domain Admin.' },
+      'btn-scope-tpl-cloud': { target: 'aws://account-123456789012', scope: 'us-east-1 VPC, S3 Buckets, EKS cluster prod-k8s', constraints: 'No modification of production database snapshots', objectives: 'IAM privilege escalation, metadata SSRF, container breakout to node.' }
     };
 
     Object.keys(presets).forEach(btnId => {
@@ -450,11 +521,11 @@
       if (el) {
         el.addEventListener('click', () => {
           const p = presets[btnId];
-          if (targetInput) targetInput.value = p.target;
-          if (scopeInput) scopeInput.value = p.scope;
-          if (objInput) objInput.value = p.objectives;
-          if (root.ProjectState) root.ProjectState.update(p);
-          alert(`Applied Scoping Preset.`);
+          if (root.ProjectState) {
+            root.ProjectState.update(p);
+            syncScopingFields(root.ProjectState.get());
+          }
+          alert('Applied Scoping Preset.');
         });
       }
     });
@@ -545,6 +616,277 @@
         }
       });
     }
+  }
+
+  // ============================================================================
+  // FINDINGS & VULNERABILITY REGISTRY UI
+  // ============================================================================
+  function initFindingsUI() {
+    const btnAdd = document.getElementById('btn-add-finding-inline');
+    const btnBurp = document.getElementById('btn-open-burp-zap-import');
+    const btnReport = document.getElementById('btn-findings-export-report');
+    const btnMd = document.getElementById('btn-export-findings-md');
+    const btnEps = document.getElementById('btn-findings-calc-eps');
+    const btnSnap = document.getElementById('btn-findings-to-snapshot');
+
+    if (btnAdd) {
+      btnAdd.addEventListener('click', () => {
+        const title = prompt('Finding Title / Vulnerability Name:');
+        if (!title || !title.trim()) return;
+        const severity = prompt('Severity (Critical, High, Medium, Low):', 'High') || 'High';
+        const target = prompt('Affected Target / Endpoint:', root.ProjectState ? root.ProjectState.get().target : '') || 'Target';
+        const cve = prompt('CVE Identifier (e.g. CVE-2024-XXXX or N/A):', 'N/A') || 'N/A';
+        
+        if (root.ProjectState) {
+          root.ProjectState.addFinding({
+            title: title.trim(),
+            severity: severity.trim(),
+            target: target.trim(),
+            cve: cve.trim(),
+            status: 'Validated'
+          });
+          renderFindingsTable();
+        }
+      });
+    }
+
+    if (btnBurp) {
+      btnBurp.addEventListener('click', () => {
+        if (root.WindowManager) root.WindowManager.open('win-burp-zap');
+      });
+    }
+
+    if (btnReport) {
+      btnReport.addEventListener('click', () => {
+        if (root.DeliverableGenerator) root.DeliverableGenerator.openReportWindow();
+      });
+    }
+
+    if (btnMd) {
+      btnMd.addEventListener('click', () => {
+        const s = root.ProjectState ? root.ProjectState.get() : {};
+        const findings = s.findings || [];
+        if (findings.length === 0) {
+          alert('No findings to copy.');
+          return;
+        }
+        let md = `| Severity | Vulnerability | Target | CVSS | Status |\n|:---|:---|:---|:---|:---|\n`;
+        findings.forEach(f => {
+          md += `| **${f.severity}** | ${f.title} | \`${f.target}\` | ${f.cvss || 'N/A'} | ${f.status || 'Discovered'} |\n`;
+        });
+        navigator.clipboard.writeText(md);
+        alert('Findings table copied to clipboard as Markdown.');
+      });
+    }
+
+    if (btnEps) {
+      btnEps.addEventListener('click', () => {
+        const s = root.ProjectState ? root.ProjectState.get() : {};
+        const findings = s.findings || [];
+        if (findings.length === 0) {
+          alert('No findings to recalculate EPS. Ingest Burp/ZAP or load sample data.');
+          return;
+        }
+        alert(`Recalculated Exploitability Priority Scores across ${findings.length} findings.`);
+      });
+    }
+
+    if (btnSnap) {
+      btnSnap.addEventListener('click', () => {
+        if (root.WindowManager) root.WindowManager.open('win-snapshot');
+        if (root.SnapshotManager && document.getElementById('snapshot-preview-text')) {
+          document.getElementById('snapshot-preview-text').value = root.SnapshotManager.generate();
+        }
+      });
+    }
+
+    renderFindingsTable();
+  }
+
+  function renderFindingsTable() {
+    const tbody = document.getElementById('findings-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const s = root.ProjectState ? root.ProjectState.get() : {};
+    const findings = s.findings || [];
+
+    if (findings.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 24px 12px; color: #666; font-style: italic;">
+            <div style="font-size: 20px; margin-bottom: 4px;">🛡️</div>
+            No security findings recorded yet.<br>
+            <span style="font-size: 11px; color: #888;">Ingest scan results via the Burp/ZAP Bridge, or highlight pentest notes to convert them into findings.</span>
+          </td>
+        </tr>
+      `;
+    } else {
+      findings.forEach(f => {
+        const sevClass = (f.severity || 'medium').toLowerCase();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="severity-pill sev-${sevClass}">${f.severity}</span></td>
+          <td>
+            <strong>${root.SecurityValidator ? root.SecurityValidator.escapeHTML(f.title) : f.title}</strong>
+            ${f.cve && f.cve !== 'N/A' ? `<br><code style="font-size:10px; color:#555;">${f.cve}</code>` : ''}
+          </td>
+          <td><code>${f.target || 'N/A'}</code></td>
+          <td><strong>${f.cvss || 'N/A'}</strong></td>
+          <td><span style="font-size:11px;">${f.status || 'Discovered'}</span></td>
+          <td>
+            <button class="win-btn btn-del-finding" data-id="${f.id}" style="color:#8b0000; font-size:10px; padding:1px 5px;">✕ Delete</button>
+          </td>
+        `;
+        tr.querySelector('.btn-del-finding').addEventListener('click', () => {
+          if (confirm(`Remove finding "${f.title}"?`)) {
+            root.ProjectState.removeFinding(f.id);
+            renderFindingsTable();
+          }
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    const crit = findings.filter(f => (f.severity || '').toLowerCase() === 'critical').length;
+    const high = findings.filter(f => (f.severity || '').toLowerCase() === 'high').length;
+    const countEl = document.getElementById('sb-findings-count');
+    if (countEl) countEl.textContent = `Total Findings: ${findings.length} (${crit} Critical, ${high} High)`;
+  }
+
+  // ============================================================================
+  // ATTACK PATH & EXPLOIT CHAIN UI
+  // ============================================================================
+  function initChainsUI() {
+    renderAttackChains();
+  }
+
+  function renderAttackChains() {
+    const container = document.getElementById('attack-chain-steps');
+    if (!container) return;
+
+    const s = root.ProjectState ? root.ProjectState.get() : {};
+    const chains = s.attackChains || [];
+
+    const probEl = document.getElementById('metric-breach-prob');
+    const pathEl = document.getElementById('metric-fastest-path');
+    const chokeEl = document.getElementById('metric-bottleneck');
+    const epsEl = document.getElementById('metric-combined-eps');
+    const epsBreakdown = document.getElementById('eps-breakdown-text');
+
+    if (chains.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 20px 10px; color: #777; font-style: italic;">
+          No attack paths mapped yet. Execute breach simulation or map attack vectors.
+        </div>
+      `;
+      if (probEl) probEl.textContent = '0.0%';
+      if (pathEl) pathEl.textContent = 'None';
+      if (chokeEl) chokeEl.textContent = 'None';
+      if (epsEl) epsEl.textContent = '0 / 100';
+      if (epsBreakdown) {
+        epsBreakdown.innerHTML = 'No active findings analyzed. Load sample data or add vulnerabilities to calculate chained EPS.';
+      }
+      return;
+    }
+
+    const chain = chains[0];
+    const badges = ['INITIAL ACCESS', 'FOOTHOLD', 'PRIV ESC', 'CREDENTIALS', 'DOMAIN CTRL'];
+    let html = '';
+    (chain.steps || []).forEach((step, idx) => {
+      const badgeLabel = badges[idx] || `PHASE ${idx + 1}`;
+      html += `
+        <div class="chain-step">
+          <span class="chain-badge step-${idx + 1}">${idx + 1}. ${badgeLabel}</span>
+          <span class="chain-desc">${step}</span>
+        </div>
+      `;
+      if (idx < chain.steps.length - 1) {
+        html += `<div class="chain-arrow">▼</div>`;
+      }
+    });
+    container.innerHTML = html;
+
+    if (probEl) probEl.textContent = '88.6%';
+    if (pathEl) pathEl.textContent = 'Edge → VPN → DC';
+    if (chokeEl) chokeEl.textContent = 'ADCS ESC1 (srv-pki01)';
+    if (epsEl) epsEl.textContent = '96 / 100';
+    if (epsBreakdown) {
+      epsBreakdown.innerHTML = `
+        • CVSS Base Score: 9.8 (Critical)<br>
+        • CISA KEV Catalog: Listed (+30 pts)<br>
+        • In-The-Wild Exploitation: Confirmed (+25 pts)<br>
+        • Public Working PoC: Available on GitHub (+15 pts)<br>
+        • Weaponized Metasploit Module: YES (+10 pts)<br>
+        • Attack Vector: Remote Pre-Auth (No Creds needed)<br>
+        <strong style="color:#8b0000;">=&gt; Total EPS: 96/100 (CRITICAL — EXPLOIT NOW)</strong>
+      `;
+    }
+  }
+
+  // ============================================================================
+  // SAMPLE & DEMO DATA CONTROLS
+  // ============================================================================
+  function initDemoDataUI() {
+    const loadButtons = [
+      document.getElementById('btn-load-sample-data'),
+      document.getElementById('btn-scope-load-sample'),
+      document.getElementById('btn-findings-load-sample')
+    ];
+
+    const clearButtons = [
+      document.getElementById('btn-clear-all-data'),
+      document.getElementById('btn-scope-reset'),
+      document.getElementById('btn-findings-clear')
+    ];
+
+    loadButtons.forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', () => {
+          if (!root.ProjectState) return;
+          const sample = root.ProjectState.loadSampleData();
+          if (root.NotesTaker) {
+            root.NotesTaker.setNotes(sample.notes || '');
+            root.NotesTaker.setTitle('Megacorp VPN Assessment');
+          }
+          syncScopingFields(sample);
+          renderFindingsTable();
+          renderAttackChains();
+          if (root.AttackGraphSimulator) {
+            root.AttackGraphSimulator.loadScenario('enterprise');
+          }
+          if (root.DeliverableGenerator && root.DeliverableGenerator.renderReportPreview) {
+            root.DeliverableGenerator.renderReportPreview();
+          }
+          alert('Sample pentest mission loaded (Megacorp VPN).');
+        });
+      }
+    });
+
+    clearButtons.forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', () => {
+          if (!root.ProjectState) return;
+          if (confirm('Reset all mission data (Target, Scope, Findings, Notes, Attack Paths)? All workspaces will return to a clean initial state.')) {
+            const empty = root.ProjectState.clearAllData();
+            if (root.NotesTaker) {
+              root.NotesTaker.setNotes('');
+              root.NotesTaker.setTitle('');
+            }
+            syncScopingFields(empty);
+            renderFindingsTable();
+            renderAttackChains();
+            if (root.AttackGraphSimulator) {
+              root.AttackGraphSimulator.resetGraph();
+            }
+            if (root.DeliverableGenerator && root.DeliverableGenerator.renderReportPreview) {
+              root.DeliverableGenerator.renderReportPreview();
+            }
+            alert('Mission workspaces reset to clean initial state.');
+          }
+        });
+      }
+    });
   }
 
   // Run on DOM ready

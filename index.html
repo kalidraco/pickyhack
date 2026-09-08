@@ -218,6 +218,16 @@
         </button>
 
         <div class="toolbar-separator"></div>
+
+        <!-- Sample & Reset Controls -->
+        <button class="win-btn" id="btn-load-sample-data" title="Load sample pentest mission data (Megacorp VPN)">
+          <span>📂</span> Sample Data
+        </button>
+        <button class="win-btn" id="btn-clear-all-data" title="Reset all mission data to clean initial state">
+          <span>🗑️</span> Reset
+        </button>
+
+        <div class="toolbar-separator"></div>
         <span class="badge-kev" title="Active catalog entries tracking in-the-wild exploits">CISA KEV: 1,642</span>
         <span class="badge-logless" id="toolbar-logless-badge" title="Full Logless: Chat is ephemeral in memory, project state is local">LOGLESS</span>
       </div>
@@ -468,12 +478,18 @@
         </button>
       </div>
 
+      <!-- Note Title Bar -->
+      <div class="notes-title-bar win-inset-shallow" style="display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: var(--win-gray); border-bottom: 1px solid var(--win-gray-dark);">
+        <label for="note-title-input" style="font-size: 11px; font-weight: bold; color: #000;">Title:</label>
+        <input type="text" id="note-title-input" class="win-input" placeholder="Untitled Note..." style="flex: 1; padding: 2px 6px; font-size: 11px; font-family: var(--font-sys); background: #fff;">
+      </div>
+
       <!-- Editor Area -->
       <div class="notes-editor-wrapper win-inset">
         <textarea 
           id="notes-textarea" 
           class="notes-editor" 
-          placeholder="PickyHack Pentest Notes (Notes.txt)&#10;&#10;Use this notepad to record observations, command outputs, hypotheses, and findings.&#10;• Use the [+] buttons in the toolbar to insert structured templates.&#10;• Highlight any text and click 'Ask PickyHack' to have AI analyze it immediately.&#10;• Notes are automatically saved in local browser storage."
+          placeholder="Start writing..."
           spellcheck="false"
         ></textarea>
       </div>
@@ -520,7 +536,14 @@
         <button class="win-btn btn-highlight" id="btn-scope-sync-ai" title="Sync target details with PickyHack AI Context">
           <span>⚡</span> Sync with AI
         </button>
-        <button class="win-btn" id="btn-clear-notes" style="margin-left: auto;">Clear</button>
+        <div class="toolbar-separator"></div>
+        <button class="win-btn" id="btn-scope-load-sample" title="Load Megacorp VPN sample scoping data">
+          <span>📂</span> Load Sample
+        </button>
+        <button class="win-btn" id="btn-scope-reset" title="Reset scoping data to clean state">
+          <span>🗑️</span> Reset
+        </button>
+        <button class="win-btn" id="btn-clear-notes" style="margin-left: auto;">Clear Scope</button>
       </div>
 
       <!-- Form Body -->
@@ -601,6 +624,13 @@
         </button>
         <button class="win-btn" id="btn-findings-to-snapshot">
           <span>💾</span> Add to Snapshot
+        </button>
+        <div class="toolbar-separator"></div>
+        <button class="win-btn" id="btn-findings-load-sample" title="Load sample verified findings">
+          <span>📂</span> Load Sample
+        </button>
+        <button class="win-btn" id="btn-findings-clear" title="Clear all findings">
+          <span>🗑️</span> Clear All
         </button>
       </div>
 
@@ -768,19 +798,19 @@
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; font-size: 11px; padding: 4px 0;">
             <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
               <span style="color:#666;">Breach Probability:</span><br>
-              <strong id="metric-breach-prob" style="color:#b83b26; font-size: 13px;">88.6%</strong>
+              <strong id="metric-breach-prob" style="color:#b83b26; font-size: 13px;">0.0%</strong>
             </div>
             <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
               <span style="color:#666;">Optimal Attack Path:</span><br>
-              <strong id="metric-fastest-path" style="color:#000080; font-size: 11px;">Edge → VPN → DC</strong>
+              <strong id="metric-fastest-path" style="color:#000080; font-size: 11px;">None</strong>
             </div>
             <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
               <span style="color:#666;">Primary Bottleneck:</span><br>
-              <strong id="metric-bottleneck" style="color:#8b0000; font-size: 11px;">ADCS ESC1 (srv-pki01)</strong>
+              <strong id="metric-bottleneck" style="color:#8b0000; font-size: 11px;">None</strong>
             </div>
             <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
               <span style="color:#666;">Chained EPS:</span><br>
-              <strong id="metric-combined-eps" style="color:#b83b26; font-size: 13px;">96 / 100</strong>
+              <strong id="metric-combined-eps" style="color:#b83b26; font-size: 13px;">0 / 100</strong>
             </div>
           </div>
         </div>
@@ -789,30 +819,7 @@
             <span>EXPLOIT INTELLIGENCE CHAIN (INITIAL ACCESS → ENTERPRISE TAKEOVER)</span>
           </div>
           <div class="attack-chain-container" id="attack-chain-steps">
-            <div class="chain-step">
-              <span class="chain-badge step-1">1. INITIAL ACCESS</span>
-              <span class="chain-desc">Edge Router / VPN Auth Bypass (CVE-2024-3400 / CVE-2024-21762)</span>
-            </div>
-            <div class="chain-arrow">▼</div>
-            <div class="chain-step">
-              <span class="chain-badge step-2">2. FOOTHOLD</span>
-              <span class="chain-desc">Reverse Shell via Metasploit payload (unprivileged service user)</span>
-            </div>
-            <div class="chain-arrow">▼</div>
-            <div class="chain-step">
-              <span class="chain-badge step-3">3. PRIV ESC</span>
-              <span class="chain-desc">Linux Kernel nf_tables UAF (CVE-2024-1086) → Root capabilities</span>
-            </div>
-            <div class="chain-arrow">▼</div>
-            <div class="chain-step">
-              <span class="chain-badge step-4">4. CREDENTIALS</span>
-              <span class="chain-desc">Extract SAM / NTDS / Cloud IAM STS Session Tokens & Kerberos TGT</span>
-            </div>
-            <div class="chain-arrow">▼</div>
-            <div class="chain-step">
-              <span class="chain-badge step-5">5. DOMAIN CTRL</span>
-              <span class="chain-desc">ADCS Misconfiguration ESC1 → Enterprise Admin Takeover</span>
-            </div>
+            <!-- Dynamically populated from ProjectState.attackChains -->
           </div>
         </div>
 
@@ -821,13 +828,7 @@
             <span>EPS EXPLOITABILITY SCORING BREAKDOWN</span>
           </div>
           <div style="font-family: var(--font-mono); font-size: 11px; line-height: 1.5; color: #222;" id="eps-breakdown-text">
-            • CVSS Base Score: 9.8 (Critical)<br>
-            • CISA KEV Catalog: Listed (+30 pts)<br>
-            • In-The-Wild Exploitation: Confirmed (+25 pts)<br>
-            • Public Working PoC: Available on GitHub (+15 pts)<br>
-            • Weaponized Metasploit Module: YES (+10 pts)<br>
-            • Attack Vector: Remote Pre-Auth (No Creds needed)<br>
-            <strong style="color:#8b0000;">=&gt; Total EPS: 96/100 (CRITICAL — EXPLOIT NOW)</strong>
+            No active findings analyzed. Load sample data or add vulnerabilities to calculate chained EPS.
           </div>
         </div>
       </div>
