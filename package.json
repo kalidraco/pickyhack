@@ -1,0 +1,19 @@
+{
+  "name": "pickyhack",
+  "version": "1.0.0",
+  "description": "PickyHack — Offensive Security & Pentest Intelligence AI Desktop Workbench",
+  "scripts": {
+    "dev": "python3 -m http.server 8088",
+    "start": "python3 -m http.server 8088"
+  },
+  "keywords": [
+    "pentest",
+    "offensive-security",
+    "cve",
+    "cisa-kev",
+    "exploit-intelligence",
+    "windows98"
+  ],
+  "author": "PickyHack Team",
+  "license": "MIT"
+}

@@ -1,0 +1,42 @@
+{
+  "skills": [
+    {
+      "source": "coreyhaines31/marketingskills",
+      "skills": [
+        "ai-seo",
+        "seo-audit"
+      ]
+    },
+    {
+      "source": "designed-by-ai/skills",
+      "skills": [
+        "design-mobile-apps"
+      ]
+    },
+    {
+      "source": "firebase/agent-skills",
+      "skills": [
+        "firebase-security-rules-auditor"
+      ]
+    },
+    {
+      "source": "leonxlnx/taste-skill",
+      "skills": [
+        "design-taste-frontend",
+        "industrial-brutalist-ui"
+      ]
+    },
+    {
+      "source": "mattpocock/skills",
+      "skills": [
+        "improve-codebase-architecture"
+      ]
+    },
+    {
+      "source": "microsoft/azure-skills",
+      "skills": [
+        "entra-app-registration"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PickyHack — Offensive Security & Pentest Intelligence AI</title>
+  <meta name="description" content="PickyHack is an offensive security, vulnerability research and pentest copilot AI powered by live CISA KEV, CVE correlation, and exploit intelligence.">
+  <link rel="icon" type="image/svg+xml" href="assets/pickyhack-logo.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Desktop Environment -->
+  <div id="desktop">
+    
+    <!-- Desktop Icons -->
+    <div class="desktop-icons">
+      <div class="desktop-icon selected" id="icon-workspace" title="Main Pentest Redaction Workspace">
+        <svg class="desktop-icon-img" viewBox="0 0 32 32">
+          <rect x="4" y="2" width="24" height="28" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+          <line x1="8" y1="8" x2="24" y2="8" stroke="#808080" stroke-width="2"/>
+          <line x1="8" y1="13" x2="24" y2="13" stroke="#808080" stroke-width="2"/>
+          <line x1="8" y1="18" x2="20" y2="18" stroke="#808080" stroke-width="2"/>
+          <line x1="8" y1="23" x2="16" y2="23" stroke="#808080" stroke-width="2"/>
+        </svg>
+        <span class="desktop-icon-label">PickyHack Workspace</span>
+      </div>
+
+      <div class="desktop-icon" id="icon-kev" title="CISA Known Exploited Vulnerabilities Catalog">
+        <svg class="desktop-icon-img" viewBox="0 0 32 32">
+          <rect x="2" y="6" width="28" height="22" fill="#c0c0c0" stroke="#000" stroke-width="1.5"/>
+          <rect x="4" y="4" width="24" height="4" fill="#8b0000"/>
+          <text x="7" y="21" font-family="'VT323', monospace" font-size="14" font-weight="bold" fill="#8b0000">KEV</text>
+        </svg>
+        <span class="desktop-icon-label">CISA KEV Feed</span>
+      </div>
+
+      <div class="desktop-icon" id="icon-chains" title="Exploit Intelligence & Attack Paths">
+        <svg class="desktop-icon-img" viewBox="0 0 32 32">
+          <circle cx="8" cy="8" r="4" fill="#b83b26" stroke="#000"/>
+          <circle cx="24" cy="16" r="4" fill="#d35400" stroke="#000"/>
+          <circle cx="10" cy="24" r="4" fill="#2980b9" stroke="#000"/>
+          <line x1="11" y1="10" x2="21" y2="14" stroke="#000" stroke-width="1.5"/>
+          <line x1="21" y1="18" x2="13" y2="22" stroke="#000" stroke-width="1.5"/>
+        </svg>
+        <span class="desktop-icon-label">Attack Paths</span>
+      </div>
+
+      <div class="desktop-icon" id="icon-snapshot" title="Context Snapshot & Portable State">
+        <svg class="desktop-icon-img" viewBox="0 0 32 32">
+          <rect x="4" y="4" width="24" height="24" fill="#ffff88" stroke="#000" stroke-width="1.5"/>
+          <polygon points="12,4 12,14 20,14 20,4" fill="#c0c0c0" stroke="#000" stroke-width="1"/>
+          <text x="7" y="24" font-family="'VT323', monospace" font-size="12" fill="#000080">SNAP</text>
+        </svg>
+        <span class="desktop-icon-label">Context Snapshot</span>
+      </div>
+
+      <div class="desktop-icon" id="icon-prompt" title="PickyHack System Prompt / Specification">
+        <svg class="desktop-icon-img" viewBox="0 0 32 32">
+          <rect x="3" y="3" width="26" height="26" fill="#000" stroke="#fff" stroke-width="1"/>
+          <text x="6" y="19" font-family="'VT323', monospace" font-size="13" fill="#00ff00">&gt;_AI</text>
+        </svg>
+        <span class="desktop-icon-label">AI Copilot</span>
+      </div>
+    </div>
+
+    <!-- Main Window: PickyHack Pentest Intelligence Workbench -->
+    <div class="win-window win-outset-deep" id="main-window">
+      
+      <!-- Window Titlebar -->
+      <div class="win-titlebar" id="window-titlebar">
+        <div class="win-title-left">
+          <img src="assets/pickyhack-logo.svg" alt="PickyHack Icon" class="win-title-icon">
+          <span id="window-title-text">PickyHack v1.0 — [Target Redaction Workspace]</span>
+        </div>
+        <div class="win-title-controls">
+          <button class="win-title-btn" id="btn-win-min" title="Minimize">_</button>
+          <button class="win-title-btn" id="btn-win-max" title="Maximize">□</button>
+          <button class="win-title-btn" id="btn-win-close" title="Close">✕</button>
+        </div>
+      </div>
+
+      <!-- Window Menu Bar -->
+      <div class="win-menubar">
+        <span class="win-menu-item" id="menu-file"><u>F</u>ile</span>
+        <span class="win-menu-item" id="menu-edit"><u>E</u>dit</span>
+        <span class="win-menu-item" id="menu-templates"><u>T</u>emplates</span>
+        <span class="win-menu-item" id="menu-snapshot"><u>S</u>napshot</span>
+        <span class="win-menu-item" id="menu-intelligence"><u>I</u>ntelligence</span>
+        <span class="win-menu-item" id="menu-attack-chain"><u>A</u>ttack Chains</span>
+        <span class="win-menu-item" id="menu-nuclei"><u>N</u>uclei</span>
+        <span class="win-menu-item" id="menu-help"><u>H</u>elp</span>
+      </div>
+
+      <!-- Window Toolbar -->
+      <div class="win-toolbar">
+        <button class="win-btn" id="btn-new-target" title="Clear and create a new target session">
+          <span>📄</span> New Target
+        </button>
+        <button class="win-btn" id="btn-scope-sample" title="Load standard target scope template">
+          <span>🎯</span> Sample Scope
+        </button>
+
+        <div class="toolbar-separator"></div>
+
+        <!-- CONTEXT SNAPSHOT ACTION BUTTONS (Core Persistence) -->
+        <button class="win-btn btn-highlight" id="btn-save-snapshot" title="Generate portable full context snapshot of current mission state">
+          <span>💾</span> <strong>Save Snapshot</strong>
+        </button>
+        <button class="win-btn" id="btn-import-snapshot" title="Import previously saved Context Snapshot or markdown file">
+          <span>📥</span> Import Context
+        </button>
+        
+        <div class="toolbar-separator"></div>
+
+        <button class="win-btn" id="btn-correlate" title="Correlate target notes against CVEs, CISA KEV & Exploits">
+          <span>⚡</span> Correlate Intel
+        </button>
+        <button class="win-btn" id="btn-synth-chain" title="Synthesize Attack Chains (Initial Access to Root)">
+          <span>⛓️</span> Attack Path
+        </button>
+        <button class="win-btn" id="btn-intel-briefing" title="Generate 24h/7d Threat Briefing (Quoi de neuf ?)">
+          <span>📡</span> Quoi de neuf ?
+        </button>
+
+        <div class="toolbar-separator"></div>
+
+        <button class="win-btn" id="btn-export-nuclei" title="Generate automated Nuclei template">
+          <span>⚙️</span> Nuclei Template
+        </button>
+        <button class="win-btn" id="btn-calc-eps" title="Calculate Exploitability Priority Score">
+          <span>📊</span> Calc EPS
+        </button>
+
+        <div class="toolbar-separator"></div>
+        <span class="badge-kev">CISA KEV: 1,642</span>
+        <span class="badge-eps" id="toolbar-eps-badge">EPS: STANDBY</span>
+      </div>
+
+      <!-- Main Workspace Body (Split view) -->
+      <div class="win-workspace-body">
+        
+        <!-- Left: Primary Pentester Redaction Workspace -->
+        <section class="workspace-left" aria-label="Pentester Workspace">
+          <div class="editor-wrapper win-inset">
+            
+            <!-- Editor Subheader -->
+            <div class="editor-header-bar">
+              <div class="editor-target-pill">
+                <strong>SCOPE:</strong>
+                <span id="active-scope-label">No Target Defined</span>
+              </div>
+              <div class="editor-mode-indicator">
+                <span id="persistence-indicator">PERSISTENCE: <strong>AUTOSAVE READY</strong></span>
+              </div>
+            </div>
+
+            <!-- The Core Redaction Container with the Editorial Placeholder -->
+            <div class="editor-container" id="editor-container">
+              <!-- The Editorial Placeholder: “What we hack ?” -->
+              <div class="editorial-placeholder" id="editorial-placeholder" aria-hidden="true">What we hack ?</div>
+              
+              <!-- Textarea for the Pentester -->
+              <textarea 
+                id="pentest-notes" 
+                class="pentest-textarea" 
+                placeholder="" 
+                spellcheck="false" 
+                autocomplete="off" 
+                aria-label="Pentester Target Definition and Notes"
+              ></textarea>
+            </div>
+
+            <!-- Quick Template Bar below editor -->
+            <div class="template-bar">
+              <span>Quick Scope:</span>
+              <button class="win-btn template-btn" id="tpl-external">External Recon</button>
+              <button class="win-btn template-btn" id="tpl-webapp">Web / API Pentest</button>
+              <button class="win-btn template-btn" id="tpl-ad">Active Directory</button>
+              <button class="win-btn template-btn" id="tpl-cloud">Cloud &amp; Container</button>
+              <button class="win-btn template-btn" id="btn-clear-notes" style="margin-left:auto;">Clear</button>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Right: Auxiliary Intelligence & Attack Path Graph -->
+        <aside class="workspace-right" aria-label="Intelligence Panels">
+          <div class="aux-container win-outset">
+            
+            <!-- Panel Navigation Tabs -->
+            <div class="win-tabs" role="tablist">
+              <button class="win-tab active" id="tab-btn-console" data-tab="tab-console" role="tab" aria-selected="true">
+                Copilot Chat
+              </button>
+              <button class="win-tab" id="tab-btn-chains" data-tab="tab-chains" role="tab" aria-selected="false">
+                Attack Paths
+              </button>
+              <button class="win-tab" id="tab-btn-cve" data-tab="tab-cve" role="tab" aria-selected="false">
+                KEV &amp; CVEs
+              </button>
+              <button class="win-tab" id="tab-btn-nuclei" data-tab="tab-nuclei" role="tab" aria-selected="false">
+                Nuclei Rule
+              </button>
+            </div>
+
+            <!-- Tab 1: AI Copilot Chat & Interactive Terminal with Context Persistence -->
+            <div class="tab-panel active" id="tab-console" role="tabpanel">
+              <div class="chat-subbar">
+                <span style="font-weight:bold; font-size:11px;">SESSION CHAT (TEMPORARY)</span>
+                <div style="display:flex; gap:4px; margin-left:auto;">
+                  <button class="win-btn" id="btn-chat-save-snapshot" style="font-size:10px; padding:1px 5px;" title="Snapshot current state into a portable prompt">
+                    💾 Save Snapshot
+                  </button>
+                  <button class="win-btn" id="btn-chat-import-snapshot" style="font-size:10px; padding:1px 5px;" title="Restore state from a snapshot">
+                    📥 Import
+                  </button>
+                </div>
+              </div>
+
+              <!-- Chat / Terminal Display Feed -->
+              <div class="dos-console win-inset" id="copilot-terminal">
+<span class="dos-amber">PickyHack Pentest Intelligence System v1.0</span>
+<span class="dos-white">Copyright (C) 1998-2026 PickyHack Offensive Security Labs.</span>
+<span class="dos-cyan">Loading CISA KEV database (1,642 entries)... Done.</span>
+<span class="dos-cyan">Context Persistence Engine: READY (Continuous State Auto-Save active).</span>
+<span class="dos-green">PickyHack Copilot is ready.</span>
+
+C:\PICKYHACK&gt; Define target in workspace or ask a question below.
+              </div>
+
+              <!-- Interactive Chat Input -->
+              <div class="chat-input-container win-inset-shallow">
+                <span class="chat-prompt-indicator">&gt;</span>
+                <input 
+                  type="text" 
+                  id="chat-input" 
+                  class="chat-input-field" 
+                  placeholder="Ask AI Copilot, test command or target query..." 
+                  autocomplete="off"
+                >
+                <button class="win-btn" id="btn-chat-send" style="padding:2px 8px; font-weight:bold;">Send</button>
+              </div>
+            </div>
+
+            <!-- Tab 2: Attack Chains & Exploit Graph -->
+            <div class="tab-panel" id="tab-chains" role="tabpanel">
+              <div class="intel-card win-inset">
+                <div class="intel-card-title">
+                  <span>EXPLOIT INTELLIGENCE GRAPH</span>
+                  <span class="badge-eps" id="graph-eps-indicator">EPS 94 / 100</span>
+                </div>
+                <div class="attack-chain-container" id="attack-chain-steps">
+                  <div class="chain-step">
+                    <span class="chain-badge step-1">INITIAL ACCESS</span>
+                    <span class="chain-desc">Edge Router / VPN Auth Bypass (CVE-2024-3400 / CVE-2026-X)</span>
+                  </div>
+                  <div class="chain-arrow">▼</div>
+                  <div class="chain-step">
+                    <span class="chain-badge step-2">FOOTHOLD</span>
+                    <span class="chain-desc">Reverse Shell via Metasploit payload (unprivileged user)</span>
+                  </div>
+                  <div class="chain-arrow">▼</div>
+                  <div class="chain-step">
+                    <span class="chain-badge step-3">PRIV ESC</span>
+                    <span class="chain-desc">Linux Kernel eBPF / SUID Misconfiguration (Root Access)</span>
+                  </div>
+                  <div class="chain-arrow">▼</div>
+                  <div class="chain-step">
+                    <span class="chain-badge step-4">CREDENTIALS</span>
+                    <span class="chain-desc">Extract SAM/NTDS / Cloud IAM STS Session Tokens</span>
+                  </div>
+                  <div class="chain-arrow">▼</div>
+                  <div class="chain-step">
+                    <span class="chain-badge step-5">DOMAIN CTRL</span>
+                    <span class="chain-desc">ADCS Misconfiguration ESC1 → Enterprise Admin Takeover</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="intel-card win-inset" style="margin-top: 4px;">
+                <div class="intel-card-title">
+                  <span>EPS EXPLOITABILITY SCORING BREAKDOWN</span>
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 11px; line-height: 1.45; color: #222;" id="eps-breakdown-text">
+                  • CVSS Base Score: 9.8 (Critical)<br>
+                  • CISA KEV Catalog: Listed (+30 pts)<br>
+                  • In-The-Wild Exploitation: Confirmed (+25 pts)<br>
+                  • Public Working PoC: Available on GitHub (+15 pts)<br>
+                  • Weaponized Metasploit Module: YES (+10 pts)<br>
+                  • Attack Vector: Remote Pre-Auth (No Creds needed)<br>
+                  <strong style="color:#8b0000;">=&gt; Total EPS: 96/100 (CRITICAL — EXPLOIT NOW)</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 3: CISA KEV & Live CVEs -->
+            <div class="tab-panel" id="tab-cve" role="tabpanel">
+              <div class="cve-table-container win-inset">
+                <table class="cve-table" id="cve-table">
+                  <thead>
+                    <tr>
+                      <th>CVE / Product</th>
+                      <th>CVSS</th>
+                      <th>EPS</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cve-table-body">
+                    <!-- Populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tab 4: Nuclei Automation Studio -->
+            <div class="tab-panel" id="tab-nuclei" role="tabpanel">
+              <div class="dos-console win-inset" id="nuclei-yaml-view" style="color: #ffff88;">
+id: pickyhack-perimeter-detect
+
+info:
+  name: PickyHack Dynamic Perimeter Vulnerability Detection
+  author: PickyHack AI Copilot
+  severity: critical
+  tags: cve,kev,rce,preauth
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/health"
+      - "{{BaseURL}}/auth/login"
+      - "{{BaseURL}}/.env"
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200
+              </div>
+              <div style="margin-top: 4px; display:flex; gap:6px;">
+                <button class="win-btn" id="btn-copy-nuclei">Copy Nuclei YAML</button>
+                <button class="win-btn" id="btn-run-nuclei-sim">Simulate Run</button>
+              </div>
+            </div>
+
+          </div>
+        </aside>
+
+      </div>
+
+      <!-- Window Status Bar -->
+      <footer class="win-statusbar">
+        <div class="status-panel win-inset-shallow status-flex" id="sb-status">
+          Ready. Waiting for pentester target definition.
+        </div>
+        <div class="status-panel win-inset-shallow" id="sb-cursor">
+          Ln 1, Col 1
+        </div>
+        <div class="status-panel win-inset-shallow" id="sb-words">
+          0 chars
+        </div>
+        <div class="status-panel win-inset-shallow" id="sb-snapshot">
+          Snapshot: Clean
+        </div>
+        <div class="status-panel win-inset-shallow" id="sb-intel">
+          KEV: ACTIVE
+        </div>
+      </footer>
+
+    </div>
+
+  </div>
+
+  <!-- Taskbar at bottom -->
+  <footer id="taskbar">
+    <button class="win-btn start-btn" id="start-button">
+      <img src="assets/pickyhack-logo.svg" alt="PickyHack Logo" class="start-flag">
+      <span>Start</span>
+    </button>
+    
+    <div class="task-items">
+      <button class="win-btn task-item active" id="task-main-win">
+        <img src="assets/pickyhack-logo.svg" alt="" style="width:14px; height:14px;">
+        <span>PickyHack Workspace</span>
+      </button>
+    </div>
+
+    <div class="system-tray win-inset-shallow">
+      <button class="win-btn" id="tray-quick-snapshot" style="padding:1px 4px; font-size:10px;" title="Quick Save Context Snapshot">
+        💾 Snapshot
+      </button>
+      <img src="assets/pickyhack-logo.svg" alt="Shield" class="tray-icon" title="Exploit Intelligence Engine Active">
+      <span id="system-clock">02:14 AM</span>
+    </div>
+  </footer>
+
+  <!-- Start Menu Dropdown -->
+  <div id="start-menu" class="win-outset-deep">
+    <div class="start-sidebar">
+      <div class="start-sidebar-text">PICKYHACK 98</div>
+    </div>
+    <div class="start-menu-items">
+      <div class="start-menu-item" id="sm-save-snapshot">
+        <span>💾</span> Save Context Snapshot...
+      </div>
+      <div class="start-menu-item" id="sm-import-snapshot">
+        <span>📥</span> Import Context Snapshot...
+      </div>
+      <div class="start-separator"></div>
+      <div class="start-menu-item" id="sm-new-target">
+        <span>🎯</span> New Pentest Scope
+      </div>
+      <div class="start-menu-item" id="sm-briefing">
+        <span>📡</span> Quoi de neuf ? (Threat Briefing)
+      </div>
+      <div class="start-menu-item" id="sm-kev-catalog">
+        <span>🛡️</span> CISA KEV Catalog
+      </div>
+      <div class="start-menu-item" id="sm-nuclei-gen">
+        <span>⚙️</span> Nuclei Automation
+      </div>
+      <div class="start-separator"></div>
+      <div class="start-menu-item" id="sm-about">
+        <span>ℹ️</span> About PickyHack...
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Context Snapshot Export Window (Section 5) -->
+  <div class="win-modal-backdrop" id="snapshot-modal">
+    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="snapshot-title">
+      <div class="win-titlebar">
+        <div class="win-title-left">
+          <span>💾</span>
+          <span id="snapshot-title">Context Snapshot — Portable Pentest State</span>
+        </div>
+        <button class="win-title-btn" id="snapshot-close-x">✕</button>
+      </div>
+      <div class="dialog-body">
+        <div style="font-size:12px; font-weight:bold; color:#000080;">
+          Snapshot generated successfully.
+        </div>
+        
+        <!-- Metrics Stats Pillbox -->
+        <div class="snapshot-metrics-bar win-inset" id="snapshot-metrics-summary">
+          <span class="metric-tag"><strong id="stat-assets">0</strong> assets</span>
+          <span class="metric-tag"><strong id="stat-services">0</strong> services</span>
+          <span class="metric-tag"><strong id="stat-vulns">0</strong> vulnerabilities</span>
+          <span class="metric-tag"><strong id="stat-chains">0</strong> attack paths</span>
+          <span class="metric-tag"><strong id="stat-obs">0</strong> observations</span>
+        </div>
+
+        <p style="font-size:11px; color:#444;">
+          This self-contained prompt can be copied and fed to <em>any</em> LLM session to instantly resume the pentest with full continuity:
+        </p>
+
+        <!-- Preview Textarea -->
+        <div class="win-inset" style="height:210px; overflow:hidden; position:relative;">
+          <textarea id="snapshot-preview-textarea" class="snapshot-preview-field" readonly spellcheck="false"></textarea>
+        </div>
+      </div>
+      <div class="dialog-buttons">
+        <button class="win-btn" id="btn-copy-context" style="min-width:110px; font-weight:bold;">
+          📋 Copy Context
+        </button>
+        <button class="win-btn" id="btn-download-snapshot" style="min-width:110px;">
+          💾 Download .md
+        </button>
+        <button class="win-btn" id="snapshot-ok-btn" style="min-width:70px;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Context Snapshot Import Window (Section 6) -->
+  <div class="win-modal-backdrop" id="import-modal">
+    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="import-title">
+      <div class="win-titlebar">
+        <div class="win-title-left">
+          <span>📥</span>
+          <span id="import-title">Import Context — Restore Mission State</span>
+        </div>
+        <button class="win-title-btn" id="import-close-x">✕</button>
+      </div>
+      <div class="dialog-body">
+        <p style="font-size:11px; color:#333;">
+          Paste a <strong>PickyHack Context Snapshot</strong> below or upload a <code>.md</code> file to restore target state, discovered assets, vulnerabilities, and attack paths.
+        </p>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label style="font-size:11px; font-weight:bold;">Snapshot Content:</label>
+          <input type="file" id="file-import-input" accept=".md,.txt" style="display:none;">
+          <button class="win-btn" id="btn-trigger-file-import" style="font-size:10px; padding:2px 6px;">
+            📁 Load from .md file
+          </button>
+        </div>
+
+        <div class="win-inset" style="height:190px; overflow:hidden;">
+          <textarea 
+            id="import-textarea" 
+            class="snapshot-preview-field" 
+            placeholder="Paste === PICKYHACK CONTEXT SNAPSHOT === here..." 
+            spellcheck="false"
+          ></textarea>
+        </div>
+      </div>
+      <div class="dialog-buttons">
+        <button class="win-btn" id="btn-run-import" style="min-width:120px; font-weight:bold;">
+          ⚡ Restore Context
+        </button>
+        <button class="win-btn" id="import-cancel-btn" style="min-width:70px;">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- About PickyHack Dialog Modal -->
+  <div class="win-modal-backdrop" id="about-modal">
+    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="about-title">
+      <div class="win-titlebar">
+        <div class="win-title-left">
+          <img src="assets/pickyhack-logo.svg" alt="" class="win-title-icon">
+          <span id="about-title">About PickyHack Pentest Intelligence</span>
+        </div>
+        <button class="win-title-btn" id="about-close-x">✕</button>
+      </div>
+      <div class="dialog-body">
+        <div style="display:flex; gap:16px; align-items:center;">
+          <div style="width:72px; height:72px; flex-shrink:0;">
+            <img src="assets/pickyhack-logo.svg" alt="PickyHack Emblem" style="width:100%; height:100%;">
+          </div>
+          <div>
+            <h2 style="font-size:15px; margin-bottom:4px;">PickyHack v1.0</h2>
+            <p style="font-size:11px; color:#444;">Offensive Security &amp; Pentest Intelligence AI Copilot</p>
+            <p style="font-size:11px; color:#666; margin-top:4px;">Windows 98 Pentest Edition • Portable Context Engine</p>
+          </div>
+        </div>
+        <div class="win-inset" style="padding:8px; font-size:11px; line-height:1.5; max-height:160px; overflow-y:auto; background:#fff;">
+          <strong>Concept &amp; Architecture :</strong><br>
+          PickyHack sépare le chat éphémère du <strong>Pentest State persistant</strong>.<br>
+          • <strong>Context Snapshot</strong> : export portable et autonome de tout l'état de mission.<br>
+          • <strong>Threat &amp; Exploit Intelligence</strong> : CISA KEV, NVD CVEs, PoCs, Metasploit.<br>
+          • <strong>Attack Paths &amp; EPS Scoring</strong> : Corrélation offensive multi-étapes.
+        </div>
+      </div>
+      <div class="dialog-buttons">
+        <button class="win-btn" id="about-ok-btn" style="min-width:70px;">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>

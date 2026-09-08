@@ -1,0 +1,35 @@
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node / NPM
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment & Secrets (Never commit secrets!)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.cert
+
+# Logs & Temporary Files
+*.log
+scratch/
+tmp/
+.cache/
+
+# Local Editor Configurations
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
