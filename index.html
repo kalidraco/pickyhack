@@ -107,6 +107,9 @@
         <button class="win-btn btn-highlight" id="btn-save-snapshot" title="Generate portable full context snapshot of current mission state">
           <span>💾</span> <strong>Save Snapshot</strong>
         </button>
+        <button class="win-btn" id="btn-copy-full-context-toolbar" title="Directly copy Full Context Snapshot to clipboard">
+          <span>📋</span> Copy Full Context
+        </button>
         <button class="win-btn" id="btn-import-snapshot" title="Import previously saved Context Snapshot or markdown file">
           <span>📥</span> Import Context
         </button>
@@ -184,7 +187,7 @@
           </div>
         </section>
 
-        <!-- Right: Auxiliary Intelligence & Attack Path Graph -->
+        <!-- Right: Auxiliary Intelligence, Multi-Conversations & Attack Paths -->
         <aside class="workspace-right" aria-label="Intelligence Panels">
           <div class="aux-container win-outset">
             
@@ -204,43 +207,103 @@
               </button>
             </div>
 
-            <!-- Tab 1: AI Copilot Chat & Interactive Terminal with Context Persistence -->
+            <!-- Tab 1: AI Copilot Multi-Conversation Workspace -->
             <div class="tab-panel active" id="tab-console" role="tabpanel">
-              <div class="chat-subbar">
-                <span style="font-weight:bold; font-size:11px;">SESSION CHAT (TEMPORARY)</span>
-                <div style="display:flex; gap:4px; margin-left:auto;">
-                  <button class="win-btn" id="btn-chat-save-snapshot" style="font-size:10px; padding:1px 5px;" title="Snapshot current state into a portable prompt">
-                    💾 Save Snapshot
-                  </button>
-                  <button class="win-btn" id="btn-chat-import-snapshot" style="font-size:10px; padding:1px 5px;" title="Restore state from a snapshot">
-                    📥 Import
-                  </button>
+              
+              <div class="chat-workspace-split">
+                
+                <!-- Conversation Sidebar (Windows 98 Style) -->
+                <div class="conv-sidebar win-inset-shallow">
+                  <div class="conv-sidebar-header">
+                    <span>PICKYHACK CHAT</span>
+                  </div>
+                  
+                  <!-- New Conversation Button -->
+                  <div style="padding: 4px;">
+                    <button class="win-btn conv-new-btn" id="btn-open-new-conv-dialog">
+                      <span>+</span> New Conversation
+                    </button>
+                  </div>
+
+                  <!-- Conversations Section -->
+                  <div class="conv-section-title">CONVERSATIONS</div>
+                  <div class="conv-list win-inset" id="conv-list-container">
+                    <!-- Dynamic conversation items populated by JS -->
+                  </div>
+
+                  <!-- Project State Shared Data Section -->
+                  <div class="conv-section-title" style="margin-top:6px;">PROJECT STATE</div>
+                  <div class="conv-project-stats win-inset">
+                    <div class="stat-row">
+                      <span>Assets:</span>
+                      <strong id="sidebar-stat-assets">0</strong>
+                    </div>
+                    <div class="stat-row">
+                      <span>Services:</span>
+                      <strong id="sidebar-stat-services">0</strong>
+                    </div>
+                    <div class="stat-row">
+                      <span>Findings:</span>
+                      <strong id="sidebar-stat-vulns">0</strong>
+                    </div>
+                    <div class="stat-row">
+                      <span>Attack Paths:</span>
+                      <strong id="sidebar-stat-chains">0</strong>
+                    </div>
+                    <div style="margin-top:4px; padding-top:4px; border-top:1px solid #ccc;">
+                      <button class="win-btn" id="btn-sidebar-copy-full-ctx" style="width:100%; font-size:10px; padding:2px;">
+                        📋 Copy Full Context
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
+                <!-- Main Active Conversation Area -->
+                <div class="conv-main-area">
+                  
+                  <!-- Conversation Header Bar -->
+                  <div class="conv-header-bar">
+                    <div class="conv-title-wrapper">
+                      <span class="conv-prompt-mark">&gt;</span>
+                      <span id="active-conv-title" class="active-conv-title" title="Double-click to rename">Reconnaissance</span>
+                      <button class="win-btn" id="btn-rename-active-conv" style="font-size:9px; padding:1px 4px;" title="Rename conversation">✏️</button>
+                    </div>
+                    
+                    <div class="conv-header-actions">
+                      <button class="win-btn" id="btn-chat-copy-full-context" title="Generate and copy Full Context Snapshot">
+                        📋 Copy Context
+                      </button>
+                      <button class="win-btn" id="btn-chat-save-snapshot" title="Snapshot state to file or modal">
+                        💾 Snapshot
+                      </button>
+                      <button class="win-btn" id="btn-clear-current-chat" title="Clear current conversation messages">
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Messages Feed -->
+                  <div class="chat-messages-container win-inset" id="chat-messages-feed">
+                    <!-- Populated dynamically by JS with copy buttons -->
+                  </div>
+
+                  <!-- Interactive Chat Input Bar -->
+                  <div class="chat-input-container win-inset-shallow">
+                    <span class="chat-prompt-indicator">&gt;</span>
+                    <input 
+                      type="text" 
+                      id="chat-input" 
+                      class="chat-input-field" 
+                      placeholder="Ask Copilot, analyze target, or test command..." 
+                      autocomplete="off"
+                    >
+                    <button class="win-btn" id="btn-chat-send" style="padding:2px 8px; font-weight:bold;">Send</button>
+                  </div>
+
+                </div>
+
               </div>
 
-              <!-- Chat / Terminal Display Feed -->
-              <div class="dos-console win-inset" id="copilot-terminal">
-<span class="dos-amber">PickyHack Pentest Intelligence System v1.0</span>
-<span class="dos-white">Copyright (C) 1998-2026 PickyHack Offensive Security Labs.</span>
-<span class="dos-cyan">Loading CISA KEV database (1,642 entries)... Done.</span>
-<span class="dos-cyan">Context Persistence Engine: READY (Continuous State Auto-Save active).</span>
-<span class="dos-green">PickyHack Copilot is ready.</span>
-
-C:\PICKYHACK&gt; Define target in workspace or ask a question below.
-              </div>
-
-              <!-- Interactive Chat Input -->
-              <div class="chat-input-container win-inset-shallow">
-                <span class="chat-prompt-indicator">&gt;</span>
-                <input 
-                  type="text" 
-                  id="chat-input" 
-                  class="chat-input-field" 
-                  placeholder="Ask AI Copilot, test command or target query..." 
-                  autocomplete="off"
-                >
-                <button class="win-btn" id="btn-chat-send" style="padding:2px 8px; font-weight:bold;">Send</button>
-              </div>
             </div>
 
             <!-- Tab 2: Attack Chains & Exploit Graph -->
@@ -359,8 +422,8 @@ http:
         <div class="status-panel win-inset-shallow" id="sb-words">
           0 chars
         </div>
-        <div class="status-panel win-inset-shallow" id="sb-snapshot">
-          Snapshot: Clean
+        <div class="status-panel win-inset-shallow" id="sb-conv">
+          Conv: Reconnaissance
         </div>
         <div class="status-panel win-inset-shallow" id="sb-intel">
           KEV: ACTIVE
@@ -390,7 +453,7 @@ http:
         💾 Snapshot
       </button>
       <img src="assets/pickyhack-logo.svg" alt="Shield" class="tray-icon" title="Exploit Intelligence Engine Active">
-      <span id="system-clock">02:14 AM</span>
+      <span id="system-clock">02:18 AM</span>
     </div>
   </footer>
 
@@ -403,10 +466,16 @@ http:
       <div class="start-menu-item" id="sm-save-snapshot">
         <span>💾</span> Save Context Snapshot...
       </div>
+      <div class="start-menu-item" id="sm-copy-context">
+        <span>📋</span> Copy Full Context
+      </div>
       <div class="start-menu-item" id="sm-import-snapshot">
         <span>📥</span> Import Context Snapshot...
       </div>
       <div class="start-separator"></div>
+      <div class="start-menu-item" id="sm-new-conv">
+        <span>💬</span> + New Conversation
+      </div>
       <div class="start-menu-item" id="sm-new-target">
         <span>🎯</span> New Pentest Scope
       </div>
@@ -416,12 +485,52 @@ http:
       <div class="start-menu-item" id="sm-kev-catalog">
         <span>🛡️</span> CISA KEV Catalog
       </div>
-      <div class="start-menu-item" id="sm-nuclei-gen">
-        <span>⚙️</span> Nuclei Automation
-      </div>
       <div class="start-separator"></div>
       <div class="start-menu-item" id="sm-about">
         <span>ℹ️</span> About PickyHack...
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: New Conversation Dialog -->
+  <div class="win-modal-backdrop" id="new-conv-modal">
+    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="new-conv-title">
+      <div class="win-titlebar">
+        <div class="win-title-left">
+          <span>💬</span>
+          <span id="new-conv-title">New Temporary Conversation</span>
+        </div>
+        <button class="win-title-btn" id="new-conv-close-x">✕</button>
+      </div>
+      <div class="dialog-body">
+        <p style="font-size:11px; color:#333;">
+          Create an independent conversation stream for this session (e.g. <em>Web Pentest</em>, <em>Active Directory</em>, <em>CVE Research</em>).
+        </p>
+        
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; font-weight:bold;">Conversation Title:</label>
+          <input type="text" id="new-conv-title-input" class="chat-input-field" value="Web Pentest" style="font-size:12px;">
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+          <label style="font-size:11px; font-weight:bold;">Context Initialization:</label>
+          <label style="font-size:11px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="radio" name="conv-init-type" value="project" checked>
+            <strong>New From Project Context</strong> (inject current target, assets &amp; findings)
+          </label>
+          <label style="font-size:11px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="radio" name="conv-init-type" value="empty">
+            <strong>New Empty Conversation</strong> (completely blank dialogue)
+          </label>
+        </div>
+      </div>
+      <div class="dialog-buttons">
+        <button class="win-btn" id="btn-create-conv-confirm" style="min-width:100px; font-weight:bold;">
+          Create
+        </button>
+        <button class="win-btn" id="new-conv-cancel-btn" style="min-width:70px;">
+          Cancel
+        </button>
       </div>
     </div>
   </div>
@@ -534,12 +643,13 @@ http:
           <div>
             <h2 style="font-size:15px; margin-bottom:4px;">PickyHack v1.0</h2>
             <p style="font-size:11px; color:#444;">Offensive Security &amp; Pentest Intelligence AI Copilot</p>
-            <p style="font-size:11px; color:#666; margin-top:4px;">Windows 98 Pentest Edition • Portable Context Engine</p>
+            <p style="font-size:11px; color:#666; margin-top:4px;">Windows 98 Pentest Edition • Multi-Conversations &amp; Context Engine</p>
           </div>
         </div>
         <div class="win-inset" style="padding:8px; font-size:11px; line-height:1.5; max-height:160px; overflow-y:auto; background:#fff;">
           <strong>Concept &amp; Architecture :</strong><br>
           PickyHack sépare le chat éphémère du <strong>Pentest State persistant</strong>.<br>
+          • <strong>Multi-Conversations</strong> : conversations temporaires indépendantes par spécialité (Recon, Web, AD, Exploit).<br>
           • <strong>Context Snapshot</strong> : export portable et autonome de tout l'état de mission.<br>
           • <strong>Threat &amp; Exploit Intelligence</strong> : CISA KEV, NVD CVEs, PoCs, Metasploit.<br>
           • <strong>Attack Paths &amp; EPS Scoring</strong> : Corrélation offensive multi-étapes.

@@ -1,6 +1,6 @@
 /**
  * PickyHack — Offensive Security & Pentest Intelligence AI
- * Windows 98 Desktop Application Logic & Context Snapshot Engine
+ * Windows 98 Desktop Application Logic, Multi-Conversations & Context Snapshot Engine
  */
 
 (function () {
@@ -136,7 +136,7 @@
     }
   ];
 
-  // --- Persistent Pentest State Model ---
+  // --- Persistent Pentest State Model (Shared across all conversations) ---
   const pentestState = {
     version: '1.0',
     generated: new Date().toISOString(),
@@ -163,11 +163,69 @@
     decisions: [],
     openQuestions: [],
     currentPriorities: [],
-    nextActions: [],
-    conversationHistory: [] // Dialogue turns (temporary chat abstraction)
+    nextActions: []
   };
 
-  // --- Templates ---
+  // --- Temporary Multi-Conversations System ---
+  let conversations = [
+    {
+      id: 'conv-recon',
+      title: 'Reconnaissance',
+      createdAt: new Date().toISOString(),
+      messages: [
+        {
+          id: 'msg-1',
+          sender: 'ai',
+          time: '02:00 AM',
+          text: `Welcome to PickyHack Pentest Copilot.
+Session context initialized for **Perimeter Reconnaissance**.
+I am configured to act as Senior Penetration Tester + Exploit Intelligence Analyst.
+
+Recommended initial reconnaissance command:`,
+          code: `nmap -sV -sC -Pn -T4 -p 80,443,8090,8443,10255 target.example.com`
+        }
+      ]
+    },
+    {
+      id: 'conv-cve',
+      title: 'CVE Research',
+      createdAt: new Date().toISOString(),
+      messages: [
+        {
+          id: 'msg-c1',
+          sender: 'ai',
+          time: '02:05 AM',
+          text: `CVE Research stream active.
+Targeted vulnerability correlation for perimeter edge appliances.
+Currently tracking active KEV entries:
+- **CVE-2024-3400** (PAN-OS GlobalProtect Command Injection, EPS: 99/100)
+- **CVE-2023-22527** (Atlassian Confluence OGNL Template Injection, EPS: 95/100)`,
+          code: `curl -k -H "Host: target.example.com" -I "https://target.example.com/ssl-vpn/hipreport.esp"`
+        }
+      ]
+    },
+    {
+      id: 'conv-exploit',
+      title: 'Exploit Analysis',
+      createdAt: new Date().toISOString(),
+      messages: [
+        {
+          id: 'msg-e1',
+          sender: 'ai',
+          time: '02:10 AM',
+          text: `Exploit Analysis stream active.
+Validation methodology: non-destructive confirmation prior to controlled exploitation.
+
+Metasploit module ready for weaponized validation:`,
+          code: `msfconsole -q -x "use exploit/linux/http/panos_telemetry_cmd_exec; set RHOSTS target.example.com; check"`
+        }
+      ]
+    }
+  ];
+
+  let activeConvId = 'conv-recon';
+
+  // --- Scope Templates ---
   const TEMPLATES = {
     external: `Target: megacorp-finance.com
 Scope: *.megacorp-finance.com, 198.51.100.0/24
@@ -255,26 +313,33 @@ Current Priorities:
   const sbStatus = document.getElementById('sb-status');
   const sbCursor = document.getElementById('sb-cursor');
   const sbWords = document.getElementById('sb-words');
-  const sbSnapshot = document.getElementById('sb-snapshot');
+  const sbConv = document.getElementById('sb-conv');
   const persistenceIndicator = document.getElementById('persistence-indicator');
-  const terminal = document.getElementById('copilot-terminal');
   const cveTableBody = document.getElementById('cve-table-body');
   const attackChainSteps = document.getElementById('attack-chain-steps');
   const epsBreakdown = document.getElementById('eps-breakdown-text');
   const graphEpsIndicator = document.getElementById('graph-eps-indicator');
   const toolbarEpsBadge = document.getElementById('toolbar-eps-badge');
 
+  // Conversation DOM
+  const convListContainer = document.getElementById('conv-list-container');
+  const activeConvTitleElem = document.getElementById('active-conv-title');
+  const chatMessagesFeed = document.getElementById('chat-messages-feed');
+  const chatInput = document.getElementById('chat-input');
+  const chatSendBtn = document.getElementById('btn-chat-send');
+  const sidebarStatAssets = document.getElementById('sidebar-stat-assets');
+  const sidebarStatServices = document.getElementById('sidebar-stat-services');
+  const sidebarStatVulns = document.getElementById('sidebar-stat-vulns');
+  const sidebarStatChains = document.getElementById('sidebar-stat-chains');
+
   // Modals
   const snapshotModal = document.getElementById('snapshot-modal');
   const importModal = document.getElementById('import-modal');
+  const newConvModal = document.getElementById('new-conv-modal');
   const aboutModal = document.getElementById('about-modal');
   const snapshotPreview = document.getElementById('snapshot-preview-textarea');
   const importTextarea = document.getElementById('import-textarea');
   const fileImportInput = document.getElementById('file-import-input');
-
-  // Chat Elements
-  const chatInput = document.getElementById('chat-input');
-  const chatSendBtn = document.getElementById('btn-chat-send');
 
   // --- Editorial Placeholder Controller ---
   function updatePlaceholderState() {
@@ -305,6 +370,7 @@ Current Priorities:
     updateCursorStats();
     syncStateFromNotes();
     autoSaveProjectState();
+    updateSidebarProjectStats();
   });
 
   function updateCursorStats() {
@@ -367,6 +433,14 @@ Current Priorities:
     pentestState.vulnerabilities = [...new Set(cveMatches.map(c => c.toUpperCase()))];
   }
 
+  // --- Update Sidebar Project Stats (Live Across All Conversations) ---
+  function updateSidebarProjectStats() {
+    sidebarStatAssets.textContent = pentestState.discoveredAssets.length || 0;
+    sidebarStatServices.textContent = pentestState.services.length || 0;
+    sidebarStatVulns.textContent = pentestState.vulnerabilities.length || 0;
+    sidebarStatChains.textContent = pentestState.attackPaths.length || 0;
+  }
+
   // --- Local Project Persistence (Auto-Save) ---
   function autoSaveProjectState() {
     try {
@@ -374,7 +448,6 @@ Current Priorities:
       pentestState.rawNotes = textarea.value;
       pentestState.lastUpdated = new Date().toISOString();
       localStorage.setItem('pickyhack_pentest_state', JSON.stringify(pentestState));
-      sbSnapshot.textContent = 'Autosaved';
       persistenceIndicator.innerHTML = 'PERSISTENCE: <strong>AUTOSAVED</strong>';
     } catch (e) {
       console.warn('LocalStorage save failed:', e);
@@ -391,10 +464,7 @@ Current Priorities:
           updatePlaceholderState();
           updateCursorStats();
           syncStateFromNotes();
-          if (parsed.conversationHistory && Array.isArray(parsed.conversationHistory)) {
-            pentestState.conversationHistory = parsed.conversationHistory;
-          }
-          logToTerminal('[*] Restored previous pentest state from local persistence.', 'dos-cyan');
+          appendAIMessage('Restored active pentest state from local persistence.', null);
         }
       }
     } catch (e) {
@@ -404,252 +474,379 @@ Current Priorities:
 
   window.addEventListener('beforeunload', autoSaveProjectState);
 
-  // --- Terminal Logging Utility ---
-  function logToTerminal(msg, colorClass = 'dos-white') {
-    const time = new Date().toTimeString().split(' ')[0];
-    const span = document.createElement('div');
-    span.className = colorClass;
-    span.textContent = `[${time}] ${msg}`;
-    terminal.appendChild(span);
-    terminal.scrollTop = terminal.scrollHeight;
+  // ==========================================================================
+  // MULTI-CONVERSATIONS MANAGER
+  // ==========================================================================
+
+  function getActiveConversation() {
+    return conversations.find(c => c.id === activeConvId) || conversations[0];
   }
 
-  // --- Exploitability Priority Score (EPS) Calculation ---
-  function calculateEPS(vuln) {
-    let score = 0;
-    score += (vuln.cvss / 10) * 30;
-    if (vuln.inKEV) score += 30;
-    if (vuln.wildExploit) score += 20;
-    if (vuln.pocAvailable) score += 10;
-    if (vuln.metasploit) score += 5;
-    if (vuln.authRequired.toLowerCase().includes('pre-auth') || vuln.authRequired.toLowerCase().includes('none')) {
-      score += 5;
-    }
-    return Math.min(100, Math.round(score));
-  }
-
-  // --- Render CVE & KEV Feed Table ---
-  function renderCVETable() {
-    cveTableBody.innerHTML = '';
-    INTEL_DB.forEach((vuln) => {
-      const eps = calculateEPS(vuln);
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>
-          <strong style="color:#000080;">${vuln.cve}</strong><br>
-          <span style="color:#444; font-size:10px;">${vuln.product}</span>
-          <div style="margin-top:2px;">
-            ${vuln.inKEV ? '<span class="badge-tag tag-kev">CISA KEV</span>' : ''}
-            ${vuln.pocAvailable ? '<span class="badge-tag tag-poc">PoC</span>' : ''}
-            ${vuln.metasploit ? '<span class="badge-tag tag-meta">Metasploit</span>' : ''}
-          </div>
-        </td>
-        <td><strong>${vuln.cvss}</strong></td>
-        <td><strong style="color:${eps >= 90 ? '#8b0000' : '#d35400'};">${eps}</strong></td>
-        <td><span style="font-size:10px;">${vuln.epsCategory.split('—')[0].trim()}</span></td>
-        <td>
-          <button class="win-btn" style="font-size:9px; padding:1px 4px;" data-cve="${vuln.cve}">Insert</button>
-        </td>
+  function renderConversationList() {
+    convListContainer.innerHTML = '';
+    conversations.forEach(conv => {
+      const item = document.createElement('div');
+      item.className = 'conv-item' + (conv.id === activeConvId ? ' active' : '');
+      
+      item.innerHTML = `
+        <div class="conv-item-left" title="${conv.title}">
+          <span style="font-family:var(--font-pixel);">${conv.id === activeConvId ? '&gt;' : ' '}</span>
+          <span>${conv.title}</span>
+        </div>
+        ${conversations.length > 1 ? `<span class="conv-item-del" title="Delete conversation">✕</span>` : ''}
       `;
 
-      tr.querySelector('button').addEventListener('click', (e) => {
-        e.stopPropagation();
-        insertCVEIntoWorkspace(vuln);
+      item.querySelector('.conv-item-left').addEventListener('click', () => {
+        switchConversation(conv.id);
       });
 
-      tr.addEventListener('click', () => {
-        document.querySelectorAll('#cve-table-body tr').forEach(r => r.classList.remove('selected'));
-        tr.classList.add('selected');
-        showCVEDetail(vuln);
-      });
-
-      cveTableBody.appendChild(tr);
-    });
-  }
-
-  function insertCVEIntoWorkspace(vuln) {
-    const snippet = `\n\n[MAPPED VULNERABILITY: ${vuln.cve}]
-Product: ${vuln.product} (${vuln.vendor})
-CVSS: ${vuln.cvss} | EPS Score: ${vuln.epsScore}/100 (${vuln.epsCategory})
-CISA KEV Listed: ${vuln.inKEV ? 'YES' : 'NO'} | In-The-Wild Exploitation: ${vuln.wildExploit ? 'CONFIRMED' : 'NO'}
-Authentication: ${vuln.authRequired}
-Public PoC: ${vuln.pocAvailable ? 'AVAILABLE' : 'NONE'} | Metasploit: ${vuln.metasploit ? 'AVAILABLE' : 'NONE'}
-Impact: ${vuln.impact}
-Target Attack Chain: ${vuln.chain}`;
-
-    textarea.value += snippet;
-    updatePlaceholderState();
-    updateCursorStats();
-    syncStateFromNotes();
-    autoSaveProjectState();
-    logToTerminal(`[+] Inserted ${vuln.cve} into target workspace.`, 'dos-green');
-  }
-
-  function showCVEDetail(vuln) {
-    logToTerminal(`--- CVE INTEL: ${vuln.cve} (${vuln.product}) ---`, 'dos-amber');
-    logToTerminal(`CVSS: ${vuln.cvss} | EPS: ${vuln.epsScore}/100 [${vuln.epsCategory}]`, 'dos-white');
-    logToTerminal(`Threat Actor: ${vuln.threatActor}`, 'dos-white');
-    logToTerminal(`Attack Chain: ${vuln.chain}`, 'dos-cyan');
-    logToTerminal(`Remediation: Upgrade to fixed version ${vuln.fixed}`, 'dos-green');
-  }
-
-  // --- Attack Chain Synthesis ---
-  function correlateTargetWithIntel() {
-    const text = textarea.value.toLowerCase();
-    logToTerminal('[*] Correlating target scope notes against CISA KEV & Exploit DB...', 'dos-cyan');
-
-    let matchedVuln = null;
-    let chainSteps = [];
-
-    if (text.includes('palo alto') || text.includes('pan-os') || text.includes('globalprotect')) {
-      matchedVuln = INTEL_DB[0];
-      chainSteps = [
-        { badge: 'INITIAL ACCESS', desc: 'Pre-Auth Command Injection via GlobalProtect (CVE-2024-3400)', step: 1 },
-        { badge: 'FOOTHOLD', desc: 'Spawning unprivileged reverse shell with SUID root capabilities', step: 2 },
-        { badge: 'PRIV ESC', desc: 'Execution of root payload / cron job overwrite', step: 3 },
-        { badge: 'CREDENTIALS', desc: 'Extraction of LDAP and admin VPN credentials from memory', step: 4 },
-        { badge: 'LATERAL MOVE', desc: 'Pivoting into internal finance subnet 198.51.100.0/24', step: 5 }
-      ];
-    } else if (text.includes('confluence') || text.includes('atlassian') || text.includes('wiki')) {
-      matchedVuln = INTEL_DB[4];
-      chainSteps = [
-        { badge: 'INITIAL ACCESS', desc: 'Atlassian Confluence OGNL Template Injection (CVE-2023-22527)', step: 1 },
-        { badge: 'FOOTHOLD', desc: 'Direct Web Shell injection into Tomcat runtime', step: 2 },
-        { badge: 'PRIV ESC', desc: 'Linux Kernel nf_tables Local Privilege Escalation (CVE-2024-1086)', step: 3 },
-        { badge: 'CREDENTIALS', desc: 'Confluence PostgreSQL database password dumping & session tokens', step: 4 },
-        { badge: 'DOMAIN CTRL', desc: 'Harvested Active Directory service account used for BloodHound dump', step: 5 }
-      ];
-    } else if (text.includes('adcs') || text.includes('active directory') || text.includes('domain')) {
-      matchedVuln = INTEL_DB[5];
-      chainSteps = [
-        { badge: 'INITIAL ACCESS', desc: 'Compromised domain user credentials (CORP\\jdoe)', step: 1 },
-        { badge: 'FOOTHOLD', desc: 'Internal network access & AD enumeration via BloodHound / NetExec', step: 2 },
-        { badge: 'PRIV ESC', desc: 'ADCS ESC1 Certificate Enrollment with SAN of Domain Admin', step: 3 },
-        { badge: 'CREDENTIALS', desc: 'Requesting Kerberos TGT certificate authentication via Certipy', step: 4 },
-        { badge: 'DOMAIN CTRL', desc: 'DCSync attack against DC01.corp.local → Full Enterprise Admin', step: 5 }
-      ];
-    } else if (text.includes('kubernetes') || text.includes('k8s') || text.includes('cloud') || text.includes('aws')) {
-      chainSteps = [
-        { badge: 'INITIAL ACCESS', desc: 'Exposed Kubelet API / Misconfigured API gateway', step: 1 },
-        { badge: 'FOOTHOLD', desc: 'Default ServiceAccount token mounted inside Pod', step: 2 },
-        { badge: 'PRIV ESC', desc: 'Kubernetes RBAC secret harvesting (cluster-admin delegation)', step: 3 },
-        { badge: 'CREDENTIALS', desc: 'Harvesting AWS IMDSv2 IAM role session credentials', step: 4 },
-        { badge: 'CLOUD CTRL', desc: 'Assuming OrganizationAccountAccessRole across AWS cloud', step: 5 }
-      ];
-    } else {
-      matchedVuln = INTEL_DB[0];
-      chainSteps = [
-        { badge: 'INITIAL ACCESS', desc: 'External Perimeter Port Scan & CVE Fingerprinting', step: 1 },
-        { badge: 'FOOTHOLD', desc: 'Exploitation of unpatched edge service with public PoC', step: 2 },
-        { badge: 'PRIV ESC', desc: 'Local Kernel or SUID privilege escalation to root/SYSTEM', step: 3 },
-        { badge: 'CREDENTIALS', desc: 'Dumping LSASS / SAM / shadow file credentials', step: 4 },
-        { badge: 'LATERAL MOVE', desc: 'Pass-the-Hash / WinRM pivoting across subnets', step: 5 }
-      ];
-    }
-
-    pentestState.attackPaths = chainSteps.map(c => `${c.badge}: ${c.desc}`);
-
-    // Update attack chain visualization
-    attackChainSteps.innerHTML = '';
-    chainSteps.forEach((s, idx) => {
-      const stepDiv = document.createElement('div');
-      stepDiv.className = 'chain-step';
-      stepDiv.innerHTML = `
-        <span class="chain-badge step-${s.step}">${s.badge}</span>
-        <span class="chain-desc">${s.desc}</span>
-      `;
-      attackChainSteps.appendChild(stepDiv);
-
-      if (idx < chainSteps.length - 1) {
-        const arrow = document.createElement('div');
-        arrow.className = 'chain-arrow';
-        arrow.textContent = '▼';
-        attackChainSteps.appendChild(arrow);
+      const delBtn = item.querySelector('.conv-item-del');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteConversation(conv.id);
+        });
       }
+
+      convListContainer.appendChild(item);
     });
 
-    const eps = matchedVuln ? calculateEPS(matchedVuln) : 94;
-    graphEpsIndicator.textContent = `EPS ${eps} / 100`;
-    toolbarEpsBadge.textContent = `EPS: ${eps}/100`;
+    const active = getActiveConversation();
+    if (active) {
+      activeConvTitleElem.textContent = active.title;
+      sbConv.textContent = `Conv: ${active.title}`;
+    }
 
-    if (matchedVuln) {
-      epsBreakdown.innerHTML = `
-        • Vulnerability: <strong>${matchedVuln.cve}</strong> (${matchedVuln.product})<br>
-        • CVSS Base: ${matchedVuln.cvss} (${matchedVuln.cvss >= 9 ? 'Critical' : 'High'})<br>
-        • CISA KEV Catalog: ${matchedVuln.inKEV ? '<span style="color:#8b0000; font-weight:bold;">Listed (+30 pts)</span>' : 'Not Listed'}<br>
-        • In-The-Wild Exploitation: ${matchedVuln.wildExploit ? '<span style="color:#8b0000; font-weight:bold;">CONFIRMED (+20 pts)</span>' : 'Unconfirmed'}<br>
-        • Public Working PoC: ${matchedVuln.pocAvailable ? 'GitHub Public (+10 pts)' : 'None'}<br>
-        • Metasploit Module: ${matchedVuln.metasploit ? 'Weaponized Module (+5 pts)' : 'None'}<br>
-        • Attack Vector: ${matchedVuln.authRequired}<br>
-        <strong style="color:#8b0000;">=> Total EPS: ${eps}/100 (${matchedVuln.epsCategory})</strong>
+    updateSidebarProjectStats();
+  }
+
+  function switchConversation(id) {
+    activeConvId = id;
+    renderConversationList();
+    renderActiveMessages();
+  }
+
+  function createNewConversation(title, initType) {
+    const cleanTitle = title.trim() || 'Pentest Stream';
+    const newId = 'conv-' + Date.now();
+    const newConv = {
+      id: newId,
+      title: cleanTitle,
+      createdAt: new Date().toISOString(),
+      messages: []
+    };
+
+    if (initType === 'project') {
+      // Inject current Project State
+      const assetSummary = pentestState.discoveredAssets.length > 0 
+        ? pentestState.discoveredAssets.join(', ') 
+        : 'Perimeter pending scan';
+
+      const vulnsSummary = pentestState.vulnerabilities.length > 0
+        ? pentestState.vulnerabilities.join(', ')
+        : 'None mapped yet';
+
+      newConv.messages.push({
+        id: 'msg-init-' + Date.now(),
+        sender: 'ai',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: `**Project Context Injected for stream "${cleanTitle}"**
+- **Target:** ${pentestState.target || 'Undefined'}
+- **Scope:** ${pentestState.scope || 'Perimeter'}
+- **Assets:** ${assetSummary}
+- **Vulnerabilities:** ${vulnsSummary}
+
+How shall we proceed with this test objective?`,
+        code: `nuclei -target https://${pentestState.target || 'target.example.com'} -tags cve,kev`
+      });
+    } else {
+      newConv.messages.push({
+        id: 'msg-init-' + Date.now(),
+        sender: 'ai',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: `New empty conversation stream started: **${cleanTitle}**. Ready for notes, queries, or command testing.`,
+        code: null
+      });
+    }
+
+    conversations.push(newConv);
+    switchConversation(newId);
+  }
+
+  function deleteConversation(id) {
+    if (conversations.length <= 1) return;
+    const conv = conversations.find(c => c.id === id);
+    if (!conv) return;
+
+    if (confirm(`Delete conversation "${conv.title}"?\n(Project State and Context Snapshots will remain safe)`)) {
+      conversations = conversations.filter(c => c.id !== id);
+      if (activeConvId === id) {
+        activeConvId = conversations[0].id;
+      }
+      renderConversationList();
+      renderActiveMessages();
+    }
+  }
+
+  function renameActiveConversation() {
+    const active = getActiveConversation();
+    const newName = prompt('Rename conversation:', active.title);
+    if (newName && newName.trim()) {
+      active.title = newName.trim();
+      renderConversationList();
+    }
+  }
+
+  activeConvTitleElem.addEventListener('dblclick', renameActiveConversation);
+  document.getElementById('btn-rename-active-conv').addEventListener('click', renameActiveConversation);
+
+  // New Conversation Modal Triggers
+  document.getElementById('btn-open-new-conv-dialog').addEventListener('click', () => {
+    document.getElementById('new-conv-title-input').value = 'Web Assessment';
+    newConvModal.classList.add('open');
+  });
+
+  document.getElementById('sm-new-conv').addEventListener('click', () => {
+    toggleStartMenu(false);
+    document.getElementById('btn-open-new-conv-dialog').click();
+  });
+
+  document.getElementById('new-conv-close-x').addEventListener('click', () => {
+    newConvModal.classList.remove('open');
+  });
+  document.getElementById('new-conv-cancel-btn').addEventListener('click', () => {
+    newConvModal.classList.remove('open');
+  });
+
+  document.getElementById('btn-create-conv-confirm').addEventListener('click', () => {
+    const title = document.getElementById('new-conv-title-input').value;
+    const initType = document.querySelector('input[name="conv-init-type"]:checked').value;
+    createNewConversation(title, initType);
+    newConvModal.classList.remove('open');
+  });
+
+  // Clear current conversation
+  document.getElementById('btn-clear-current-chat').addEventListener('click', () => {
+    const active = getActiveConversation();
+    if (confirm(`Clear messages in "${active.title}"?`)) {
+      active.messages = [];
+      renderActiveMessages();
+    }
+  });
+
+  // ==========================================================================
+  // CHAT MESSAGES & COPY ACTIONS (Sections: Copie des Réponses, Copie du Code)
+  // ==========================================================================
+
+  function renderActiveMessages() {
+    chatMessagesFeed.innerHTML = '';
+    const active = getActiveConversation();
+
+    if (!active.messages || active.messages.length === 0) {
+      chatMessagesFeed.innerHTML = `
+        <div style="color:#777; font-family:var(--font-mono); font-size:11px; text-align:center; padding:20px;">
+          No messages in this stream yet. Type below to ask Copilot.
+        </div>
       `;
+      return;
     }
 
-    logToTerminal(`[+] Correlated attack path (${chainSteps.length} stages). Computed EPS: ${eps}/100.`, 'dos-green');
-    autoSaveProjectState();
+    active.messages.forEach(msg => {
+      const card = document.createElement('div');
+      card.className = `chat-msg ${msg.sender === 'user' ? 'chat-msg-user' : 'chat-msg-ai'}`;
+
+      if (msg.sender === 'user') {
+        card.innerHTML = `
+          <div><span class="msg-speaker">C:\\PICKYHACK&gt;</span> <span>${escapeHtml(msg.text)}</span></div>
+        `;
+      } else {
+        // AI Message
+        let codeBlockHtml = '';
+        if (msg.code) {
+          codeBlockHtml = `
+            <div class="msg-code-block-wrapper">
+              <div class="msg-code-block-header">
+                <span>TERMINAL / COMMAND</span>
+                <button class="win-btn code-copy-btn" data-code="${escapeHtml(msg.code)}">Copy</button>
+              </div>
+              <pre class="msg-code-block"><code>${escapeHtml(msg.code)}</code></pre>
+            </div>
+          `;
+        }
+
+        // Format basic markdown (bold, bullet points)
+        const formattedText = formatMarkdown(msg.text);
+
+        card.innerHTML = `
+          <div class="msg-speaker-bar">
+            <span class="msg-speaker">PickyHack Copilot</span>
+            <span class="msg-time">${msg.time || ''}</span>
+          </div>
+          <div class="chat-msg-content">${formattedText}</div>
+          ${codeBlockHtml}
+          <div class="msg-actions-bar">
+            <button class="win-btn msg-action-btn btn-copy-response">Copy</button>
+            <button class="win-btn msg-action-btn btn-copy-md">Copy Markdown</button>
+          </div>
+        `;
+
+        // Copy Full Response
+        const copyBtn = card.querySelector('.btn-copy-response');
+        copyBtn.addEventListener('click', function () {
+          const fullText = (msg.text + (msg.code ? '\n\n' + msg.code : '')).trim();
+          navigator.clipboard.writeText(fullText).then(() => {
+            copyBtn.textContent = 'Copied';
+            setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
+          });
+        });
+
+        // Copy Markdown
+        const copyMdBtn = card.querySelector('.btn-copy-md');
+        copyMdBtn.addEventListener('click', function () {
+          const mdText = msg.text + (msg.code ? '\n\n```bash\n' + msg.code + '\n```' : '');
+          navigator.clipboard.writeText(mdText).then(() => {
+            copyMdBtn.textContent = 'Copied';
+            setTimeout(() => { copyMdBtn.textContent = 'Copy Markdown'; }, 2000);
+          });
+        });
+
+        // Copy Code Block Only
+        const codeCopyBtn = card.querySelector('.code-copy-btn');
+        if (codeCopyBtn) {
+          codeCopyBtn.addEventListener('click', function () {
+            const codeToCopy = this.getAttribute('data-code');
+            navigator.clipboard.writeText(codeToCopy).then(() => {
+              codeCopyBtn.textContent = 'Copied';
+              setTimeout(() => { codeCopyBtn.textContent = 'Copy'; }, 2000);
+            });
+          });
+        }
+      }
+
+      chatMessagesFeed.appendChild(card);
+    });
+
+    chatMessagesFeed.scrollTop = chatMessagesFeed.scrollHeight;
   }
 
-  document.getElementById('btn-correlate').addEventListener('click', () => {
-    correlateTargetWithIntel();
-    switchTab('tab-chains');
-  });
-  document.getElementById('btn-synth-chain').addEventListener('click', () => {
-    correlateTargetWithIntel();
-    switchTab('tab-chains');
-  });
-  document.getElementById('btn-calc-eps').addEventListener('click', () => {
-    correlateTargetWithIntel();
-    switchTab('tab-chains');
-  });
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
-  // --- Template Loading ---
-  function loadTemplate(key) {
-    if (TEMPLATES[key]) {
-      textarea.value = TEMPLATES[key];
-      updatePlaceholderState();
-      updateCursorStats();
-      syncStateFromNotes();
-      textarea.focus();
-      logToTerminal(`[+] Loaded scope template: ${key.toUpperCase()}`, 'dos-cyan');
+  function formatMarkdown(str) {
+    if (!str) return '';
+    return escapeHtml(str)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code style="background:#222; padding:1px 4px; color:#ffaa00;">$1</code>')
+      .replace(/\n- (.*?)/g, '<br>• $1')
+      .replace(/\n/g, '<br>');
+  }
+
+  function appendUserMessage(text) {
+    const active = getActiveConversation();
+    active.messages.push({
+      id: 'msg-' + Date.now(),
+      sender: 'user',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: text
+    });
+    renderActiveMessages();
+  }
+
+  function appendAIMessage(text, code = null) {
+    const active = getActiveConversation();
+    active.messages.push({
+      id: 'msg-' + Date.now(),
+      sender: 'ai',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: text,
+      code: code
+    });
+    renderActiveMessages();
+  }
+
+  // --- Interactive Chat Send Handler ---
+  function handleChatSubmit() {
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+
+    chatInput.value = '';
+    appendUserMessage(msg);
+
+    const lower = msg.toLowerCase();
+
+    // Built-in Commands
+    if (lower === 'help') {
+      setTimeout(() => {
+        appendAIMessage(`PickyHack Commands available in this stream:
+- **recon**: Correlates target scope notes against CISA KEV & Exploit-DB
+- **cve**: Inspects high-priority CVEs and exploit availability
+- **path**: Synthesizes full multi-step attack chain
+- **snapshot**: Opens the Context Snapshot manager
+- **briefing**: Generates the 24h/7d threat intelligence briefing
+- **status**: Displays active project state metrics`, `recon`);
+      }, 250);
+      return;
+    }
+
+    if (lower === 'recon' || lower.includes('recon')) {
       correlateTargetWithIntel();
-      autoSaveProjectState();
+      setTimeout(() => {
+        appendAIMessage(`Reconnaissance correlation triggered against **${pentestState.target || 'target'}**.
+- Assets identified: ${pentestState.discoveredAssets.length}
+- Services mapped: ${pentestState.services.join(', ') || 'Pending'}
+- Active attack chain synthesized in the **Attack Paths** tab.`, `nmap -sV -Pn --script=vuln ${pentestState.target || 'target.example.com'}`);
+      }, 300);
+      return;
     }
+
+    if (lower === 'snapshot' || lower.includes('save context')) {
+      openSnapshotModal();
+      return;
+    }
+
+    if (lower === 'briefing' || lower.includes('quoi de neuf')) {
+      runThreatBriefing();
+      return;
+    }
+
+    // Default Senior Pentester Technical Analysis (14-point persona)
+    setTimeout(() => {
+      // Dynamically update project facts if user mentioned new services or technologies
+      if (lower.includes('apache') || lower.includes('nginx') || lower.includes('spring') || lower.includes('fortinet')) {
+        syncStateFromNotes();
+        updateSidebarProjectStats();
+      }
+
+      appendAIMessage(`[TL;DR] Target analysis for "${msg}" completed.
+**Risk:** HIGH / CRITICAL
+**Exploitability Priority Score (EPS):** 96 / 100
+**Current Intelligence:** Evaluated against CISA KEV catalog (1,642 active entries) and public GitHub PoCs.
+
+**Detection & Validation Methodology:**
+1. Verify exposed service banners without intrusive payload execution.
+2. Confirm patch level and configuration parameters.
+3. Validate access conditions (pre-auth vs authenticated).`, `curl -s -I "https://${pentestState.target || 'target.example.com'}/health" | grep -i "Server"`);
+
+      autoSaveProjectState();
+    }, 400);
   }
 
-  document.getElementById('tpl-external').addEventListener('click', () => loadTemplate('external'));
-  document.getElementById('tpl-webapp').addEventListener('click', () => loadTemplate('webapp'));
-  document.getElementById('tpl-ad').addEventListener('click', () => loadTemplate('ad'));
-  document.getElementById('tpl-cloud').addEventListener('click', () => loadTemplate('cloud'));
-  document.getElementById('btn-scope-sample').addEventListener('click', () => loadTemplate('external'));
-
-  document.getElementById('btn-clear-notes').addEventListener('click', function () {
-    textarea.value = '';
-    updatePlaceholderState();
-    updateCursorStats();
-    syncStateFromNotes();
-    autoSaveProjectState();
-    logToTerminal('[-] Workspace cleared. Ready for new target.', 'dos-amber');
-  });
-
-  document.getElementById('btn-new-target').addEventListener('click', function () {
-    textarea.value = '';
-    updatePlaceholderState();
-    updateCursorStats();
-    syncStateFromNotes();
-    textarea.focus();
-    autoSaveProjectState();
-    logToTerminal('[*] Created new empty target workspace.', 'dos-white');
+  chatSendBtn.addEventListener('click', handleChatSubmit);
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleChatSubmit();
   });
 
   // ==========================================================================
-  // CONTEXT SNAPSHOT ENGINE (Sections 1-6)
+  // CONTEXT SNAPSHOT & PERSISTENCE ENGINE
   // ==========================================================================
 
-  /**
-   * Generates a fully autonomous, portable Context Snapshot Markdown string.
-   * Compiles pentest facts, assets, services, CVEs, attack paths, failed tests,
-   * hypotheses, and conversation state into an AI-actionable prompt.
-   */
   function generateContextSnapshot() {
     syncStateFromNotes();
     if (pentestState.attackPaths.length === 0) {
@@ -659,7 +856,6 @@ Target Attack Chain: ${vuln.chain}`;
     const now = new Date();
     const dateFormatted = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
 
-    // Build intelligent compression
     const assetsList = pentestState.discoveredAssets.length > 0 
       ? pentestState.discoveredAssets.map(a => `- ${a}`).join('\n') 
       : '- (No specific external hosts extracted yet)';
@@ -680,11 +876,13 @@ Target Attack Chain: ${vuln.chain}`;
       ? pentestState.attackPaths.map((p, i) => `${i + 1}. ${p}`).join('\n')
       : '1. INITIAL ACCESS: Edge Perimeter CVE Fingerprinting\n2. FOOTHOLD: Remote exploit with public PoC\n3. PRIV ESC: Local kernel / SUID escalation\n4. LATERAL MOVE: Internal subnet pivot';
 
-    const lastDialogue = pentestState.conversationHistory.length > 0
-      ? pentestState.conversationHistory.slice(-4).map(turn => `[${turn.speaker.toUpperCase()}]: ${turn.text}`).join('\n\n')
-      : '[PENTESTER]: Workspace initialized for ' + (pentestState.target || 'target assessment') + '.\n[PICKYHACK COPILOT]: Correlation engine active, KEV feeds checked.';
+    // Extract dialogue from active conversation
+    const active = getActiveConversation();
+    const lastDialogue = active.messages && active.messages.length > 0
+      ? active.messages.slice(-4).map(turn => `[${turn.sender.toUpperCase()}]: ${turn.text.replace(/\n/g, ' ')}`).join('\n\n')
+      : '[PENTESTER]: Initialized stream: ' + active.title + '\n[PICKYHACK COPILOT]: Correlation engine active, KEV feeds checked.';
 
-    const snapshot = `=== PICKYHACK CONTEXT SNAPSHOT ===
+    return `=== PICKYHACK CONTEXT SNAPSHOT ===
 
 SNAPSHOT VERSION:
 1.0
@@ -712,7 +910,7 @@ CURRENT STATE
 ========================
 ${pentestState.currentState}
 Target perimeter defined with ${pentestState.discoveredAssets.length} assets and ${pentestState.services.length} services mapped.
-Active EPS prioritization has highlighted critical vulnerabilities requiring verification.
+Active stream: "${active.title}". Continuous EPS prioritization highlighted critical vulnerabilities.
 
 ========================
 CONFIRMED FACTS
@@ -829,16 +1027,40 @@ LAST CONVERSATION STATE
 ${lastDialogue}
 
 === END PICKYHACK CONTEXT SNAPSHOT ===`;
-
-    return snapshot;
   }
+
+  // --- Copy Full Context Functionality ---
+  function copyFullContextToClipboard(buttonElement) {
+    const text = generateContextSnapshot();
+    navigator.clipboard.writeText(text).then(() => {
+      if (buttonElement) {
+        const orig = buttonElement.textContent;
+        buttonElement.textContent = '✓ Copied!';
+        setTimeout(() => { buttonElement.textContent = orig; }, 1800);
+      }
+      sbStatus.textContent = 'Full Context Snapshot copied to clipboard!';
+    });
+  }
+
+  document.getElementById('btn-copy-full-context-toolbar').addEventListener('click', function () {
+    copyFullContextToClipboard(this);
+  });
+  document.getElementById('btn-chat-copy-full-context').addEventListener('click', function () {
+    copyFullContextToClipboard(this);
+  });
+  document.getElementById('btn-sidebar-copy-full-ctx').addEventListener('click', function () {
+    copyFullContextToClipboard(this);
+  });
+  document.getElementById('sm-copy-context').addEventListener('click', () => {
+    toggleStartMenu(false);
+    copyFullContextToClipboard();
+  });
 
   // --- Open Save Snapshot Modal ---
   function openSnapshotModal() {
     const snapshotText = generateContextSnapshot();
     snapshotPreview.value = snapshotText;
 
-    // Calculate metrics
     const assetCount = pentestState.discoveredAssets.length || 3;
     const serviceCount = pentestState.services.length || 4;
     const vulnCount = pentestState.vulnerabilities.length || 2;
@@ -852,12 +1074,6 @@ ${lastDialogue}
     document.getElementById('stat-obs').textContent = obsCount;
 
     snapshotModal.classList.add('open');
-    sbSnapshot.textContent = 'Snapshot: Ready';
-    logToTerminal('[*] Generated PickyHack Context Snapshot.', 'dos-cyan');
-  }
-
-  function closeSnapshotModal() {
-    snapshotModal.classList.remove('open');
   }
 
   document.getElementById('btn-save-snapshot').addEventListener('click', openSnapshotModal);
@@ -869,27 +1085,15 @@ ${lastDialogue}
     openSnapshotModal();
   });
 
-  document.getElementById('snapshot-close-x').addEventListener('click', closeSnapshotModal);
-  document.getElementById('snapshot-ok-btn').addEventListener('click', closeSnapshotModal);
+  document.getElementById('snapshot-close-x').addEventListener('click', () => snapshotModal.classList.remove('open'));
+  document.getElementById('snapshot-ok-btn').addEventListener('click', () => snapshotModal.classList.remove('open'));
 
-  // --- Copy Context Button (Section 5) ---
+  // Copy Context from Modal
   document.getElementById('btn-copy-context').addEventListener('click', function () {
-    const text = snapshotPreview.value;
-    navigator.clipboard.writeText(text).then(() => {
-      const originalText = this.textContent;
-      this.textContent = '✓ Copied!';
-      setTimeout(() => { this.textContent = originalText; }, 1800);
-      logToTerminal('[+] Context Snapshot copied to clipboard. Ready to paste in any LLM.', 'dos-green');
-      sbStatus.textContent = 'Context Snapshot copied to clipboard!';
-    }).catch(() => {
-      snapshotPreview.select();
-      document.execCommand('copy');
-      this.textContent = '✓ Copied!';
-      setTimeout(() => { this.textContent = '📋 Copy Context'; }, 1800);
-    });
+    copyFullContextToClipboard(this);
   });
 
-  // --- Download .md Snapshot (Section 5) ---
+  // Download .md Snapshot
   document.getElementById('btn-download-snapshot').addEventListener('click', function () {
     const text = snapshotPreview.value;
     const targetSlug = (pentestState.target || 'target').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
@@ -901,47 +1105,33 @@ ${lastDialogue}
     link.download = filename;
     link.click();
     URL.revokeObjectURL(link.href);
-
-    logToTerminal(`[+] Context Snapshot downloaded as ${filename}`, 'dos-cyan');
   });
 
-  // --- Open Import Snapshot Modal (Section 6) ---
+  // --- Open Import Snapshot Modal ---
   function openImportModal() {
     importTextarea.value = '';
     importModal.classList.add('open');
   }
 
-  function closeImportModal() {
-    importModal.classList.remove('open');
-  }
-
   document.getElementById('btn-import-snapshot').addEventListener('click', openImportModal);
-  document.getElementById('btn-chat-import-snapshot').addEventListener('click', openImportModal);
   document.getElementById('sm-import-snapshot').addEventListener('click', () => {
     toggleStartMenu(false);
     openImportModal();
   });
 
-  document.getElementById('import-close-x').addEventListener('click', closeImportModal);
-  document.getElementById('import-cancel-btn').addEventListener('click', closeImportModal);
+  document.getElementById('import-close-x').addEventListener('click', () => importModal.classList.remove('open'));
+  document.getElementById('import-cancel-btn').addEventListener('click', () => importModal.classList.remove('open'));
 
-  // File Upload for Snapshot Import
-  document.getElementById('btn-trigger-file-import').addEventListener('click', () => {
-    fileImportInput.click();
-  });
-
+  document.getElementById('btn-trigger-file-import').addEventListener('click', () => fileImportInput.click());
   fileImportInput.addEventListener('change', function (e) {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = function (evt) {
-        importTextarea.value = evt.target.result;
-      };
+      reader.onload = (evt) => { importTextarea.value = evt.target.result; };
       reader.readAsText(file);
     }
   });
 
-  // --- Context Restoration Processor (Sections 6 & 7) ---
   document.getElementById('btn-run-import').addEventListener('click', function () {
     const raw = importTextarea.value.trim();
     if (!raw) {
@@ -949,7 +1139,6 @@ ${lastDialogue}
       return;
     }
 
-    // Parse sections
     const targetMatch = raw.match(/TARGET:\s*([^\n\r]+)/i);
     const scopeMatch = raw.match(/SCOPE:\s*([^\n\r]+)/i);
     const objMatch = raw.match(/OBJECTIVES:\s*([^\n\r]+)/i);
@@ -958,7 +1147,6 @@ ${lastDialogue}
     const scope = scopeMatch ? scopeMatch[1].trim() : 'Perimeter';
     const objectives = objMatch ? objMatch[1].trim() : 'External reconnaissance';
 
-    // Extract Assets & Services
     const assetsBlock = raw.match(/========================\s*DISCOVERED ASSETS\s*========================\s*([\s\S]*?)========================/i);
     const assets = assetsBlock ? assetsBlock[1].trim().split('\n').filter(l => l.startsWith('- ')).map(l => l.replace('- ', '').trim()) : ['example.com'];
 
@@ -971,7 +1159,6 @@ ${lastDialogue}
     const prioritiesBlock = raw.match(/========================\s*CURRENT PRIORITIES\s*========================\s*([\s\S]*?)========================/i);
     const priorities = prioritiesBlock ? prioritiesBlock[1].trim().split('\n')[0] : 'Validate authentication bypass on /admin.';
 
-    // Reconstruct Pentest State
     pentestState.target = target;
     pentestState.scope = scope;
     pentestState.objectives = objectives;
@@ -979,7 +1166,6 @@ ${lastDialogue}
     pentestState.services = services;
     pentestState.vulnerabilities = vulns;
 
-    // Restore workspace notes
     textarea.value = `Target: ${target}\nScope: ${scope}\nObjective: ${objectives}\n\nRestored Assets:\n${assets.map(a => '- ' + a).join('\n')}\n\nServices:\n${services.map(s => '- ' + s).join('\n')}\n\n${vulns.length > 0 ? 'Vulnerabilities:\n' + vulns.map(v => '- ' + v).join('\n') : ''}`;
 
     updatePlaceholderState();
@@ -988,12 +1174,10 @@ ${lastDialogue}
     correlateTargetWithIntel();
     autoSaveProjectState();
 
-    closeImportModal();
+    importModal.classList.remove('open');
     switchTab('tab-console');
 
-    // Display Exact Restoration Output (Section 6)
-    const restoreSummary = `
-Context restored.
+    const restoreSummary = `Context restored.
 
 Target: ${target}
 Assets: ${assets.length}
@@ -1006,101 +1190,242 @@ ${priorities}
 
 Ready to continue.`;
 
-    logToTerminal('====================================================', 'dos-green');
-    logToTerminal(restoreSummary.trim(), 'dos-white');
-    logToTerminal('====================================================', 'dos-green');
+    appendAIMessage(restoreSummary);
     sbStatus.textContent = `Context restored for ${target}. Ready to continue pentest.`;
   });
 
-  // --- Interactive Copilot Chat / Console Input ---
-  function handleChatSubmit() {
-    const msg = chatInput.value.trim();
-    if (!msg) return;
-
-    chatInput.value = '';
-    logToTerminal(`C:\\PICKYHACK> ${msg}`, 'dos-user');
-
-    // Record turn in conversation history
-    pentestState.conversationHistory.push({
-      speaker: 'pentester',
-      text: msg,
-      timestamp: new Date().toISOString()
-    });
-
-    const lower = msg.toLowerCase();
-
-    // Built-in Commands
-    if (lower === 'help') {
-      logToTerminal('Available commands: recon, cve, path, briefing, snapshot, nuclei, clear, status', 'dos-amber');
-      return;
+  // --- Exploitability Priority Score (EPS) Calculation ---
+  function calculateEPS(vuln) {
+    let score = 0;
+    score += (vuln.cvss / 10) * 30;
+    if (vuln.inKEV) score += 30;
+    if (vuln.wildExploit) score += 20;
+    if (vuln.pocAvailable) score += 10;
+    if (vuln.metasploit) score += 5;
+    if (vuln.authRequired.toLowerCase().includes('pre-auth') || vuln.authRequired.toLowerCase().includes('none')) {
+      score += 5;
     }
-
-    if (lower === 'recon' || lower.includes('recon')) {
-      correlateTargetWithIntel();
-      logToTerminal('[+] Reconnaissance triggered against ' + (pentestState.target || 'target') + '.', 'dos-cyan');
-      return;
-    }
-
-    if (lower === 'snapshot' || lower.includes('save context')) {
-      openSnapshotModal();
-      return;
-    }
-
-    if (lower === 'briefing' || lower.includes('quoi de neuf')) {
-      runThreatBriefing();
-      return;
-    }
-
-    // Default Copilot Analysis Response (Section 10 structure)
-    setTimeout(() => {
-      const response = `[PickyHack Copilot — Offensive Security Assessment]
-TL;DR: Target ${pentestState.target || 'perimeter'} exhibits high attack surface exposure.
-Risk: CRITICAL
-Exploitability: EPS 96 / 100
-Current intelligence: Validated against CISA KEV catalog (1,642 entries). Active PoC available.
-Detection: Execute Nuclei perimeter probe to verify unauthenticated response codes.
-Validation: Send non-destructive probe to test endpoint.
-Recommendation: Focus on shortest attack path to foothold before credential harvesting.`;
-
-      logToTerminal(response, 'dos-green');
-
-      pentestState.conversationHistory.push({
-        speaker: 'pickyhack',
-        text: response,
-        timestamp: new Date().toISOString()
-      });
-
-      autoSaveProjectState();
-    }, 300);
+    return Math.min(100, Math.round(score));
   }
 
-  chatSendBtn.addEventListener('click', handleChatSubmit);
-  chatInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') {
-      handleChatSubmit();
+  // --- Render CVE & KEV Feed Table ---
+  function renderCVETable() {
+    cveTableBody.innerHTML = '';
+    INTEL_DB.forEach((vuln) => {
+      const eps = calculateEPS(vuln);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <strong style="color:#000080;">${vuln.cve}</strong><br>
+          <span style="color:#444; font-size:10px;">${vuln.product}</span>
+          <div style="margin-top:2px;">
+            ${vuln.inKEV ? '<span class="badge-tag tag-kev">CISA KEV</span>' : ''}
+            ${vuln.pocAvailable ? '<span class="badge-tag tag-poc">PoC</span>' : ''}
+            ${vuln.metasploit ? '<span class="badge-tag tag-meta">Metasploit</span>' : ''}
+          </div>
+        </td>
+        <td><strong>${vuln.cvss}</strong></td>
+        <td><strong style="color:${eps >= 90 ? '#8b0000' : '#d35400'};">${eps}</strong></td>
+        <td><span style="font-size:10px;">${vuln.epsCategory.split('—')[0].trim()}</span></td>
+        <td>
+          <button class="win-btn" style="font-size:9px; padding:1px 4px;" data-cve="${vuln.cve}">Insert</button>
+        </td>
+      `;
+
+      tr.querySelector('button').addEventListener('click', (e) => {
+        e.stopPropagation();
+        insertCVEIntoWorkspace(vuln);
+      });
+
+      tr.addEventListener('click', () => {
+        document.querySelectorAll('#cve-table-body tr').forEach(r => r.classList.remove('selected'));
+        tr.classList.add('selected');
+        appendAIMessage(`CVE Inspected: **${vuln.cve}** (${vuln.product})\nCVSS: ${vuln.cvss} | EPS: ${vuln.epsScore}/100\nThreat Actor: ${vuln.threatActor}\nRemediation: Upgrade to fixed version ${vuln.fixed}`, vuln.chain);
+      });
+
+      cveTableBody.appendChild(tr);
+    });
+  }
+
+  function insertCVEIntoWorkspace(vuln) {
+    const snippet = `\n\n[MAPPED VULNERABILITY: ${vuln.cve}]
+Product: ${vuln.product} (${vuln.vendor})
+CVSS: ${vuln.cvss} | EPS Score: ${vuln.epsScore}/100 (${vuln.epsCategory})
+CISA KEV Listed: ${vuln.inKEV ? 'YES' : 'NO'} | In-The-Wild Exploitation: ${vuln.wildExploit ? 'CONFIRMED' : 'NO'}
+Authentication: ${vuln.authRequired}
+Public PoC: ${vuln.pocAvailable ? 'AVAILABLE' : 'NONE'} | Metasploit: ${vuln.metasploit ? 'AVAILABLE' : 'NONE'}
+Impact: ${vuln.impact}
+Target Attack Chain: ${vuln.chain}`;
+
+    textarea.value += snippet;
+    updatePlaceholderState();
+    updateCursorStats();
+    syncStateFromNotes();
+    autoSaveProjectState();
+    appendAIMessage(`Inserted vulnerability **${vuln.cve}** into target workspace.`, null);
+  }
+
+  // --- Attack Chain Synthesis ---
+  function correlateTargetWithIntel() {
+    const text = textarea.value.toLowerCase();
+    let matchedVuln = null;
+    let chainSteps = [];
+
+    if (text.includes('palo alto') || text.includes('pan-os') || text.includes('globalprotect')) {
+      matchedVuln = INTEL_DB[0];
+      chainSteps = [
+        { badge: 'INITIAL ACCESS', desc: 'Pre-Auth Command Injection via GlobalProtect (CVE-2024-3400)', step: 1 },
+        { badge: 'FOOTHOLD', desc: 'Spawning unprivileged reverse shell with SUID root capabilities', step: 2 },
+        { badge: 'PRIV ESC', desc: 'Execution of root payload / cron job overwrite', step: 3 },
+        { badge: 'CREDENTIALS', desc: 'Extraction of LDAP and admin VPN credentials from memory', step: 4 },
+        { badge: 'LATERAL MOVE', desc: 'Pivoting into internal finance subnet 198.51.100.0/24', step: 5 }
+      ];
+    } else if (text.includes('confluence') || text.includes('atlassian') || text.includes('wiki')) {
+      matchedVuln = INTEL_DB[4];
+      chainSteps = [
+        { badge: 'INITIAL ACCESS', desc: 'Atlassian Confluence OGNL Template Injection (CVE-2023-22527)', step: 1 },
+        { badge: 'FOOTHOLD', desc: 'Direct Web Shell injection into Tomcat runtime', step: 2 },
+        { badge: 'PRIV ESC', desc: 'Linux Kernel nf_tables Local Privilege Escalation (CVE-2024-1086)', step: 3 },
+        { badge: 'CREDENTIALS', desc: 'Confluence PostgreSQL database password dumping & session tokens', step: 4 },
+        { badge: 'DOMAIN CTRL', desc: 'Harvested Active Directory service account used for BloodHound dump', step: 5 }
+      ];
+    } else if (text.includes('adcs') || text.includes('active directory') || text.includes('domain')) {
+      matchedVuln = INTEL_DB[5];
+      chainSteps = [
+        { badge: 'INITIAL ACCESS', desc: 'Compromised domain user credentials (CORP\\jdoe)', step: 1 },
+        { badge: 'FOOTHOLD', desc: 'Internal network access & AD enumeration via BloodHound / NetExec', step: 2 },
+        { badge: 'PRIV ESC', desc: 'ADCS ESC1 Certificate Enrollment with SAN of Domain Admin', step: 3 },
+        { badge: 'CREDENTIALS', desc: 'Requesting Kerberos TGT certificate authentication via Certipy', step: 4 },
+        { badge: 'DOMAIN CTRL', desc: 'DCSync attack against DC01.corp.local → Full Enterprise Admin', step: 5 }
+      ];
+    } else if (text.includes('kubernetes') || text.includes('k8s') || text.includes('cloud') || text.includes('aws')) {
+      chainSteps = [
+        { badge: 'INITIAL ACCESS', desc: 'Exposed Kubelet API / Misconfigured API gateway', step: 1 },
+        { badge: 'FOOTHOLD', desc: 'Default ServiceAccount token mounted inside Pod', step: 2 },
+        { badge: 'PRIV ESC', desc: 'Kubernetes RBAC secret harvesting (cluster-admin delegation)', step: 3 },
+        { badge: 'CREDENTIALS', desc: 'Harvesting AWS IMDSv2 IAM role session credentials', step: 4 },
+        { badge: 'CLOUD CTRL', desc: 'Assuming OrganizationAccountAccessRole across AWS cloud', step: 5 }
+      ];
+    } else {
+      matchedVuln = INTEL_DB[0];
+      chainSteps = [
+        { badge: 'INITIAL ACCESS', desc: 'External Perimeter Port Scan & CVE Fingerprinting', step: 1 },
+        { badge: 'FOOTHOLD', desc: 'Exploitation of unpatched edge service with public PoC', step: 2 },
+        { badge: 'PRIV ESC', desc: 'Local Kernel or SUID privilege escalation to root/SYSTEM', step: 3 },
+        { badge: 'CREDENTIALS', desc: 'Dumping LSASS / SAM / shadow file credentials', step: 4 },
+        { badge: 'LATERAL MOVE', desc: 'Pass-the-Hash / WinRM pivoting across subnets', step: 5 }
+      ];
     }
+
+    pentestState.attackPaths = chainSteps.map(c => `${c.badge}: ${c.desc}`);
+
+    attackChainSteps.innerHTML = '';
+    chainSteps.forEach((s, idx) => {
+      const stepDiv = document.createElement('div');
+      stepDiv.className = 'chain-step';
+      stepDiv.innerHTML = `
+        <span class="chain-badge step-${s.step}">${s.badge}</span>
+        <span class="chain-desc">${s.desc}</span>
+      `;
+      attackChainSteps.appendChild(stepDiv);
+
+      if (idx < chainSteps.length - 1) {
+        const arrow = document.createElement('div');
+        arrow.className = 'chain-arrow';
+        arrow.textContent = '▼';
+        attackChainSteps.appendChild(arrow);
+      }
+    });
+
+    const eps = matchedVuln ? calculateEPS(matchedVuln) : 94;
+    graphEpsIndicator.textContent = `EPS ${eps} / 100`;
+    toolbarEpsBadge.textContent = `EPS: ${eps}/100`;
+
+    if (matchedVuln) {
+      epsBreakdown.innerHTML = `
+        • Vulnerability: <strong>${matchedVuln.cve}</strong> (${matchedVuln.product})<br>
+        • CVSS Base: ${matchedVuln.cvss} (${matchedVuln.cvss >= 9 ? 'Critical' : 'High'})<br>
+        • CISA KEV Catalog: ${matchedVuln.inKEV ? '<span style="color:#8b0000; font-weight:bold;">Listed (+30 pts)</span>' : 'Not Listed'}<br>
+        • In-The-Wild Exploitation: ${matchedVuln.wildExploit ? '<span style="color:#8b0000; font-weight:bold;">CONFIRMED (+20 pts)</span>' : 'Unconfirmed'}<br>
+        • Public Working PoC: ${matchedVuln.pocAvailable ? 'GitHub Public (+10 pts)' : 'None'}<br>
+        • Metasploit Module: ${matchedVuln.metasploit ? 'Weaponized Module (+5 pts)' : 'None'}<br>
+        • Attack Vector: ${matchedVuln.authRequired}<br>
+        <strong style="color:#8b0000;">=> Total EPS: ${eps}/100 (${matchedVuln.epsCategory})</strong>
+      `;
+    }
+
+    autoSaveProjectState();
+    updateSidebarProjectStats();
+  }
+
+  document.getElementById('btn-correlate').addEventListener('click', () => {
+    correlateTargetWithIntel();
+    switchTab('tab-chains');
+  });
+  document.getElementById('btn-synth-chain').addEventListener('click', () => {
+    correlateTargetWithIntel();
+    switchTab('tab-chains');
+  });
+  document.getElementById('btn-calc-eps').addEventListener('click', () => {
+    correlateTargetWithIntel();
+    switchTab('tab-chains');
+  });
+
+  // --- Template Loading ---
+  function loadTemplate(key) {
+    if (TEMPLATES[key]) {
+      textarea.value = TEMPLATES[key];
+      updatePlaceholderState();
+      updateCursorStats();
+      syncStateFromNotes();
+      textarea.focus();
+      correlateTargetWithIntel();
+      autoSaveProjectState();
+      appendAIMessage(`Loaded scope template: **${key.toUpperCase()}**. Target defined: \`${pentestState.target}\`.`, null);
+    }
+  }
+
+  document.getElementById('tpl-external').addEventListener('click', () => loadTemplate('external'));
+  document.getElementById('tpl-webapp').addEventListener('click', () => loadTemplate('webapp'));
+  document.getElementById('tpl-ad').addEventListener('click', () => loadTemplate('ad'));
+  document.getElementById('tpl-cloud').addEventListener('click', () => loadTemplate('cloud'));
+  document.getElementById('btn-scope-sample').addEventListener('click', () => loadTemplate('external'));
+
+  document.getElementById('btn-clear-notes').addEventListener('click', function () {
+    textarea.value = '';
+    updatePlaceholderState();
+    updateCursorStats();
+    syncStateFromNotes();
+    autoSaveProjectState();
+  });
+
+  document.getElementById('btn-new-target').addEventListener('click', function () {
+    textarea.value = '';
+    updatePlaceholderState();
+    updateCursorStats();
+    syncStateFromNotes();
+    textarea.focus();
+    autoSaveProjectState();
   });
 
   // --- Threat Briefing: "Quoi de neuf ?" (Section 13) ---
   function runThreatBriefing() {
     switchTab('tab-console');
-    logToTerminal('================================================================', 'dos-amber');
-    logToTerminal('         PICKYHACK THREAT INTELLIGENCE BRIEFING: "QUOI DE NEUF ?" ', 'dos-amber');
-    logToTerminal('================================================================', 'dos-amber');
-    logToTerminal('Dernières 24 heures :', 'dos-cyan');
-    logToTerminal('• Nouveaux Zero-Days : 1 zero-day suspecté sur appliance VPN / Edge (Statut: LIKELY)', 'dos-white');
-    logToTerminal('• Nouvelles CVE critiques : CVE-2024-3400 PAN-OS (EPS 99/100, exploitation active UTA0218)', 'dos-white');
-    logToTerminal('• Nouveaux PoC : PoC GitHub public pour contournement d\'authentification Ivanti ICS', 'dos-white');
-    logToTerminal('', 'dos-white');
-    logToTerminal('7 derniers jours :', 'dos-cyan');
-    logToTerminal('• Nouvelles KEV ajoutées au catalogue CISA : 6 nouvelles vulnérabilités activement ciblées', 'dos-white');
-    logToTerminal('• Nouveaux modules Metasploit : exploit/linux/http/atlassian_confluence_rce_cve_2023_22527', 'dos-white');
-    logToTerminal('• Chaînes d\'exploitation observées : SSRF → IMDSv2 token theft → AWS IAM privilege escalation', 'dos-white');
-    logToTerminal('', 'dos-white');
-    logToTerminal('À surveiller :', 'dos-amber');
-    logToTerminal('• Produits fortement exposés : Passerelles VPN (Fortinet, Ivanti, Palo Alto), 45 000+ instances', 'dos-white');
-    logToTerminal('• Risque d\'exploitation massive : RCE pré-auth avec PoC 1-click public sur GitHub', 'dos-red');
-    logToTerminal('================================================================', 'dos-amber');
+    appendAIMessage(`**PICKYHACK THREAT INTELLIGENCE BRIEFING: "QUOI DE NEUF ?"**
+
+**Dernières 24 heures :**
+- **Nouveaux Zero-Days :** 1 zero-day suspecté sur appliance VPN / Edge (Statut: LIKELY)
+- **Nouvelles CVE critiques :** CVE-2024-3400 PAN-OS (EPS 99/100, exploitation active UTA0218)
+- **Nouveaux PoC :** PoC GitHub public pour contournement d'authentification Ivanti ICS
+
+**7 derniers jours :**
+- **Nouvelles KEV CISA :** 6 vulnérabilités activement ciblées ajoutées au catalogue
+- **Nouveaux modules Metasploit :** \`exploit/linux/http/atlassian_confluence_rce_cve_2023_22527\`
+- **Chaînes observées :** SSRF → IMDSv2 token theft → AWS IAM privilege escalation
+
+**À surveiller :**
+- Passerelles VPN (Fortinet, Ivanti, Palo Alto), 45 000+ instances exposées.
+- Risque d'exploitation massive: RCE pré-auth avec PoC public 1-click.`, `nuclei -id cve-2024-3400,cve-2023-22527 -target https://${pentestState.target || 'target.example.com'}`);
   }
 
   document.getElementById('btn-intel-briefing').addEventListener('click', runThreatBriefing);
@@ -1112,10 +1437,7 @@ Recommendation: Focus on shortest attack path to foothold before credential harv
   // --- Nuclei Template Generator ---
   function generateNucleiTemplate() {
     switchTab('tab-nuclei');
-    const text = textarea.value;
-    const targetMatch = text.match(/Target:\s*([^\n\r]+)/i);
-    const target = targetMatch ? targetMatch[1].trim() : 'target.example.com';
-
+    const target = pentestState.target || 'target.example.com';
     const yaml = `id: pickyhack-target-exploit-detect
 
 info:
@@ -1153,7 +1475,6 @@ http:
         condition: and`;
 
     document.getElementById('nuclei-yaml-view').textContent = yaml;
-    logToTerminal(`[+] Generated custom Nuclei automation template for ${target}.`, 'dos-green');
   }
 
   document.getElementById('btn-export-nuclei').addEventListener('click', generateNucleiTemplate);
@@ -1167,16 +1488,14 @@ http:
     navigator.clipboard.writeText(yaml).then(() => {
       this.textContent = 'Copied!';
       setTimeout(() => { this.textContent = 'Copy Nuclei YAML'; }, 1500);
-      logToTerminal('[+] Nuclei template copied to clipboard.', 'dos-cyan');
     });
   });
 
   document.getElementById('btn-run-nuclei-sim').addEventListener('click', function () {
-    logToTerminal('[*] Executing Nuclei simulation against scope...', 'dos-amber');
-    setTimeout(() => {
-      logToTerminal('[INF] [pickyhack-target-exploit-detect] [http] [critical] https://target.example.com/ssl-vpn/hipreport.esp [Matched: GlobalProtect]', 'dos-red');
-      logToTerminal('[!] Vulnerability confirmed on target edge gateway. Exploitability score: 98/100.', 'dos-green');
-    }, 600);
+    switchTab('tab-console');
+    appendAIMessage(`[NUCLEI SIMULATION] Executed pickyhack-target-exploit-detect against ${pentestState.target || 'target'}.
+- [INF] Endpoint /ssl-vpn/hipreport.esp returned status 200.
+- [!] Matched GlobalProtect header. Vulnerability confirmed (EPS 98/100).`, `nuclei -t pickyhack-target-exploit-detect.yaml -u https://${pentestState.target || 'target.example.com'}`);
   });
 
   // --- Tab Navigation ---
@@ -1203,7 +1522,7 @@ http:
   document.getElementById('icon-kev').addEventListener('click', () => switchTab('tab-cve'));
   document.getElementById('icon-chains').addEventListener('click', () => switchTab('tab-chains'));
   document.getElementById('icon-snapshot').addEventListener('click', openSnapshotModal);
-  document.getElementById('icon-prompt').addEventListener('click', openAboutModal);
+  document.getElementById('icon-prompt').addEventListener('click', () => aboutModal.classList.add('open'));
 
   // --- Start Menu Controller ---
   const startBtn = document.getElementById('start-button');
@@ -1236,21 +1555,13 @@ http:
     switchTab('tab-cve');
   });
 
-  // --- About Dialog ---
-  function openAboutModal() {
-    aboutModal.classList.add('open');
-  }
-  function closeAboutModal() {
-    aboutModal.classList.remove('open');
-  }
-
   document.getElementById('sm-about').addEventListener('click', () => {
     toggleStartMenu(false);
-    openAboutModal();
+    aboutModal.classList.add('open');
   });
-  document.getElementById('menu-help').addEventListener('click', openAboutModal);
-  document.getElementById('about-close-x').addEventListener('click', closeAboutModal);
-  document.getElementById('about-ok-btn').addEventListener('click', closeAboutModal);
+  document.getElementById('menu-help').addEventListener('click', () => aboutModal.classList.add('open'));
+  document.getElementById('about-close-x').addEventListener('click', () => aboutModal.classList.remove('open'));
+  document.getElementById('about-ok-btn').addEventListener('click', () => aboutModal.classList.remove('open'));
 
   // --- Window Control Buttons (Min, Max, Close) ---
   const mainWindow = document.getElementById('main-window');
@@ -1264,10 +1575,10 @@ http:
       mainWindow.style.bottom = '32px';
       isMaximized = true;
     } else {
-      mainWindow.style.top = '15px';
-      mainWindow.style.left = '95px';
-      mainWindow.style.right = '15px';
-      mainWindow.style.bottom = '20px';
+      mainWindow.style.top = '12px';
+      mainWindow.style.left = '92px';
+      mainWindow.style.right = '12px';
+      mainWindow.style.bottom = '18px';
       isMaximized = false;
     }
   });
@@ -1324,9 +1635,8 @@ http:
   renderCVETable();
   updatePlaceholderState();
   updateCursorStats();
+  renderConversationList();
+  renderActiveMessages();
   loadAutoSavedProjectState();
-
-  logToTerminal('[*] PickyHack Copilot initialized. Windows 98 workstation active.', 'dos-cyan');
-  logToTerminal('[*] Context Snapshot & State Persistence Engine: ACTIVE.', 'dos-white');
 
 })();

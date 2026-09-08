@@ -1,6 +1,6 @@
 # PickyHack
 
-**PickyHack** is an offensive security workbench and penetration testing copilot designed to bridge real-time vulnerability research with structured operational workflows. Built inside an authentic Windows 98 desktop environment, PickyHack combines live threat intelligence, exploit correlation, attack path mapping, and continuous context persistence.
+**PickyHack** is an offensive security workbench and penetration testing copilot designed to bridge real-time vulnerability research with structured operational workflows. Built inside an authentic Windows 98 desktop environment, PickyHack combines live threat intelligence, exploit correlation, attack path mapping, temporary multi-conversations, and continuous context persistence.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -8,17 +8,16 @@
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ File  Edit  Templates  Snapshot  Intelligence  Attack Chains  Nuclei  Help  │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ [New Target] [Sample Scope] [💾 Save Snapshot] [📥 Import Context]          │
+│ [New Target] [Sample Scope] [💾 Save Snapshot] [📋 Copy Context] [📥 Import]│
 ├──────────────────────────────────────┬──────────────────────────────────────┤
-│ PRIMARY PENTEST WORKSPACE            │ EXPLOIT INTELLIGENCE & ATTACK PATHS  │
+│ PRIMARY PENTEST WORKSPACE            │ MULTI-CONVERSATION COPILOT CHAT      │
 │                                      │                                      │
-│ What we hack ?                       │ [INITIAL ACCESS] Edge VPN RCE        │
-│                                      │        ▼                             │
-│ Target: megacorp-finance.com         │ [FOOTHOLD] Reverse Shell (UID 1000)  │
-│ Scope: *.megacorp-finance.com        │        ▼                             │
-│ Objective: External assessment       │ [PRIV ESC] Linux Kernel nf_tables    │
-│                                      │        ▼                             │
-│                                      │ [CREDENTIALS] Extract STS / SAM      │
+│ What we hack ?                       │ [CONVERSATIONS]  [ > Reconnaissance ]│
+│                                      │ > Recon          [Copy Response]     │
+│ Target: megacorp-finance.com         │   Web Pentest    ┌──────────────────┐│
+│ Scope: *.megacorp-finance.com        │   AD PrivEsc     │ nmap -sV -p- Copy││
+│ Objective: External assessment       │   CVE Research   └──────────────────┘│
+│                                      │ [PROJECT STATE]  [Send: >           ]│
 └──────────────────────────────────────┴──────────────────────────────────────┘
 ```
 
@@ -27,16 +26,54 @@
 ## Key Features
 
 - **Pentest Workspace & Editorial Environment**: Focused distraction-free writing surface centered on the pentester's target definition, featuring the minimalist **“What we hack ?”** editorial empty state that automatically disappears upon focus or typing.
+- **Temporary Multi-Conversations**: Run and switch between multiple independent conversations during the same session (`Reconnaissance`, `Web Pentest`, `Active Directory`, `CVE Research`, `Exploit Analysis`, `Reporting`).
+  - Create new streams (`+ New Conversation`) either completely empty or with injected Project Context.
+  - Rename, delete, and switch between streams instantly.
+  - Independent dialogue histories with shared underlying Project State.
+- **One-Click Message & Code Copying**:
+  - Independent **Copy** button on every code block and command (copies purely the command without UI decoration).
+  - **Copy** and **Copy Markdown** buttons on every AI response message.
+  - Instant visual feedback (`Copied` for 2 seconds).
 - **Target & Scope Management**: Pre-configured templates for external reconnaissance, web application / API assessments, Active Directory privilege escalation, and cloud/container environments.
 - **Vulnerability & Exploit Intelligence**: Direct correlation against real-world CVEs and the **CISA Known Exploited Vulnerabilities (KEV)** catalog (1,642+ active entries), tracking public GitHub PoCs and weaponized Metasploit modules.
 - **Exploitability Priority Score (EPS / 100)**: Multi-factor scoring prioritizing real-world exploitability over raw CVSS (accounting for KEV presence, in-the-wild exploitation, pre-auth vectors, and public PoCs).
 - **Attack Path Synthesis**: Generates multi-step attack chains (`Initial Access → Foothold → Privilege Escalation → Credential Access → Domain/Cloud Control`).
-- **AI-Assisted Copilot & Console**: Embedded 14-point offensive security methodology providing technical analysis (`TL;DR`, `Risk`, `Exploitability`, `Detection`, `Validation`, `Controlled Exploitation`, `Remediation`).
 - **Nuclei Automation Studio**: Generates customizable Nuclei YAML detection templates ready for automation.
 - **Continuous Local Persistence**: Auto-saves active project states to browser storage on every keystroke and before page unload.
 - **Context Snapshot Engine**: Full export, copy, and restoration mechanism guaranteeing zero loss of pentest continuity across temporary chat sessions or different LLM models.
 - **🚧 In-the-Wild Threat Stream Live Scraping** *(WIP)*: Real-time automated scraping of newly announced zero-days and vendor security advisories.
 - **🚧 Multi-LLM Provider Gateway** *(WIP)*: Direct API integration with local Ollama, OpenAI, Anthropic, and Google Gemini backends.
+
+---
+
+## Temporary Conversations vs. Persistent Project State
+
+In PickyHack, conversation history is **ephemeral by design**. If the page is reloaded or the browser closes, individual chat logs may disappear. However, the **Pentest State** remains completely preserved:
+
+```text
+                    PICKYHACK WORKSTATION
+                             │
+          ┌──────────────────┴──────────────────┐
+          │                                     │
+   TEMPORARY CHAT                         PROJECT STATE
+          │                                     │
+ Conversation A (Recon)                Target & Scope
+ Conversation B (Web Pentest)          Discovered Assets
+ Conversation C (Active Directory)     Services & Technologies
+ Conversation D (Exploits)             Mapped CVEs & Findings
+          │                            Attack Paths & Evidence
+          │                                     │
+          └──────────────────┬──────────────────┘
+                             ↓
+                      CONTEXT ENGINE
+                             ↓
+                     CONTEXT SNAPSHOT
+                             ↓
+                  Copy / Export / Import
+```
+
+### Shared Project State Across Conversations
+When a discovery is made in any conversation (e.g. Conversation A identifies an exposed service or technology), the **Project State** is updated immediately. When switching to Conversation B, that intelligence is already part of the project.
 
 ---
 
@@ -48,12 +85,10 @@ Standard LLM chat sessions are **ephemeral**: browser tabs close, contexts reset
 
 ### How Context Snapshot Solves It
 
-PickyHack decouples the temporary chat layer from the persistent **Pentest State**:
-
 ```text
 TEMPORARY CHAT SESSION
          ↓
-  [💾 SAVE SNAPSHOT]
+  [💾 SAVE SNAPSHOT] or [📋 COPY FULL CONTEXT]
          ↓
 CONTEXT SNAPSHOT ENGINE
          ↓
@@ -85,38 +120,10 @@ The generated snapshot prompt is completely autonomous and retains:
 
 ---
 
-## Architecture
-
-```text
-                           PickyHack Workstation
-                                     │
-         ┌───────────────────────────┴───────────────────────────┐
-         ▼                                                       ▼
-   Desktop Shell (Win98)                                  Project State
- ├── Window Manager                                     ├── Target & Scope
- ├── Menu Bar & Toolbar                                 ├── Discovered Assets
- ├── Editorial Workspace ("What we hack ?")             ├── Mapped Vulnerabilities
- └── Tabbed Intelligence Panels                         └── Attack Chains
-         │                                                       │
-         └───────────────────────────┬───────────────────────────┘
-                                     ▼
-                           Context Engine
-                    ├── Intelligent Compression
-                    ├── Portable Prompt Generator
-                    ├── One-Click Copy & .md Export
-                    └── State Parser & Restorer
-                                     │
-                                     ▼
-                            Local Persistence
-                    (Browser Storage / .md Snapshots)
-```
-
----
-
 ## Tech Stack
 
 - **Frontend Core**: Vanilla HTML5 & Modern Vanilla JavaScript (ES6+), zero external runtime dependencies.
-- **Styling**: Vanilla CSS3 implementing the retro Windows 98 Design System (authentic 3D bevels, typography, responsive pane layout).
+- **Styling**: Vanilla CSS3 implementing the retro Windows 98 Design System (authentic 3D bevels, typography, responsive multi-pane layout).
 - **Typography**: Crisp pixel/bitmap typography (`VT323`, `Silkscreen`) with native system fallbacks.
 - **Intelligence Data Layer**: Structured JSON vulnerability catalog (CISA KEV, CVEs, PoC availability).
 - **State Persistence**: Browser `localStorage` auto-sync and portable Markdown `.md` export/import.
@@ -140,8 +147,6 @@ cd pickyhack
 ```
 
 ### 2. Configure Environment (Optional)
-
-Copy the configuration template:
 
 ```bash
 cp .env.example .env
@@ -177,9 +182,9 @@ npm run dev
 
 ```text
 pickyhack/
-├── index.html            # Main desktop application & workspace markup
+├── index.html            # Main desktop application, conversation sidebar & workspace
 ├── style.css             # Windows 98 design system, bevel rules & layout
-├── app.js                # Context Snapshot engine, placeholder logic, CVE feed
+├── app.js                # Multi-conversation manager, Context Snapshot engine, CVE feed
 ├── pickyhack_prompt.md   # Complete 14-point Offensive Security AI prompt spec
 ├── assets/
 │   └── pickyhack-logo.svg # Pixel-art emblem (pickaxe, brick wall, Win98 button)
@@ -206,6 +211,8 @@ pickyhack/
 
 - [x] Authentic Windows 98 desktop environment & bevel design system
 - [x] Focused pentest workspace with minimal editorial empty state (**“What we hack ?”**)
+- [x] Temporary multi-conversations with dedicated sidebar (`Recon`, `Web`, `AD`, `CVEs`)
+- [x] One-click AI response copy & independent code block copy
 - [x] Real-time CVE & CISA KEV exploit correlation
 - [x] Multi-factor Exploitability Priority Score (EPS / 100) engine
 - [x] Multi-stage attack chain synthesis
