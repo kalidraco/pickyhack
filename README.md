@@ -187,7 +187,7 @@ pickyhack/
 ├── app.js                # Multi-conversation manager, Context Snapshot engine, CVE feed
 ├── pickyhack_prompt.md   # Complete 14-point Offensive Security AI prompt spec
 ├── assets/
-│   └── pickyhack-logo.svg # Pixel-art emblem (pickaxe, brick wall, Win98 button)
+│   └── pickyhack-logo.png # Exact pixel-art emblem (pickaxe, brick wall, Win98 button)
 ├── .env.example          # Environment variables template
 ├── .gitignore            # Git exclusion rules
 ├── package.json          # Node.js configuration & scripts

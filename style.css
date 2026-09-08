@@ -147,9 +147,12 @@ html, body {
 }
 
 .desktop-icon-img {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   margin-bottom: 4px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .desktop-icon-label {
@@ -215,6 +218,9 @@ html, body {
 .win-title-icon {
   width: 16px;
   height: 16px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .win-title-controls {
@@ -1081,8 +1087,11 @@ html, body {
 }
 
 .start-flag {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .task-items {
@@ -1106,6 +1115,12 @@ html, body {
   white-space: nowrap;
 }
 
+.task-item img {
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 .system-tray {
   display: flex;
   align-items: center;
@@ -1119,6 +1134,9 @@ html, body {
 .tray-icon {
   width: 16px;
   height: 16px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 /* Start Menu Dropdown */
