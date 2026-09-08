@@ -37,6 +37,12 @@
       "skills": [
         "entra-app-registration"
       ]
+    },
+    {
+      "source": "openai/skills",
+      "skills": [
+        "security-best-practices"
+      ]
     }
   ]
 }

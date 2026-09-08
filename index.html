@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PickyHack — Offensive Security & Pentest Intelligence AI</title>
   <meta name="description" content="PickyHack is an offensive security, vulnerability research and pentest copilot AI powered by live CISA KEV, CVE correlation, and exploit intelligence.">
-  <link rel="icon" type="image/png" href="assets/pickyhack-logo.png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="assets/branding/pickyhack-logo.png">
+  <link rel="stylesheet" href="src/styles/index.css">
 </head>
 <body>
 
@@ -1728,7 +1728,26 @@ http:
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script src="app.js"></script>
+  <!-- PickyHack Modular Architecture (src/) -->
+  <script src="src/config/app-config.js"></script>
+  <script src="src/config/providers-catalog.js"></script>
+  <script src="src/security/sanitizer.js"></script>
+  <script src="src/security/validator.js"></script>
+  <script src="src/core/project-state.js"></script>
+  <script src="src/core/context-engine.js"></script>
+  <script src="src/core/snapshot-manager.js"></script>
+  <script src="src/providers/provider-registry.js"></script>
+  <script src="src/modules/attachment-manager.js"></script>
+  <script src="src/modules/attack-graph.js"></script>
+  <script src="src/modules/token-optimizer.js"></script>
+  <script src="src/modules/burp-zap-bridge.js"></script>
+  <script src="src/modules/deliverable-generator.js"></script>
+  <script src="src/modules/intelligence.js"></script>
+  <script src="src/modules/notes-taker.js"></script>
+  <script src="src/ui/window-manager.js"></script>
+  <script src="src/ui/desktop-ui.js"></script>
+  <script src="src/ui/popovers.js"></script>
+  <script src="src/ui/chat-ui.js"></script>
+  <script src="src/app.js"></script>
 </body>
 </html>

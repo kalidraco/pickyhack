@@ -4,7 +4,9 @@
   "description": "PickyHack — Offensive Security & Pentest Intelligence AI Desktop Workbench",
   "scripts": {
     "dev": "python3 -u server.py",
-    "start": "python3 -u server.py"
+    "start": "python3 -u server.py",
+    "test": "node tests/run_all.js",
+    "check": "node --check src/**/*.js src/*.js"
   },
   "keywords": [
     "pentest",

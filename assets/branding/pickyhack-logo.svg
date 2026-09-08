@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%" shape-rendering="crispEdges">
+  <!-- Windows 98 Icon Frame -->
+  <rect x="16" y="8" width="96" height="76" fill="#000080" />
+  <!-- Bevel border for blue box -->
+  <path d="M16 8 H112 V10 H18 V84 H16 Z" fill="#ffffff" />
+  <path d="M110 10 H112 V84 H16 V82 H110 Z" fill="#404040" />
+  
+  <!-- Brick Wall on the right -->
+  <!-- Brick mortar / background -->
+  <rect x="72" y="16" width="34" height="64" fill="#303030" opacity="0.3"/>
+  <!-- Bricks (red/terracotta #c03a2b, #e74c3c, #962d22, highlights #e67e22) -->
+  <rect x="74" y="18" width="14" height="7" fill="#b83b26" stroke="#2c3e50" stroke-width="1"/>
+  <rect x="90" y="18" width="14" height="7" fill="#c0392b" stroke="#2c3e50" stroke-width="1"/>
+  
+  <rect x="70" y="27" width="10" height="7" fill="#962d22" stroke="#2c3e50" stroke-width="1"/>
+  <rect x="82" y="27" width="14" height="7" fill="#d35400" stroke="#2c3e50" stroke-width="1"/>
+  <rect x="98" y="27" width="8" height="7" fill="#b83b26" stroke="#2c3e50" stroke-width="1"/>
+  
+  <rect x="74" y="36" width="14" height="7" fill="#c0392b" stroke="#2c3e50" stroke-width="1"/>
+  <rect x="90" y="36" width="14" height="7" fill="#e74c3c" stroke="#2c3e50" stroke-width="1"/>
+  
+  <rect x="70" y="45" width="12" height="7" fill="#b83b26" stroke="#2c3e50" stroke-width="1"/>
+  <rect x="84" y="45" width="14" height="7" fill="#962d22" stroke="#2c3e50" stroke-width="1"/>
+  <rect x="100" y="45" width="6" height="7" fill="#c0392b" stroke="#2c3e50" stroke-width="1"/>
+
+  <rect x="76" y="54" width="14" height="7" fill="#c0392b" stroke="#2c3e50" stroke-width="1"/>
+  <rect x="92" y="54" width="12" height="7" fill="#e67e22" stroke="#2c3e50" stroke-width="1"/>
+
+  <rect x="72" y="63" width="12" height="7" fill="#962d22" stroke="#2c3e50" stroke-width="1"/>
+  <rect x="86" y="63" width="14" height="7" fill="#c0392b" stroke="#2c3e50" stroke-width="1"/>
+
+  <!-- Crumbling Bricks Flying -->
+  <rect x="78" y="10" width="7" height="6" fill="#e74c3c" stroke="#111" stroke-width="1"/>
+  <rect x="68" y="22" width="6" height="5" fill="#d35400" stroke="#111" stroke-width="1"/>
+  <rect x="62" y="34" width="8" height="6" fill="#c0392b" stroke="#111" stroke-width="1"/>
+  <rect x="54" y="46" width="6" height="5" fill="#e74c3c" stroke="#111" stroke-width="1"/>
+  <rect x="60" y="52" width="7" height="6" fill="#b83b26" stroke="#111" stroke-width="1"/>
+  <rect x="66" y="48" width="9" height="7" fill="#c0392b" stroke="#111" stroke-width="1"/>
+  <rect x="72" y="56" width="8" height="6" fill="#d35400" stroke="#111" stroke-width="1"/>
+  <rect x="80" y="66" width="7" height="5" fill="#962d22" stroke="#111" stroke-width="1"/>
+
+  <!-- Pickaxe Wooden Handle -->
+  <line x1="32" y1="62" x2="66" y2="34" stroke="#8d5524" stroke-width="5" stroke-linecap="square"/>
+  <line x1="32" y1="62" x2="66" y2="34" stroke="#c68642" stroke-width="2" stroke-linecap="square"/>
+  <!-- Pickaxe Steel Head -->
+  <path d="M42 22 Q 62 20 80 40 L 74 44 Q 60 26 44 26 Z" fill="#bdc3c7" stroke="#2c3e50" stroke-width="1.5"/>
+  <polygon points="76,36 82,41 78,43 72,39" fill="#ecf0f1" />
+  <circle cx="60" cy="28" r="3" fill="#7f8c8d" />
+
+  <!-- Lower Button [ PickyHack ] -->
+  <rect x="12" y="90" width="104" height="26" fill="#c0c0c0" />
+  <!-- Button 3D Bevel -->
+  <path d="M12 90 H116 V92 H14 V114 H12 Z" fill="#ffffff" />
+  <path d="M114 92 H116 V116 H12 V114 H114 Z" fill="#000000" />
+  <path d="M112 94 H114 V114 H14 V112 H112 Z" fill="#808080" />
+  
+  <!-- Text PickyHack (Picky in black, Hack in blue) -->
+  <text x="20" y="108" font-family="'Courier New', monospace, sans-serif" font-weight="900" font-size="14" fill="#000000" letter-spacing="-0.5">Picky<tspan fill="#0000aa">Hack</tspan></text>
+
+  <!-- Retro Pixel Mouse Cursor Clicking on Hack -->
+  <polygon points="100,102 100,122 106,116 112,122 114,120 108,114 115,114" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+</svg>

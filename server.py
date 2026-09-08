@@ -1,39 +1,17 @@
 #!/usr/bin/env python3
 """
-PickyHack Development HTTP Server
-Includes socket reuse and graceful port fallback to prevent [Errno 48] Address already in use.
+PickyHack Root Server Entry Point
+Delegates execution directly to src/backend/server.py
 """
-
-import http.server
-import socketserver
+import os
 import sys
 
-DEFAULT_PORT = 8088
+# Add src/backend to sys.path
+backend_dir = os.path.join(os.path.dirname(__file__), 'src', 'backend')
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
-class ReusableTCPServer(socketserver.TCPServer):
-    allow_reuse_address = True
-
-Handler = http.server.SimpleHTTPRequestHandler
-
-def run_server():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_PORT
-
-    for p in range(port, port + 20):
-        try:
-            with ReusableTCPServer(("", p), Handler) as httpd:
-                print(f"\n==================================================", flush=True)
-                print(f"  PickyHack 98 Workstation running live at:", flush=True)
-                print(f"  --> http://localhost:{p}", flush=True)
-                print(f"==================================================\n", flush=True)
-                print("Press Ctrl+C to stop the server.", flush=True)
-                httpd.serve_forever()
-                return
-        except OSError as e:
-            if e.errno == 48:  # Address already in use
-                print(f"[!] Port {p} is currently in use, trying port {p + 1}...", flush=True)
-                continue
-            else:
-                raise e
+from server import run_server
 
 if __name__ == '__main__':
     try:
