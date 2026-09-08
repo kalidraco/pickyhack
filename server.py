@@ -21,16 +21,16 @@ def run_server():
     for p in range(port, port + 20):
         try:
             with ReusableTCPServer(("", p), Handler) as httpd:
-                print(f"\n==================================================")
-                print(f"  PickyHack 98 Workstation running live at:")
-                print(f"  --> http://localhost:{p}")
-                print(f"==================================================\n")
-                print("Press Ctrl+C to stop the server.")
+                print(f"\n==================================================", flush=True)
+                print(f"  PickyHack 98 Workstation running live at:", flush=True)
+                print(f"  --> http://localhost:{p}", flush=True)
+                print(f"==================================================\n", flush=True)
+                print("Press Ctrl+C to stop the server.", flush=True)
                 httpd.serve_forever()
                 return
         except OSError as e:
             if e.errno == 48:  # Address already in use
-                print(f"[!] Port {p} is currently in use, trying port {p + 1}...")
+                print(f"[!] Port {p} is currently in use, trying port {p + 1}...", flush=True)
                 continue
             else:
                 raise e

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "PickyHack — Offensive Security & Pentest Intelligence AI Desktop Workbench",
   "scripts": {
-    "dev": "python3 server.py",
-    "start": "python3 server.py"
+    "dev": "python3 -u server.py",
+    "start": "python3 -u server.py"
   },
   "keywords": [
     "pentest",
