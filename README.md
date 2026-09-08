@@ -4,34 +4,35 @@
 
 # PickyHack — Stateless AI Context Harness for Pentesting
 
-> **Stateless by default. Context-driven by design.**
+> **Stateless by default. Context-driven by design.**  
+> *Your model. Your provider. Your context.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests: Passing](https://img.shields.io/badge/Tests-6%2F6%20Passing-brightgreen.svg)](tests/)
+[![Tests: Passing](https://img.shields.io/badge/Tests-7%2F7%20Passing-brightgreen.svg)](tests/)
 [![Architecture: Stateless](https://img.shields.io/badge/Architecture-Stateless%20Context%20Harness-blueviolet.svg)](docs/architecture.md)
 [![UI: Windows 98](https://img.shields.io/badge/UI-Windows%2098%20Desktop-008080.svg)](#user-interface--retro-experience)
-[![Open Models: OLMoE Ready](https://img.shields.io/badge/Open%20Models-OLMoE%20%E2%80%A2%20Llama%20%E2%80%A2%20Qwen-orange.svg)](docs/local-models.md)
+[![Model-Agnostic: BYOM](https://img.shields.io/badge/Models-Model--Agnostic%20%E2%80%A2%20BYOM-orange.svg)](docs/providers.md)
 
 **PickyHack** is a pentest-focused **AI Context Harness** that orchestrates LLMs, project intelligence, web research, and structured security context into a unified offensive-security workspace.
 
 ```text
-ANY LLM (OpenAI • Anthropic • Gemini • Mistral • Ollama • OLMoE • Custom)
-                           │
-                           ▼
-        ┌─────────────────────────────────────┐
-        │              PICKYHACK              │
-        │                                     │
-        │       Stateless Context Harness     │
-        │  ─────────────────────────────────  │
-        │   Project State    Context Engine   │
-        │   Security Intel   Web Research     │
-        │   Attack Graph     Burp/ZAP Bridge  │
-        │   Token Optimizer  Deliverable PDF  │
-        │   Pentest Notes    Context Snapshot │
-        └─────────────────────────────────────┘
-                           │
-                           ▼
-                       PENTESTER
+Any Model / Provider (Cloud APIs • Local Runtimes • Custom Endpoints)
+                               │
+                               ▼
+            ┌─────────────────────────────────────┐
+            │              PICKYHACK              │
+            │                                     │
+            │       Stateless Context Harness     │
+            │  ─────────────────────────────────  │
+            │   Project State    Context Engine   │
+            │   Security Intel   Web Research     │
+            │   Attack Graph     Burp/ZAP Bridge  │
+            │   Token Optimizer  Deliverable PDF  │
+            │   Pentest Notes    Context Snapshot │
+            └─────────────────────────────────────┘
+                               │
+                               ▼
+                           PENTESTER
 ```
 
 ---
@@ -81,13 +82,87 @@ The **Context Harness** determines *what precise context* must be assembled and 
 
 ---
 
+## Core Architecture: Model-Agnostic, Provider-Agnostic, Context-Centric
+
+PickyHack is engineered around three foundational architectural principles:
+
+- **MODEL-AGNOSTIC**: PickyHack does not depend on a closed list of models. Any model exposed through a supported API interface can be used.
+- **PROVIDER-AGNOSTIC**: PickyHack connects to any inference service—cloud platforms, local runtimes, or custom proxies.
+- **CONTEXT-CENTRIC**: The technical context (scope, boundaries, verified findings, attack chains, credentials, notes) belongs to the mission project, completely decoupled from the model.
+
+### Execution Flow
+
+```text
+User
+ ↓
+PickyHack
+ ↓
+Context Engine
+ ↓
+Provider API
+ ↓
+Selected Model
+```
+
+The model can be replaced or hot-swapped at any time without modifying the core of PickyHack.
+
+---
+
+## Provider vs. Model Separation
+
+In PickyHack, **Provider** and **Model** are cleanly separated:
+
+- **Provider**: The API service or local runtime exposing the inference interface.
+- **Model**: The exact identifier of the model requested from that API.
+
+### Configuration Example
+
+```text
+Provider: Custom / OpenAI-compatible
+Base URL: https://api.your-endpoint.internal/v1
+Model ID: your-model-id
+```
+
+The **Model ID** is freely configurable. PickyHack never imposes a whitelist or locks operators into pre-defined model IDs.
+
+---
+
+## Model Discovery vs. Manual Specification
+
+PickyHack supports both dynamic discovery and manual specification:
+
+- **Dynamic Model Discovery**: If an API endpoint exposes a discovery route (e.g. `GET /v1/models` or local tag listing), PickyHack queries and populates available models automatically.
+- **Manual Model Specification**: If the endpoint does not support discovery, or for custom checkpoints and fine-tunes, the operator can manually enter any Model ID via **`[Custom Model / Enter ID...]`**.
+
+> [!TIP]
+> A model list facilitates ease of use, but **never** blocks a model not present in the list. Real compatibility is determined by the API interface and provider adapter, not by the model name.
+
+---
+
+## Multi-API: Orchestrating Multiple Engines
+
+The native **Multi-API Manager** allows operators to maintain multiple concurrent engine profiles:
+
+```text
+Provider A → Model A        (Primary Analyst)
+Provider B → Model B        (Secondary Opinion)
+Provider C → Custom Model   (Specialized Fuzzing)
+Provider D → Local Model    (Air-Gapped Stealth)
+```
+
+- **Switch Engines on the Fly**: Instantly switch the active engine at any moment during an assessment.
+- **Zero Context Loss**: Switching providers or models **never** clears the Project State or Context.
+- **Principle**: *The context belongs to the project, not to the model.*
+
+---
+
 ## The Problem PickyHack Solves
 
 Standard, long-running LLM chat conversations suffer from critical limitations during security assessments:
 
 1. **Context Window Saturation**: Extended terminal dumps and scan logs blow up token limits and increase inference costs.
 2. **Loss of Critical Technical Facts**: Subnet ranges, credentials, exact patch levels, and failed exploit attempts vanish under message recency bias.
-3. **Provider Lock-in & Painful Switching**: Migrating an active 50-turn chat from GPT-4o to Claude 3.7 or Gemini 2.5 Pro usually requires re-explaining the entire engagement from scratch.
+3. **Provider Lock-in & Painful Switching**: Migrating an active 50-turn chat from one model or provider to another usually requires re-explaining the entire engagement from scratch.
 4. **Unreliable Chat Memory**: Chat logs are not databases; they hallucinate or omit structured findings.
 5. **Scattered Pentest Data**: Critical proof-of-concepts, remediation guidance, and attack paths remain buried across unrelated dialogue threads.
 6. **Accidental Credential Exposure**: API keys, bearer tokens, and hashes pasted during testing risk leaking into exported reports or logs.
@@ -111,15 +186,27 @@ $$\text{Conversation} \neq \text{Pentest State} \neq \text{LLM}$$
 - **Hot-Swapping with Zero Context Loss**: Switch engines mid-mission without resetting target scope or losing verified findings.
 - **"Ask Multiple Models"**: Evaluate a payload or command against multiple frontier models simultaneously with side-by-side comparative cards.
 
-### 3. Open Models Directory (Featuring OLMoE)
-PickyHack includes native capability profiles and local privacy flags for leading open-weight architectures:
-- **OLMoE (Allen Institute for AI)**: 1B-active / 7B-total Mixture-of-Experts released under **Apache 2.0**. Extremely fast on laptops and local jumpboxes.
-- **Llama 3.3 (Meta)**: Heavyweight reasoning and tool orchestration.
-- **Qwen 2.5 Coder (Alibaba)**: Elite script synthesis and protocol fuzzing.
-- **DeepSeek R1 / V3**: Advanced chain-of-thought vulnerability root-cause analysis.
-- **Mistral Open-Weights (Nemo & Mixtral)**: High throughput and concise technical summaries.
-- **GPT-OSS (OpenAI)**: Apache 2.0 open-weight research models (`gpt-oss-20b`, `gpt-oss-120b`).
-- **Gemma, GLM, Phi, Nemotron**: Native capability detection and prompt tuning.
+### 3. Open Models
+
+PickyHack can work with a wide range of open and open-weight model families when they are exposed through a supported API interface (e.g. via Ollama, LM Studio, vLLM, LiteLLM, or custom inference servers).
+
+Examples of model families that can be used with PickyHack include:
+
+- **OLMoE** (Allen Institute for AI)
+- **Llama**
+- **Qwen**
+- **DeepSeek**
+- **Mistral / Mixtral**
+- **Gemma**
+- **GLM**
+- **Phi**
+- **Nemotron**
+- **GPT-OSS**
+- *and many others.*
+
+> [!IMPORTANT]
+> **This list is illustrative, not exhaustive.**  
+> The model catalog is not a whitelist. PickyHack does not depend on a closed list of models. Any compatible model can be configured manually through Custom Model / Custom Provider. Real compatibility is determined by the API interface and the provider adapter, not by the model name.
 
 Local engines automatically display the **`[🔒 Network: Local]`** indicator, certifying zero cloud egress.
 
@@ -171,7 +258,7 @@ PickyHack wraps high-powered offensive AI workflows inside an authentic, fully f
 │   [🎯 Target & Scope]  [⚡ Web Pentest]  [⛓️ Attack Path]  [📝 Notes.txt]   │
 │                                                                             │
 │ ┌─────────────────────────────────────────────────────────────────────────┐ │
-│ │ 🤖 [PICKYHACK AI • gpt-4o]                                              │ │
+│ │ 🤖 [PICKYHACK AI • selected-model]                                      │ │
 │ │ Target vpn.megacorp.internal is running PAN-OS 10.2.7.                  │ │
 │ │ Critical vuln detected: CVE-2024-3400 (CVSS 10.0, EPS 99/100, KEV: YES) │ │
 │ │                                                                         │ │
@@ -180,7 +267,7 @@ PickyHack wraps high-powered offensive AI workflows inside an authentic, fully f
 │                                                                             │
 │ [📎 +] [Ask PickyHack a question or run a command...]         [Send] [⚖️Comp]│
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ ⊞ Start │ 🤖 PickyHack AI │ 📝 Notes.txt │ 📡 CISA KEV │  🤖 gpt-4o  14:40  │
+│ ⊞ Start │ 🤖 PickyHack AI │ 📝 Notes.txt │ 📡 CISA KEV │  🤖 active-model  │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
