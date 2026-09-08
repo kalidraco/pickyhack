@@ -136,6 +136,432 @@
     }
   ];
 
+  // ==========================================================================
+  // AI PROVIDERS PRESETS & SPECIFICATIONS
+  // ==========================================================================
+  const AI_PROVIDERS = {
+    openai: {
+      name: 'OpenAI',
+      defaultEndpoint: 'https://api.openai.com/v1',
+      models: [
+        { id: 'gpt-4o', label: 'GPT-4o (Omni Flagship Pentest Intelligence)' },
+        { id: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast & Efficient)' },
+        { id: 'o3-mini', label: 'o3-mini (Advanced Reasoning & Exploit Paths)' },
+        { id: 'o1', label: 'o1 (Deep Reasoning)' },
+        { id: 'gpt-4-turbo', label: 'GPT-4 Turbo' }
+      ]
+    },
+    anthropic: {
+      name: 'Anthropic',
+      defaultEndpoint: 'https://api.anthropic.com/v1',
+      models: [
+        { id: 'claude-3-7-sonnet-20250219', label: 'Claude 3.7 Sonnet (Hybrid Reasoning)' },
+        { id: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet (Senior Pentest Specialist)' },
+        { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku (Fast Reconnaissance)' }
+      ]
+    },
+    gemini: {
+      name: 'Google Gemini',
+      defaultEndpoint: 'https://generativelanguage.googleapis.com/v1beta',
+      models: [
+        { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Deep Context)' },
+        { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Live Intelligence)' },
+        { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' }
+      ]
+    },
+    mistral: {
+      name: 'Mistral AI',
+      defaultEndpoint: 'https://api.mistral.ai/v1',
+      models: [
+        { id: 'mistral-large-latest', label: 'Mistral Large (Top Reasoning)' },
+        { id: 'codestral-latest', label: 'Codestral (Offensive / Exploit PoC Code)' },
+        { id: 'mistral-small-latest', label: 'Mistral Small' }
+      ]
+    },
+    openrouter: {
+      name: 'OpenRouter',
+      defaultEndpoint: 'https://openrouter.ai/api/v1',
+      models: [
+        { id: 'anthropic/claude-3.7-sonnet', label: 'Claude 3.7 Sonnet (OpenRouter)' },
+        { id: 'openai/gpt-4o', label: 'GPT-4o (OpenRouter)' },
+        { id: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro (OpenRouter)' }
+      ]
+    },
+    custom: {
+      name: 'Custom / Local',
+      defaultEndpoint: 'http://localhost:11434/v1',
+      models: [
+        { id: 'llama3.3:70b', label: 'Llama 3.3 70B (Local Ollama)' },
+        { id: 'deepseek-r1', label: 'DeepSeek R1 (Local / Custom)' },
+        { id: 'qwen2.5-coder:32b', label: 'Qwen 2.5 Coder 32B' },
+        { id: 'mistral:latest', label: 'Mistral (Local Ollama)' }
+      ]
+    }
+  };
+
+  // ==========================================================================
+  // AI CONFIGURATION & CREDENTIALS SECURITY MANAGER
+  // ==========================================================================
+  const AIConfigManager = {
+    STORAGE_KEY: 'pickyhack_ai_config',
+    FLAG_KEY: 'pickyhack_ai_configured',
+
+    get() {
+      try {
+        const raw = localStorage.getItem(this.STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const prov = parsed.provider || 'openai';
+          return {
+            provider: prov,
+            endpoint: parsed.endpoint || (AI_PROVIDERS[prov] ? AI_PROVIDERS[prov].defaultEndpoint : 'https://api.openai.com/v1'),
+            apiKey: parsed.apiKey || '',
+            model: parsed.model || 'gpt-4o',
+            customModel: parsed.customModel || '',
+            isConnected: !!parsed.isConnected
+          };
+        }
+      } catch (e) {
+        console.warn('Could not read AI config from localStorage:', e);
+      }
+      return {
+        provider: 'openai',
+        endpoint: AI_PROVIDERS.openai.defaultEndpoint,
+        apiKey: '',
+        model: 'gpt-4o',
+        customModel: '',
+        isConnected: false
+      };
+    },
+
+    save(cfg) {
+      try {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cfg));
+        localStorage.setItem(this.FLAG_KEY, 'true');
+      } catch (e) {
+        console.warn('Could not save AI config:', e);
+      }
+      this.syncUI();
+    },
+
+    clear() {
+      try {
+        localStorage.removeItem(this.STORAGE_KEY);
+        localStorage.removeItem(this.FLAG_KEY);
+      } catch (e) {
+        console.warn('Could not clear AI config:', e);
+      }
+      this.syncUI();
+    },
+
+    isConfigured() {
+      return localStorage.getItem(this.FLAG_KEY) === 'true';
+    },
+
+    syncUI() {
+      const cfg = this.get();
+      const prov = AI_PROVIDERS[cfg.provider] || AI_PROVIDERS.openai;
+      const modelName = cfg.customModel || cfg.model;
+      const label = cfg.apiKey ? `${prov.name} [${modelName}]` : `${prov.name} [Standby]`;
+
+      const toolbarLabel = document.getElementById('toolbar-ai-label');
+      if (toolbarLabel) toolbarLabel.textContent = label;
+
+      const sbAi = document.getElementById('sb-ai-engine');
+      if (sbAi) {
+        sbAi.textContent = cfg.apiKey ? `AI: ${prov.name} (${modelName})` : `AI: ${prov.name} (Offline / Standby)`;
+        sbAi.style.color = cfg.apiKey ? '#000080' : '#856404';
+      }
+    }
+  };
+
+  // ==========================================================================
+  // LLM ADAPTER (Provider-Agnostic Abstraction)
+  // ==========================================================================
+  const LLMAdapter = {
+    async send(systemPrompt, userPrompt) {
+      const cfg = AIConfigManager.get();
+      const model = cfg.customModel || cfg.model;
+
+      // If no API key provided and not a local custom server, run local synthesis fallback
+      if (!cfg.apiKey && cfg.provider !== 'custom') {
+        return this.localSynthesisFallback(userPrompt);
+      }
+
+      try {
+        if (cfg.provider === 'anthropic') {
+          return await this.callAnthropic(cfg, model, systemPrompt, userPrompt);
+        } else if (cfg.provider === 'gemini') {
+          return await this.callGemini(cfg, model, systemPrompt, userPrompt);
+        } else {
+          // OpenAI, Mistral, OpenRouter, Custom
+          return await this.callOpenAICompatible(cfg, model, systemPrompt, userPrompt);
+        }
+      } catch (err) {
+        console.error('LLM API call failed, falling back to local engine:', err);
+        const fallback = this.localSynthesisFallback(userPrompt);
+        return {
+          text: `⚠️ **[Provider API Notice: ${err.message}]**\n\n*PickyHack Context Harness generated fallback analysis below:*\n\n${fallback.text}`,
+          code: fallback.code,
+          isFallback: true
+        };
+      }
+    },
+
+    async callOpenAICompatible(cfg, model, systemPrompt, userPrompt) {
+      const endpoint = (cfg.endpoint || 'https://api.openai.com/v1').replace(/\/+$/, '') + '/chat/completions';
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (cfg.apiKey) {
+        headers['Authorization'] = `Bearer ${cfg.apiKey}`;
+      }
+      if (cfg.provider === 'openrouter') {
+        headers['HTTP-Referer'] = 'https://pickyhack.app';
+        headers['X-Title'] = 'PickyHack Pentest Copilot';
+      }
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.3
+        })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      }
+
+      const data = await res.json();
+      const reply = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
+      return this.parseModelOutput(reply);
+    },
+
+    async callAnthropic(cfg, model, systemPrompt, userPrompt) {
+      const endpoint = (cfg.endpoint || 'https://api.anthropic.com/v1').replace(/\/+$/, '') + '/messages';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': cfg.apiKey,
+          'anthropic-version': '2023-06-01',
+          'dangerously-allow-browser': 'true'
+        },
+        body: JSON.stringify({
+          model: model,
+          max_tokens: 4096,
+          system: systemPrompt,
+          messages: [
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Anthropic HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      }
+
+      const data = await res.json();
+      const reply = data.content && data.content[0] ? data.content[0].text : '';
+      return this.parseModelOutput(reply);
+    },
+
+    async callGemini(cfg, model, systemPrompt, userPrompt) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cfg.apiKey}`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ parts: [{ text: userPrompt }] }]
+        })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Gemini HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      }
+
+      const data = await res.json();
+      const reply = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]
+        ? data.candidates[0].content.parts[0].text
+        : '';
+      return this.parseModelOutput(reply);
+    },
+
+    parseModelOutput(raw) {
+      let text = raw;
+      let code = null;
+      const codeBlockMatch = raw.match(/```(?:bash|sh|shell|zsh)?\n([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        code = codeBlockMatch[1].trim();
+        text = raw.replace(codeBlockMatch[0], '').trim();
+      }
+      return { text, code, isFallback: false };
+    },
+
+    localSynthesisFallback(userPrompt) {
+      const target = pentestState.target || 'target.example.com';
+      let matched = INTEL_DB[0];
+      const lower = (userPrompt + ' ' + (pentestState.rawNotes || '')).toLowerCase();
+
+      if (lower.includes('confluence') || lower.includes('atlassian') || lower.includes('ognl')) {
+        matched = INTEL_DB[4];
+      } else if (lower.includes('fortinet') || lower.includes('fortios')) {
+        matched = INTEL_DB[2];
+      } else if (lower.includes('ivanti')) {
+        matched = INTEL_DB[1];
+      } else if (lower.includes('kernel') || lower.includes('privesc') || lower.includes('nftables')) {
+        matched = INTEL_DB[3];
+      } else if (lower.includes('active directory') || lower.includes('adcs') || lower.includes('domain')) {
+        matched = INTEL_DB[5];
+      }
+
+      const eps = calculateEPS(matched);
+
+      return {
+        text: `**PickyHack Exploit Intelligence Analysis**
+**Target Scope:** \`${target}\`
+**Correlated Vulnerability:** **${matched.cve}** (${matched.product})
+**CVSS:** ${matched.cvss} | **Exploitability Priority Score (EPS):** ${eps}/100 (${matched.epsCategory})
+**CISA KEV Status:** ${matched.inKEV ? 'Listed (Active In-The-Wild Exploitation)' : 'Not Listed'}
+**Authentication Required:** ${matched.authRequired}
+
+**Detection & Verification Methodology:**
+1. Non-destructive version banner fingerprinting.
+2. Confirm patch level and configuration parameters.
+3. Validate attack chain: *${matched.chain}*
+
+*(Tip: Connect your live LLM API key in **AI Engine** toolbar button to stream reasoning directly from your provider).*`,
+        code: `nuclei -id ${matched.cve.toLowerCase()} -target https://${target}`,
+        isFallback: true
+      };
+    }
+  };
+
+  // ==========================================================================
+  // CONTEXT ENGINE & HARNESS
+  // ==========================================================================
+  const ContextEngine = {
+    determineRelevance(userQuery, state) {
+      const q = (userQuery || '').toLowerCase();
+      
+      let relAssets = state.discoveredAssets.filter(a => q.includes(a.toLowerCase()));
+      if (relAssets.length === 0) relAssets = state.discoveredAssets.slice(0, 5);
+
+      let relServices = state.services.filter(s => q.includes(s.toLowerCase()));
+      if (relServices.length === 0) relServices = state.services;
+
+      let relVulns = state.vulnerabilities.filter(v => q.includes(v.toLowerCase()));
+      if (relVulns.length === 0) relVulns = state.vulnerabilities.slice(0, 4);
+
+      let matchedIntel = INTEL_DB.filter(item => {
+        return q.includes(item.cve.toLowerCase()) ||
+               q.includes(item.product.toLowerCase()) ||
+               q.includes(item.vendor.toLowerCase()) ||
+               (state.rawNotes && state.rawNotes.toLowerCase().includes(item.product.toLowerCase()));
+      });
+      if (matchedIntel.length === 0) matchedIntel = [INTEL_DB[0]];
+
+      return {
+        target: state.target || 'target.example.com',
+        scope: state.scope || 'Authorized Scope',
+        objectives: state.objectives || 'Vulnerability Mapping & Attack Paths',
+        assets: relAssets,
+        services: relServices,
+        technologies: state.technologies,
+        vulnerabilities: relVulns,
+        intel: matchedIntel,
+        attackPaths: state.attackPaths,
+        confirmedFacts: state.confirmedFacts
+      };
+    }
+  };
+
+  const ContextHarness = {
+    buildPacket(userQuery, activeConv, state) {
+      const rel = ContextEngine.determineRelevance(userQuery, state);
+      
+      const userData = `TARGET: ${rel.target}\nSCOPE: ${rel.scope}\nOBJECTIVE: ${rel.objectives}`;
+      const projectData = `DISCOVERED ASSETS:\n${rel.assets.length > 0 ? rel.assets.map(a => `- ${a}`).join('\n') : '- (None recorded yet)'}\nSERVICES:\n${rel.services.length > 0 ? rel.services.map(s => `- ${s}`).join('\n') : '- (None)'}\nTECHNOLOGIES: ${rel.technologies.join(', ') || 'Pending'}\nCONFIRMED FINDINGS:\n${rel.vulnerabilities.length > 0 ? rel.vulnerabilities.map(v => `- ${v}`).join('\n') : '- None confirmed'}`;
+      
+      const webData = rel.intel.map(i => `- [${i.cve}] ${i.product} (${i.vendor}) | CVSS: ${i.cvss} | EPS: ${i.epsScore}/100 | KEV: ${i.inKEV ? 'YES' : 'NO'} | PoC: ${i.pocAvailable ? 'AVAILABLE' : 'NONE'}`).join('\n');
+      
+      const modelReasoning = `ATTACK PATHS:\n${rel.attackPaths.slice(0, 3).map((p, idx) => `${idx + 1}. ${p}`).join('\n') || '- Path mapping in progress'}`;
+
+      const turns = (activeConv.messages || []).slice(-4).map(m => `[${m.sender.toUpperCase()}]: ${m.text.replace(/\n+/g, ' ')}`).join('\n');
+
+      const fullPacket = `=== PICKYHACK CONTEXT HARNESS PACKET ===
+
+[SYSTEM CONTEXT]
+Tu es PickyHack, une IA d'élite spécialisée en pentest, offensive security, vulnerability research et exploit intelligence.
+Agis en Senior Penetration Tester + Vulnerability Researcher + Security Intelligence Analyst.
+Approche méthodologique: vérification non-destructive, validation préalable, corrélation CISA KEV et scoring EPS (Exploitability Priority Score).
+Les sources de données ci-dessous sont strictement délimitées pour ton raisonnement.
+
+==================================================
+[PENTEST CONTEXT — USER DATA]
+${userData}
+MANDATE: Pentest Authorization Confirmed.
+
+==================================================
+[PROJECT STATE — PROJECT DATA]
+${projectData}
+
+==================================================
+[RELEVANT INTELLIGENCE — WEB DATA (CISA KEV / NVD / EDB)]
+${webData}
+
+==================================================
+[PRIOR REASONING — MODEL REASONING]
+${modelReasoning}
+
+==================================================
+[CONVERSATION CONTEXT — STREAM: ${activeConv.title}]
+${turns || '(Stream initialized)'}
+
+==================================================
+[CURRENT USER REQUEST]
+${userQuery}
+
+=== END CONTEXT HARNESS PACKET ===`;
+
+      const systemPrompt = `Tu es PickyHack, Senior Penetration Tester + Exploit Intelligence Analyst opérant dans le PickyHack Context Harness.
+Réponds de façon directe, technique, structurée et sans verbiage inutile.
+Priorise la méthodologie offensive, la détection non-destructive, les PoCs et les commandes terminal actionnables.
+Distingue clairement [USER DATA], [WEB DATA] et [PROJECT DATA] dans ton analyse.`;
+
+      const userPrompt = `Context Harness Assembled State:
+
+${userData}
+
+${projectData}
+
+Web & Exploit Intelligence:
+${webData}
+
+Attack Paths:
+${modelReasoning}
+
+User Question / Command:
+${userQuery}`;
+
+      return {
+        fullPacket,
+        systemPrompt,
+        userPrompt
+      };
+    }
+  };
+
   // --- Persistent Pentest State Model (Shared across all conversations) ---
   const pentestState = {
     version: '1.0',
@@ -340,6 +766,31 @@ Current Priorities:
   const snapshotPreview = document.getElementById('snapshot-preview-textarea');
   const importTextarea = document.getElementById('import-textarea');
   const fileImportInput = document.getElementById('file-import-input');
+
+  // AI Config Modal DOM Elements
+  const aiConfigModal = document.getElementById('ai-config-modal');
+  const aiProviderSelect = document.getElementById('ai-provider-select');
+  const aiEndpointInput = document.getElementById('ai-endpoint-input');
+  const aiKeyInput = document.getElementById('ai-key-input');
+  const aiModelSelect = document.getElementById('ai-model-select');
+  const aiCustomModelInput = document.getElementById('ai-custom-model-input');
+  const aiModelCustomToggle = document.getElementById('ai-model-custom-toggle');
+  const btnToggleKeyVis = document.getElementById('btn-toggle-key-visibility');
+  const aiConnStatus = document.getElementById('ai-connection-status');
+  const btnTestAiConn = document.getElementById('btn-test-ai-conn');
+  const btnSaveAiConn = document.getElementById('btn-save-ai-conn');
+  const btnDisconnectAi = document.getElementById('btn-disconnect-ai');
+  const aiConfigCancelBtn = document.getElementById('ai-config-cancel-btn');
+  const aiConfigCloseX = document.getElementById('ai-config-close-x');
+
+  // Context Inspector Modal DOM Elements
+  const contextInspectorModal = document.getElementById('context-inspector-modal');
+  const contextInspectorTextarea = document.getElementById('context-inspector-textarea');
+  const btnCopyContextPacket = document.getElementById('btn-copy-context-packet');
+  const contextInspectorCloseX = document.getElementById('context-inspector-close-x');
+  const contextInspectorCloseBtn = document.getElementById('context-inspector-close-btn');
+
+  let lastContextPacket = '';
 
   // --- Editorial Placeholder Controller ---
   function updatePlaceholderState() {
@@ -771,8 +1222,8 @@ How shall we proceed with this test objective?`,
     renderActiveMessages();
   }
 
-  // --- Interactive Chat Send Handler ---
-  function handleChatSubmit() {
+  // --- Interactive Chat Send Handler (Context Harness + LLM Adapter) ---
+  async function handleChatSubmit() {
     const msg = chatInput.value.trim();
     if (!msg) return;
 
@@ -789,20 +1240,22 @@ How shall we proceed with this test objective?`,
 - **cve**: Inspects high-priority CVEs and exploit availability
 - **path**: Synthesizes full multi-step attack chain
 - **snapshot**: Opens the Context Snapshot manager
+- **packet**: Inspects the assembled Context Harness payload
+- **ai**: Configures the AI Engine provider & API key
 - **briefing**: Generates the 24h/7d threat intelligence briefing
 - **status**: Displays active project state metrics`, `recon`);
-      }, 250);
+      }, 200);
       return;
     }
 
-    if (lower === 'recon' || lower.includes('recon')) {
+    if (lower === 'recon' || lower === 'correlate') {
       correlateTargetWithIntel();
       setTimeout(() => {
         appendAIMessage(`Reconnaissance correlation triggered against **${pentestState.target || 'target'}**.
 - Assets identified: ${pentestState.discoveredAssets.length}
 - Services mapped: ${pentestState.services.join(', ') || 'Pending'}
 - Active attack chain synthesized in the **Attack Paths** tab.`, `nmap -sV -Pn --script=vuln ${pentestState.target || 'target.example.com'}`);
-      }, 300);
+      }, 250);
       return;
     }
 
@@ -811,31 +1264,51 @@ How shall we proceed with this test objective?`,
       return;
     }
 
+    if (lower === 'packet' || lower.includes('context packet') || lower === 'inspect') {
+      openContextInspectorModal();
+      return;
+    }
+
+    if (lower === 'ai' || lower === 'provider') {
+      openAiConfigModal();
+      return;
+    }
+
     if (lower === 'briefing' || lower.includes('quoi de neuf')) {
       runThreatBriefing();
       return;
     }
 
-    // Default Senior Pentester Technical Analysis (14-point persona)
-    setTimeout(() => {
-      // Dynamically update project facts if user mentioned new services or technologies
-      if (lower.includes('apache') || lower.includes('nginx') || lower.includes('spring') || lower.includes('fortinet')) {
-        syncStateFromNotes();
-        updateSidebarProjectStats();
-      }
+    // Dynamic State Updates from query
+    if (lower.includes('apache') || lower.includes('nginx') || lower.includes('spring') || lower.includes('fortinet') || lower.includes('palo alto') || lower.includes('cve-')) {
+      syncStateFromNotes();
+      updateSidebarProjectStats();
+    }
 
-      appendAIMessage(`[TL;DR] Target analysis for "${msg}" completed.
-**Risk:** HIGH / CRITICAL
-**Exploitability Priority Score (EPS):** 96 / 100
-**Current Intelligence:** Evaluated against CISA KEV catalog (1,642 active entries) and public GitHub PoCs.
+    // 1. Build Context Harness Packet
+    const active = getActiveConversation();
+    const packet = ContextHarness.buildPacket(msg, active, pentestState);
+    lastContextPacket = packet.fullPacket;
 
-**Detection & Validation Methodology:**
-1. Verify exposed service banners without intrusive payload execution.
-2. Confirm patch level and configuration parameters.
-3. Validate access conditions (pre-auth vs authenticated).`, `curl -s -I "https://${pentestState.target || 'target.example.com'}/health" | grep -i "Server"`);
+    // 2. Query LLM through LLMAdapter
+    const cfg = AIConfigManager.get();
+    const provName = AI_PROVIDERS[cfg.provider] ? AI_PROVIDERS[cfg.provider].name : cfg.provider;
+    const modelName = cfg.customModel || cfg.model;
 
-      autoSaveProjectState();
-    }, 400);
+    sbStatus.textContent = `PickyHack Harness querying ${provName} [${modelName}]...`;
+
+    try {
+      const response = await LLMAdapter.send(packet.systemPrompt, packet.userPrompt);
+      appendAIMessage(response.text, response.code);
+      sbStatus.textContent = response.isFallback 
+        ? `Response generated via PickyHack Local Intelligence Engine.` 
+        : `Response received from ${provName} (${modelName}).`;
+    } catch (err) {
+      appendAIMessage(`⚠️ **Error querying ${provName}:** ${err.message}`, null);
+      sbStatus.textContent = `Error querying AI engine. Check API key in AI Engine setup.`;
+    }
+
+    autoSaveProjectState();
   }
 
   chatSendBtn.addEventListener('click', handleChatSubmit);
@@ -1631,6 +2104,228 @@ http:
   setInterval(updateClock, 1000);
   updateClock();
 
+  // ==========================================================================
+  // AI CONFIGURATION MODAL CONTROLLER (Section 1)
+  // ==========================================================================
+  function populateModelOptions(providerKey, selectedModel) {
+    aiModelSelect.innerHTML = '';
+    const prov = AI_PROVIDERS[providerKey] || AI_PROVIDERS.openai;
+    prov.models.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.label;
+      if (m.id === selectedModel) opt.selected = true;
+      aiModelSelect.appendChild(opt);
+    });
+  }
+
+  function openAiConfigModal() {
+    const cfg = AIConfigManager.get();
+    aiProviderSelect.value = cfg.provider;
+    aiEndpointInput.value = cfg.endpoint;
+    aiKeyInput.value = cfg.apiKey;
+    populateModelOptions(cfg.provider, cfg.model);
+
+    if (cfg.customModel) {
+      aiCustomModelInput.value = cfg.customModel;
+      aiCustomModelInput.style.display = 'block';
+      aiModelCustomToggle.textContent = 'Select Standard Model';
+    } else {
+      aiCustomModelInput.value = '';
+      aiCustomModelInput.style.display = 'none';
+      aiModelCustomToggle.textContent = 'Custom Model';
+    }
+
+    const endpointRow = document.getElementById('config-row-endpoint');
+    if (endpointRow) {
+      endpointRow.style.display = (cfg.provider === 'custom' || cfg.provider === 'openrouter') ? 'block' : 'none';
+    }
+
+    aiConnStatus.className = 'win-inset-shallow';
+    aiConnStatus.textContent = cfg.apiKey 
+      ? `Connected: ${AI_PROVIDERS[cfg.provider]?.name || cfg.provider} (${cfg.customModel || cfg.model}).` 
+      : `Standby. Enter your API key or continue in Offline mode.`;
+
+    aiConfigModal.classList.add('open');
+  }
+
+  function closeAiConfigModal() {
+    aiConfigModal.classList.remove('open');
+  }
+
+  aiProviderSelect.addEventListener('change', function () {
+    const provKey = this.value;
+    const prov = AI_PROVIDERS[provKey] || AI_PROVIDERS.openai;
+    aiEndpointInput.value = prov.defaultEndpoint;
+    populateModelOptions(provKey);
+
+    const endpointRow = document.getElementById('config-row-endpoint');
+    if (endpointRow) {
+      endpointRow.style.display = (provKey === 'custom' || provKey === 'openrouter') ? 'block' : 'none';
+    }
+
+    aiConnStatus.className = 'win-inset-shallow';
+    aiConnStatus.textContent = `Provider selected: ${prov.name}. Enter API key and click Connect.`;
+  });
+
+  aiModelCustomToggle.addEventListener('click', function () {
+    if (aiCustomModelInput.style.display === 'none') {
+      aiCustomModelInput.style.display = 'block';
+      this.textContent = 'Select Standard Model';
+      aiCustomModelInput.focus();
+    } else {
+      aiCustomModelInput.style.display = 'none';
+      this.textContent = 'Custom Model';
+      aiCustomModelInput.value = '';
+    }
+  });
+
+  btnToggleKeyVis.addEventListener('click', function () {
+    if (aiKeyInput.type === 'password') {
+      aiKeyInput.type = 'text';
+      this.textContent = '🔒 Hide';
+    } else {
+      aiKeyInput.type = 'password';
+      this.textContent = '👁️ Show';
+    }
+  });
+
+  btnSaveAiConn.addEventListener('click', function () {
+    const provider = aiProviderSelect.value;
+    const endpoint = aiEndpointInput.value.trim();
+    const apiKey = aiKeyInput.value.trim();
+    const model = aiModelSelect.value;
+    const customModel = aiCustomModelInput.value.trim();
+
+    AIConfigManager.save({
+      provider,
+      endpoint,
+      apiKey,
+      model,
+      customModel,
+      isConnected: !!apiKey
+    });
+
+    aiConnStatus.className = 'win-inset-shallow status-connected';
+    aiConnStatus.textContent = apiKey 
+      ? `✓ Connected: ${AI_PROVIDERS[provider]?.name || provider} configured.` 
+      : `Offline mode selected. Local intelligence engine active.`;
+
+    setTimeout(closeAiConfigModal, 450);
+  });
+
+  btnTestAiConn.addEventListener('click', async function () {
+    const provider = aiProviderSelect.value;
+    const endpoint = aiEndpointInput.value.trim();
+    const apiKey = aiKeyInput.value.trim();
+    const model = aiCustomModelInput.value.trim() || aiModelSelect.value;
+
+    if (!apiKey && provider !== 'custom') {
+      aiConnStatus.className = 'win-inset-shallow status-offline';
+      aiConnStatus.textContent = `Please enter an API Key to test connection.`;
+      return;
+    }
+
+    aiConnStatus.className = 'win-inset-shallow';
+    aiConnStatus.textContent = `Testing probe to ${AI_PROVIDERS[provider]?.name || provider}...`;
+
+    try {
+      if (provider === 'anthropic') {
+        const testRes = await fetch((endpoint || 'https://api.anthropic.com/v1').replace(/\/+$/, '') + '/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'dangerously-allow-browser': 'true'
+          },
+          body: JSON.stringify({
+            model: model,
+            max_tokens: 10,
+            messages: [{ role: 'user', content: 'Ping' }]
+          })
+        });
+        if (!testRes.ok) throw new Error(`HTTP ${testRes.status}`);
+      } else if (provider === 'gemini') {
+        const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'Ping' }] }] })
+        });
+        if (!testRes.ok) throw new Error(`HTTP ${testRes.status}`);
+      } else {
+        const testRes = await fetch((endpoint || 'https://api.openai.com/v1').replace(/\/+$/, '') + '/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: 'user', content: 'Ping' }],
+            max_tokens: 5
+          })
+        });
+        if (!testRes.ok) throw new Error(`HTTP ${testRes.status}`);
+      }
+
+      aiConnStatus.className = 'win-inset-shallow status-connected';
+      aiConnStatus.textContent = `✓ Connection test successful! Provider verified.`;
+    } catch (err) {
+      aiConnStatus.className = 'win-inset-shallow status-error';
+      aiConnStatus.textContent = `✕ Test failed: ${err.message}`;
+    }
+  });
+
+  btnDisconnectAi.addEventListener('click', function () {
+    if (confirm('Clear saved API credentials and reset to Local Intelligence Engine?')) {
+      AIConfigManager.clear();
+      aiKeyInput.value = '';
+      aiConnStatus.className = 'win-inset-shallow status-offline';
+      aiConnStatus.textContent = 'API credentials cleared. Switched to offline mode.';
+    }
+  });
+
+  aiConfigCancelBtn.addEventListener('click', closeAiConfigModal);
+  aiConfigCloseX.addEventListener('click', closeAiConfigModal);
+
+  document.getElementById('btn-open-ai-config').addEventListener('click', openAiConfigModal);
+  document.getElementById('menu-ai-config').addEventListener('click', openAiConfigModal);
+  document.getElementById('sm-ai-config').addEventListener('click', () => {
+    toggleStartMenu(false);
+    openAiConfigModal();
+  });
+  document.getElementById('sb-ai-engine').addEventListener('click', openAiConfigModal);
+
+  // ==========================================================================
+  // CONTEXT INSPECTOR MODAL CONTROLLER (Section 5 & 6)
+  // ==========================================================================
+  function openContextInspectorModal() {
+    if (!lastContextPacket) {
+      const active = getActiveConversation();
+      const packet = ContextHarness.buildPacket('Inspect Context Harness State', active, pentestState);
+      lastContextPacket = packet.fullPacket;
+    }
+    contextInspectorTextarea.value = lastContextPacket;
+    contextInspectorModal.classList.add('open');
+  }
+
+  function closeContextInspectorModal() {
+    contextInspectorModal.classList.remove('open');
+  }
+
+  document.getElementById('btn-inspect-context').addEventListener('click', openContextInspectorModal);
+  document.getElementById('btn-chat-inspect-context').addEventListener('click', openContextInspectorModal);
+  contextInspectorCloseX.addEventListener('click', closeContextInspectorModal);
+  contextInspectorCloseBtn.addEventListener('click', closeContextInspectorModal);
+
+  btnCopyContextPacket.addEventListener('click', function () {
+    navigator.clipboard.writeText(contextInspectorTextarea.value).then(() => {
+      this.textContent = '✓ Packet Copied!';
+      setTimeout(() => { this.textContent = '📋 Copy Context Packet'; }, 1800);
+    });
+  });
+
   // --- Initial Setup ---
   renderCVETable();
   updatePlaceholderState();
@@ -1638,5 +2333,11 @@ http:
   renderConversationList();
   renderActiveMessages();
   loadAutoSavedProjectState();
+  AIConfigManager.syncUI();
+
+  // First Launch AI Engine Wizard Prompt
+  if (!AIConfigManager.isConfigured()) {
+    setTimeout(openAiConfigModal, 300);
+  }
 
 })();

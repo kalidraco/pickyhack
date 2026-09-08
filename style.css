@@ -317,6 +317,16 @@ html, body {
   font-weight: bold;
 }
 
+.badge-logless {
+  background-color: #004d40;
+  color: #a7ffeb;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-family: var(--font-pixel);
+  letter-spacing: 0.5px;
+  font-weight: bold;
+}
+
 /* Main Workspace Splitter Layout */
 .win-workspace-body {
   flex: 1;
@@ -1267,4 +1277,64 @@ html, body {
   border-bottom: 1px solid var(--win-black);
   width: 16px;
   height: 16px;
+}
+
+/* ==========================================================================
+   AI Engine Configuration & Context Inspector (Context Harness)
+   ========================================================================== */
+
+.config-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.config-select {
+  border-top: 1px solid var(--win-gray-dark);
+  border-left: 1px solid var(--win-gray-dark);
+  border-right: 1px solid var(--win-white);
+  border-bottom: 1px solid var(--win-white);
+  background-color: #ffffff;
+  color: #000000;
+  font-family: var(--font-sys);
+  outline: none;
+  cursor: pointer;
+}
+
+.config-select:focus {
+  outline: 1px dotted #000080;
+}
+
+#ai-connection-status.status-connected {
+  color: #006600;
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  font-weight: bold;
+}
+
+#ai-connection-status.status-error {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  font-weight: bold;
+}
+
+#ai-connection-status.status-offline {
+  color: #856404;
+  background-color: #fff3cd;
+  border-color: #ffeeba;
+}
+
+.inspector-badge-group {
+  display: flex;
+  gap: 4px;
+}
+
+#sb-ai-engine {
+  font-weight: bold;
+  color: #000080;
+}
+
+#sb-logless {
+  color: #004d40;
+  font-weight: bold;
 }
