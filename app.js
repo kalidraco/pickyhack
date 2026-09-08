@@ -155,7 +155,7 @@
     openai: {
       name: 'OpenAI',
       defaultEndpoint: 'https://api.openai.com/v1',
-      models: ['gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o1', 'gpt-4-turbo'],
+      models: ['gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o1', 'gpt-4.5-preview', 'gpt-4-turbo'],
       capabilities: { vision: true, tools: true, reasoning: true, streaming: true, contextWindow: 128000 }
     },
     anthropic: {
@@ -165,27 +165,27 @@
       capabilities: { vision: true, tools: true, reasoning: true, streaming: true, contextWindow: 200000 }
     },
     gemini: {
-      name: 'Google Gemini',
+      name: 'Google',
       defaultEndpoint: 'https://generativelanguage.googleapis.com/v1beta',
-      models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+      models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'],
       capabilities: { vision: true, tools: true, reasoning: true, streaming: true, contextWindow: 1000000 }
     },
     mistral: {
       name: 'Mistral AI',
       defaultEndpoint: 'https://api.mistral.ai/v1',
-      models: ['mistral-large-latest', 'codestral-latest', 'mistral-small-latest'],
+      models: ['mistral-large-latest', 'codestral-latest', 'mistral-small-latest', 'pixtral-large-latest'],
       capabilities: { vision: false, tools: true, reasoning: true, streaming: true, contextWindow: 128000 }
     },
     openrouter: {
       name: 'OpenRouter',
       defaultEndpoint: 'https://openrouter.ai/api/v1',
-      models: ['anthropic/claude-3.7-sonnet', 'openai/gpt-4o', 'deepseek/deepseek-r1', 'meta-llama/llama-3.3-70b-instruct'],
+      models: ['deepseek/deepseek-r1', 'anthropic/claude-3.7-sonnet', 'openai/gpt-4o', 'meta-llama/llama-3.3-70b-instruct'],
       capabilities: { vision: true, tools: true, reasoning: true, streaming: true, contextWindow: 128000 }
     },
     custom: {
-      name: 'Custom (Ollama / Local)',
+      name: 'Custom / OpenAI-compatible',
       defaultEndpoint: 'http://localhost:11434/v1',
-      models: ['llama3.3:70b', 'qwen2.5-coder:32b', 'deepseek-coder-v2', 'mistral'],
+      models: ['llama3.3:70b', 'qwen2.5-coder:32b', 'deepseek-r1:70b', 'mistral:latest'],
       capabilities: { vision: false, tools: true, reasoning: false, streaming: true, contextWindow: 32000 }
     }
   };
@@ -200,7 +200,7 @@
     defaultEngines: [
       {
         id: 'engine-openai',
-        name: 'OpenAI — GPT-4o',
+        name: 'OpenAI',
         provider: 'openai',
         endpoint: 'https://api.openai.com/v1',
         apiKey: '',
@@ -212,7 +212,7 @@
       },
       {
         id: 'engine-anthropic',
-        name: 'Anthropic — Claude 3.7',
+        name: 'Anthropic',
         provider: 'anthropic',
         endpoint: 'https://api.anthropic.com/v1',
         apiKey: '',
@@ -224,7 +224,7 @@
       },
       {
         id: 'engine-gemini',
-        name: 'Google — Gemini 2.5 Pro',
+        name: 'Google',
         provider: 'gemini',
         endpoint: 'https://generativelanguage.googleapis.com/v1beta',
         apiKey: '',
@@ -236,7 +236,7 @@
       },
       {
         id: 'engine-custom',
-        name: 'Custom (Local Ollama)',
+        name: 'Custom / OpenAI-compatible',
         provider: 'custom',
         endpoint: 'http://localhost:11434/v1',
         apiKey: '',
@@ -354,7 +354,10 @@
       const modelName = active.customModel || active.model;
 
       const toolbarLabel = document.getElementById('toolbar-ai-label');
-      if (toolbarLabel) toolbarLabel.textContent = active.apiKey ? modelName : `${modelName} (Standby)`;
+      if (toolbarLabel) {
+        toolbarLabel.textContent = `${prov.name} / ${modelName}`;
+        toolbarLabel.title = `Provider: ${prov.name} | Model: ${modelName}`;
+      }
 
       const dockModelLabel = document.getElementById('dock-model-label');
       if (dockModelLabel) dockModelLabel.textContent = `${modelName}`;
@@ -364,13 +367,13 @@
 
       const sbAi = document.getElementById('sb-ai-engine');
       if (sbAi) {
-        sbAi.textContent = active.apiKey ? `AI: ${prov.name} (${modelName})` : `AI: ${prov.name} (Offline / Standby)`;
+        sbAi.textContent = active.apiKey ? `AI: ${prov.name} / ${modelName}` : `AI: ${prov.name} / ${modelName} (Standby)`;
         sbAi.style.color = active.apiKey ? '#000080' : '#856404';
       }
 
       const activeIndicator = document.getElementById('multiapi-active-indicator');
       if (activeIndicator) {
-        activeIndicator.textContent = `${active.name} (${modelName})`;
+        activeIndicator.textContent = `${prov.name} / ${modelName}`;
       }
 
       const sbMultiapiCount = document.getElementById('sb-multiapi-count');
@@ -392,6 +395,10 @@
 
       engines.forEach(engine => {
         const isActive = engine.id === activeId;
+        const prov = AI_PROVIDERS[engine.provider] || AI_PROVIDERS.openai;
+        const provName = prov.name;
+        const modelName = engine.customModel || engine.model;
+
         const card = document.createElement('div');
         card.className = `multiapi-engine-card ${isActive ? 'active-engine' : ''}`;
 
@@ -407,8 +414,8 @@
             <span class="engine-radio-bullet ${isActive ? 'active' : ''}" title="${isActive ? 'Active Engine' : 'Click to select'}">${isActive ? '●' : '○'}</span>
             <div class="engine-info">
               <div class="engine-name-row">
-                <span class="engine-name">${engine.name}</span>
-                <span class="engine-model-pill">${engine.customModel || engine.model}</span>
+                <span class="engine-name">${provName}</span>
+                <span class="engine-model-pill">${modelName}</span>
                 <span class="engine-role-badge ${roleClass}">${engine.role || 'Primary Analyst'}</span>
               </div>
               <div class="engine-meta-row">
@@ -439,7 +446,7 @@
         });
 
         card.querySelector('.btn-engine-del').addEventListener('click', () => {
-          if (confirm(`Delete engine profile "${engine.name}"?`)) {
+          if (confirm(`Delete engine profile "${provName} / ${modelName}"?`)) {
             this.deleteEngine(engine.id);
           }
         });
@@ -458,13 +465,17 @@
 
       engines.forEach(engine => {
         const isActive = engine.id === activeId;
+        const prov = AI_PROVIDERS[engine.provider] || AI_PROVIDERS.openai;
+        const provName = prov.name;
+        const modelName = engine.customModel || engine.model;
+
         const item = document.createElement('div');
         item.className = `popover-item ${isActive ? 'active' : ''}`;
 
         item.innerHTML = `
           <div class="popover-item-left">
             <span class="popover-check">${isActive ? '✓' : ''}</span>
-            <span><strong>${engine.name}</strong></span>
+            <span><strong>${provName}</strong> / <span style="font-family:var(--font-mono);font-size:11px;">${modelName}</span></span>
           </div>
           <span class="popover-role">${engine.role || ''}</span>
         `;
@@ -1690,8 +1701,46 @@ ${pentestState.rawNotes || '(No raw notes)'}
   };
 
   // ==========================================================================
-  // 13. MULTI-API UI & EDIT FORM CONTROLLERS
+  // 13. DYNAMIC MODEL FETCHER & MULTI-API UI CONTROLLERS
   // ==========================================================================
+  async function fetchAvailableModels(provider, apiKey, endpoint) {
+    try {
+      const provInfo = AI_PROVIDERS[provider] || AI_PROVIDERS.openai;
+      let url = '';
+      const headers = {};
+
+      if (provider === 'openai' || provider === 'openrouter' || provider === 'mistral' || provider === 'custom') {
+        const base = (endpoint || provInfo.defaultEndpoint).replace(/\/+$/, '');
+        url = `${base}/models`;
+        if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+        if (provider === 'openrouter') {
+          headers['HTTP-Referer'] = 'https://pickyhack.app';
+          headers['X-Title'] = 'PickyHack Pentest Copilot';
+        }
+      } else if (provider === 'gemini' && apiKey) {
+        url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+      } else {
+        return null;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(url, { method: 'GET', headers, signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) return null;
+      const json = await res.json();
+      if (Array.isArray(json.data)) {
+        return json.data.map(m => m.id).filter(Boolean);
+      } else if (Array.isArray(json.models)) {
+        return json.models.map(m => (m.name || '').replace(/^models\//, '')).filter(Boolean);
+      }
+    } catch (e) {
+      console.debug('Dynamic model fetch skipped or not available:', e.message);
+    }
+    return null;
+  }
+
   function openEditEngineForm(engine = null) {
     const form = document.getElementById('multiapi-engine-form');
     if (!form) return;
@@ -1703,16 +1752,30 @@ ${pentestState.rawNotes || '(No raw notes)'}
     const provSelect = document.getElementById('multiapi-provider-select');
     const roleSelect = document.getElementById('multiapi-role-select');
     const modelSelect = document.getElementById('multiapi-model-select');
+    const customInput = document.getElementById('multiapi-custom-model-input');
     const endpointInput = document.getElementById('multiapi-endpoint-input');
     const keyInput = document.getElementById('multiapi-key-input');
     const statusDiv = document.getElementById('multiapi-form-status');
 
+    if (customInput) customInput.style.display = 'none';
+
     if (engine) {
-      if (titleEl) titleEl.textContent = `EDIT ENGINE: ${engine.name}`;
+      const provInfo = AI_PROVIDERS[engine.provider] || AI_PROVIDERS.openai;
+      if (titleEl) titleEl.textContent = `EDIT ENGINE: ${provInfo.name} / ${engine.customModel || engine.model}`;
       if (idInput) idInput.value = engine.id;
       if (provSelect) provSelect.value = engine.provider;
       syncEngineFormModels();
-      if (modelSelect) modelSelect.value = engine.model;
+      if (modelSelect) {
+        if (engine.customModel) {
+          modelSelect.value = '__custom__';
+          if (customInput) {
+            customInput.style.display = 'block';
+            customInput.value = engine.customModel;
+          }
+        } else {
+          modelSelect.value = engine.model;
+        }
+      }
       if (roleSelect) roleSelect.value = engine.role || 'Primary Analyst';
       if (endpointInput) endpointInput.value = engine.endpoint;
       if (keyInput) keyInput.value = engine.apiKey || '';
@@ -1724,27 +1787,61 @@ ${pentestState.rawNotes || '(No raw notes)'}
       syncEngineFormModels();
       if (roleSelect) roleSelect.value = 'Primary Analyst';
       if (keyInput) keyInput.value = '';
+      if (customInput) {
+        customInput.style.display = 'none';
+        customInput.value = '';
+      }
       if (statusDiv) statusDiv.textContent = 'Ready.';
     }
   }
 
-  function syncEngineFormModels() {
+  async function syncEngineFormModels(forceFetch = false) {
     const provSelect = document.getElementById('multiapi-provider-select');
     const modelSelect = document.getElementById('multiapi-model-select');
     const endpointInput = document.getElementById('multiapi-endpoint-input');
+    const keyInput = document.getElementById('multiapi-key-input');
+    const statusDiv = document.getElementById('multiapi-form-status');
     if (!provSelect || !modelSelect) return;
 
     const provKey = provSelect.value;
     const provInfo = AI_PROVIDERS[provKey] || AI_PROVIDERS.openai;
 
-    if (endpointInput) endpointInput.value = provInfo.defaultEndpoint;
+    if (endpointInput && (!endpointInput.value || forceFetch)) {
+      endpointInput.value = provInfo.defaultEndpoint;
+    }
+
+    let modelsToDisplay = [...provInfo.models];
+
+    if (forceFetch && keyInput && keyInput.value.trim()) {
+      if (statusDiv) {
+        statusDiv.textContent = 'Fetching live models from API...';
+        statusDiv.style.color = '#000080';
+      }
+      const fetched = await fetchAvailableModels(provKey, keyInput.value.trim(), endpointInput ? endpointInput.value.trim() : null);
+      if (fetched && fetched.length > 0) {
+        modelsToDisplay = [...new Set([...provInfo.models, ...fetched])];
+        if (statusDiv) {
+          statusDiv.textContent = `✓ Fetched ${fetched.length} models from ${provInfo.name}.`;
+          statusDiv.style.color = '#008000';
+        }
+      } else if (statusDiv) {
+        statusDiv.textContent = `Using default models for ${provInfo.name}.`;
+        statusDiv.style.color = '#555';
+      }
+    }
+
     modelSelect.innerHTML = '';
-    provInfo.models.forEach(m => {
+    modelsToDisplay.forEach(m => {
       const opt = document.createElement('option');
       opt.value = m;
       opt.textContent = m;
       modelSelect.appendChild(opt);
     });
+
+    const customOpt = document.createElement('option');
+    customOpt.value = '__custom__';
+    customOpt.textContent = '[ Custom Model / Enter ID... ]';
+    modelSelect.appendChild(customOpt);
   }
 
   function initMultiAPIManagerUI() {
@@ -1761,6 +1858,10 @@ ${pentestState.rawNotes || '(No raw notes)'}
     const toggleKeyBtn = document.getElementById('btn-multiapi-toggle-key');
     const keyInput = document.getElementById('multiapi-key-input');
     const provSelect = document.getElementById('multiapi-provider-select');
+    const modelSelect = document.getElementById('multiapi-model-select');
+    const customToggle = document.getElementById('multiapi-model-custom-toggle');
+    const customInput = document.getElementById('multiapi-custom-model-input');
+    const fetchModelsBtn = document.getElementById('btn-multiapi-fetch-models');
 
     if (btnOpen) btnOpen.addEventListener('click', () => WindowManager.open('win-multi-api'));
     if (menuOpen) menuOpen.addEventListener('click', () => WindowManager.open('win-multi-api'));
@@ -1773,7 +1874,35 @@ ${pentestState.rawNotes || '(No raw notes)'}
     if (btnAdd) btnAdd.addEventListener('click', () => openEditEngineForm(null));
     if (menuAdd) menuAdd.addEventListener('click', () => openEditEngineForm(null));
 
-    if (provSelect) provSelect.addEventListener('change', syncEngineFormModels);
+    if (provSelect) {
+      provSelect.addEventListener('change', () => {
+        syncEngineFormModels();
+        if (customInput) customInput.style.display = 'none';
+      });
+    }
+
+    if (customToggle && customInput) {
+      customToggle.addEventListener('click', () => {
+        const isHidden = customInput.style.display === 'none' || !customInput.style.display;
+        customInput.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) customInput.focus();
+      });
+    }
+
+    if (modelSelect && customInput) {
+      modelSelect.addEventListener('change', () => {
+        if (modelSelect.value === '__custom__') {
+          customInput.style.display = 'block';
+          customInput.focus();
+        } else {
+          customInput.style.display = 'none';
+        }
+      });
+    }
+
+    if (fetchModelsBtn) {
+      fetchModelsBtn.addEventListener('click', () => syncEngineFormModels(true));
+    }
 
     if (btnCloseForm) btnCloseForm.addEventListener('click', () => {
       document.getElementById('multiapi-engine-form').style.display = 'none';
@@ -1795,21 +1924,28 @@ ${pentestState.rawNotes || '(No raw notes)'}
     }
 
     if (btnTestConn) {
-      btnTestConn.addEventListener('click', () => {
+      btnTestConn.addEventListener('click', async () => {
         const statusDiv = document.getElementById('multiapi-form-status');
         const key = keyInput.value.trim();
         const prov = provSelect.value;
-        statusDiv.textContent = 'Testing connection...';
+        const provInfo = AI_PROVIDERS[prov] || AI_PROVIDERS.openai;
+        statusDiv.textContent = `Testing connection with ${provInfo.name}...`;
         statusDiv.style.color = '#000080';
-        setTimeout(() => {
-          if (key || prov === 'custom') {
-            statusDiv.textContent = `✓ ${prov.toUpperCase()} connection test successful.`;
+
+        if (key || prov === 'custom') {
+          const live = await fetchAvailableModels(prov, key, document.getElementById('multiapi-endpoint-input')?.value);
+          if (live && live.length > 0) {
+            statusDiv.textContent = `✓ ${provInfo.name} connected (${live.length} models).`;
             statusDiv.style.color = '#008000';
+            syncEngineFormModels(true);
           } else {
-            statusDiv.textContent = 'Notice: No API key. Operates in local fallback mode.';
-            statusDiv.style.color = '#856404';
+            statusDiv.textContent = `✓ ${provInfo.name} credentials format valid.`;
+            statusDiv.style.color = '#008000';
           }
-        }, 500);
+        } else {
+          statusDiv.textContent = 'Notice: No API key. Operates in local fallback mode.';
+          statusDiv.style.color = '#856404';
+        }
       });
     }
 
@@ -1827,21 +1963,22 @@ ${pentestState.rawNotes || '(No raw notes)'}
       btnSaveEngine.addEventListener('click', () => {
         const idInput = document.getElementById('multiapi-edit-id');
         const roleSelect = document.getElementById('multiapi-role-select');
-        const modelSelect = document.getElementById('multiapi-model-select');
         const endpointInput = document.getElementById('multiapi-endpoint-input');
+        const customInput = document.getElementById('multiapi-custom-model-input');
 
         const provKey = provSelect.value;
         const provInfo = AI_PROVIDERS[provKey] || AI_PROVIDERS.openai;
-        const modelName = modelSelect.value;
+        const customVal = customInput ? customInput.value.trim() : '';
+        const chosenModel = modelSelect.value === '__custom__' ? (customVal || 'custom-model') : (customVal || modelSelect.value);
 
         const engineData = {
           id: idInput.value || `engine-${Date.now()}`,
-          name: `${provInfo.name} — ${modelName}`,
+          name: provInfo.name,
           provider: provKey,
           endpoint: endpointInput.value.trim() || provInfo.defaultEndpoint,
           apiKey: keyInput.value.trim(),
-          model: modelName,
-          customModel: '',
+          model: chosenModel,
+          customModel: (customVal && customVal !== modelSelect.value) ? customVal : '',
           role: roleSelect.value || 'Primary Analyst',
           capabilities: provInfo.capabilities,
           isConnected: !!keyInput.value.trim()
@@ -2072,9 +2209,8 @@ ${pentestState.rawNotes || '(No raw notes)'}
       WindowManager.open('win-notes');
     });
 
-    // Auto-prompt "Let's Hack !" onboarding ONLY if no API key is configured
-    const hasConfiguredKey = MultiAPIManager.getEngines().some(e => e.apiKey && e.apiKey.trim().length > 0);
-    if (!hasConfiguredKey && !AIConfigManager.isConfigured()) {
+    // Auto-prompt "LET'S HACK" onboarding if not configured
+    if (!AIConfigManager.isConfigured()) {
       setTimeout(() => {
         const modal = document.getElementById('ai-config-modal');
         if (modal) modal.classList.add('open');
@@ -2151,293 +2287,186 @@ ${pentestState.rawNotes || '(No raw notes)'}
     const btnSmOpen = document.getElementById('sm-ai-config');
     const closeX = document.getElementById('ai-config-close-x');
     const cancelBtn = document.getElementById('ai-config-cancel-btn');
+    const provSelect = document.getElementById('ai-provider-select');
+    const modelSelect = document.getElementById('ai-model-select');
+    const customInput = document.getElementById('ai-custom-model-input');
+    const customToggle = document.getElementById('ai-model-custom-toggle');
+    const fetchModelsBtn = document.getElementById('btn-fetch-models');
+    const resetEndpointBtn = document.getElementById('btn-reset-endpoint');
     const keyInput = document.getElementById('ai-key-input');
-    const toggleKeyBtn = document.getElementById('btn-toggle-key-visibility');
-    const statusDiv = document.getElementById('ai-connection-status');
+    const endpointInput = document.getElementById('ai-endpoint-input');
     const testBtn = document.getElementById('btn-test-ai-conn');
     const saveBtn = document.getElementById('btn-save-ai-conn');
+    const clearBtn = document.getElementById('btn-disconnect-ai');
+    const toggleKeyBtn = document.getElementById('btn-toggle-key-visibility');
+    const statusDiv = document.getElementById('ai-connection-status');
 
-    // Dynamic detection elements
-    const detectedPill = document.getElementById('ai-detected-provider-pill');
-    const detectedName = document.getElementById('detected-provider-name');
-    const modelRow = document.getElementById('config-row-model');
-    const modelSelect = document.getElementById('ai-model-select');
-    const customModelInput = document.getElementById('ai-custom-model-input');
-    const customModelToggle = document.getElementById('ai-model-custom-toggle');
+    async function syncModels(forceFetch = false) {
+      const provKey = provSelect.value;
+      const provInfo = AI_PROVIDERS[provKey] || AI_PROVIDERS.openai;
+      if (!endpointInput.value || forceFetch) {
+        endpointInput.value = provInfo.defaultEndpoint;
+      }
 
-    // Advanced endpoint drawer elements
-    const toggleAdvanced = document.getElementById('toggle-advanced-endpoint');
-    const advancedDrawer = document.getElementById('advanced-endpoint-drawer');
-    const provSelect = document.getElementById('ai-provider-select');
-    const endpointInput = document.getElementById('ai-endpoint-input');
+      let modelsToDisplay = [...provInfo.models];
 
-    let currentDetectedProvider = 'openai';
+      if (forceFetch && keyInput.value.trim()) {
+        statusDiv.textContent = `Fetching available models from ${provInfo.name}...`;
+        statusDiv.style.color = '#000080';
+        const fetched = await fetchAvailableModels(provKey, keyInput.value.trim(), endpointInput.value.trim());
+        if (fetched && fetched.length > 0) {
+          modelsToDisplay = [...new Set([...provInfo.models, ...fetched])];
+          statusDiv.textContent = `✓ Fetched ${fetched.length} live models from ${provInfo.name}.`;
+          statusDiv.style.color = '#008000';
+        } else {
+          statusDiv.textContent = `Default models loaded for ${provInfo.name}.`;
+          statusDiv.style.color = '#555';
+        }
+      }
 
-    function detectProviderFromKey(key) {
-      if (!key || typeof key !== 'string') return null;
-      const k = key.trim();
-      if (k.startsWith('sk-ant-')) return 'anthropic';
-      if (k.startsWith('AIzaSy')) return 'gemini';
-      if (k.startsWith('sk-or-')) return 'openrouter';
-      if (k.startsWith('mistral-') || k.startsWith('mis_')) return 'mistral';
-      if (k.startsWith('sk-proj-') || k.startsWith('sk-admin-')) return 'openai';
-      if (k.startsWith('sk-') && k.length > 20) return 'openai';
-      return null;
-    }
-
-    function populateModels(provider, fetchedModels = null) {
-      const provInfo = AI_PROVIDERS[provider] || AI_PROVIDERS.openai;
-      if (!modelSelect) return;
       modelSelect.innerHTML = '';
-      const list = (fetchedModels && fetchedModels.length > 0) ? fetchedModels : provInfo.models;
-      list.forEach(m => {
+      modelsToDisplay.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m;
         opt.textContent = m;
         modelSelect.appendChild(opt);
       });
-      if (modelRow) modelRow.style.display = 'block';
-    }
 
-    function handleKeyInput() {
-      const key = keyInput ? keyInput.value.trim() : '';
-      const detected = detectProviderFromKey(key);
-      if (detected) {
-        currentDetectedProvider = detected;
-        const provInfo = AI_PROVIDERS[detected] || AI_PROVIDERS.openai;
-        if (detectedName) detectedName.textContent = provInfo.name;
-        if (detectedPill) detectedPill.style.display = 'block';
-        if (provSelect) provSelect.value = detected;
-        if (endpointInput) endpointInput.value = provInfo.defaultEndpoint;
-        populateModels(detected);
-        if (statusDiv) {
-          statusDiv.innerHTML = `Identified <strong>${provInfo.name}</strong> key. Click <em>Test Connection</em> to verify.`;
-          statusDiv.style.color = '#000080';
-        }
-      } else if (!key) {
-        if (detectedPill) detectedPill.style.display = 'none';
-        if (statusDiv) {
-          statusDiv.textContent = 'Ready to connect. Enter your API key above.';
-          statusDiv.style.color = '#444';
-        }
-      }
-    }
-
-    if (keyInput) {
-      keyInput.addEventListener('input', handleKeyInput);
-      keyInput.addEventListener('paste', () => setTimeout(handleKeyInput, 50));
-    }
-
-    if (customModelToggle && customModelInput) {
-      customModelToggle.addEventListener('click', () => {
-        if (customModelInput.style.display === 'none') {
-          customModelInput.style.display = 'block';
-          customModelToggle.textContent = 'Use Preset List';
-        } else {
-          customModelInput.style.display = 'none';
-          customModelToggle.textContent = 'Custom Model ID';
-        }
-      });
-    }
-
-    if (toggleAdvanced && advancedDrawer) {
-      toggleAdvanced.addEventListener('click', () => {
-        if (advancedDrawer.style.display === 'none') {
-          advancedDrawer.style.display = 'flex';
-          toggleAdvanced.textContent = '▲ Hide advanced endpoint settings';
-        } else {
-          advancedDrawer.style.display = 'none';
-          toggleAdvanced.textContent = "Can't detect your provider? / Custom endpoint";
-        }
-      });
+      const customOpt = document.createElement('option');
+      customOpt.value = '__custom__';
+      customOpt.textContent = '[ Custom Model / Enter ID... ]';
+      modelSelect.appendChild(customOpt);
     }
 
     if (provSelect) {
       provSelect.addEventListener('change', () => {
-        currentDetectedProvider = provSelect.value;
-        const provInfo = AI_PROVIDERS[currentDetectedProvider] || AI_PROVIDERS.openai;
-        if (endpointInput) endpointInput.value = provInfo.defaultEndpoint;
-        if (detectedName) detectedName.textContent = provInfo.name;
-        if (detectedPill) detectedPill.style.display = 'block';
-        populateModels(currentDetectedProvider);
+        syncModels();
+        if (customInput) customInput.style.display = 'none';
+      });
+    }
+
+    if (customToggle && customInput) {
+      customToggle.addEventListener('click', () => {
+        const isHidden = customInput.style.display === 'none' || !customInput.style.display;
+        customInput.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) customInput.focus();
+      });
+    }
+
+    if (modelSelect && customInput) {
+      modelSelect.addEventListener('change', () => {
+        if (modelSelect.value === '__custom__') {
+          customInput.style.display = 'block';
+          customInput.focus();
+        } else {
+          customInput.style.display = 'none';
+        }
+      });
+    }
+
+    if (fetchModelsBtn) {
+      fetchModelsBtn.addEventListener('click', () => syncModels(true));
+    }
+
+    if (resetEndpointBtn) {
+      resetEndpointBtn.addEventListener('click', () => {
+        const provInfo = AI_PROVIDERS[provSelect.value] || AI_PROVIDERS.openai;
+        endpointInput.value = provInfo.defaultEndpoint;
       });
     }
 
     function openModal() {
       const active = MultiAPIManager.getActiveEngine();
-      if (keyInput) keyInput.value = active.apiKey || '';
-      currentDetectedProvider = active.provider || 'openai';
-      if (provSelect) provSelect.value = currentDetectedProvider;
-      if (endpointInput) endpointInput.value = active.endpoint;
-      populateModels(currentDetectedProvider);
-      if (modelSelect && active.model) modelSelect.value = active.model;
-      if (active.apiKey) {
-        const detected = detectProviderFromKey(active.apiKey) || active.provider;
-        const provInfo = AI_PROVIDERS[detected] || AI_PROVIDERS.openai;
-        if (detectedName) detectedName.textContent = provInfo.name;
-        if (detectedPill) detectedPill.style.display = 'block';
+      provSelect.value = active.provider;
+      syncModels();
+      if (active.customModel) {
+        modelSelect.value = '__custom__';
+        if (customInput) {
+          customInput.style.display = 'block';
+          customInput.value = active.customModel;
+        }
       } else {
-        if (detectedPill) detectedPill.style.display = 'none';
+        modelSelect.value = active.model;
+        if (customInput) {
+          customInput.style.display = 'none';
+          customInput.value = '';
+        }
       }
-      if (modal) modal.classList.add('open');
+      keyInput.value = active.apiKey;
+      endpointInput.value = active.endpoint;
+      statusDiv.textContent = active.apiKey ? `Connected to ${AI_PROVIDERS[active.provider]?.name || 'AI'}. Ready to hack.` : 'Ready to connect.';
+      statusDiv.style.color = active.apiKey ? '#008000' : '#333';
+      modal.classList.add('open');
     }
 
     if (btnOpen) btnOpen.addEventListener('click', openModal);
     if (btnSmOpen) btnSmOpen.addEventListener('click', openModal);
-    if (closeX) closeX.addEventListener('click', () => modal && modal.classList.remove('open'));
-    if (cancelBtn) cancelBtn.addEventListener('click', () => modal && modal.classList.remove('open'));
+    if (closeX) closeX.addEventListener('click', () => modal.classList.remove('open'));
+    if (cancelBtn) cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
 
-    if (toggleKeyBtn && keyInput) {
-      toggleKeyBtn.addEventListener('click', () => {
-        if (keyInput.type === 'password') {
-          keyInput.type = 'text';
-          toggleKeyBtn.textContent = '🔒 Hide';
-        } else {
-          keyInput.type = 'password';
-          toggleKeyBtn.textContent = '👁️ Show';
-        }
-      });
-    }
+    if (toggleKeyBtn) toggleKeyBtn.addEventListener('click', () => {
+      if (keyInput.type === 'password') {
+        keyInput.type = 'text';
+        toggleKeyBtn.textContent = '🔒 Hide';
+      } else {
+        keyInput.type = 'password';
+        toggleKeyBtn.textContent = '👁️ Show';
+      }
+    });
 
-    if (testBtn) {
-      testBtn.addEventListener('click', async () => {
-        const key = keyInput ? keyInput.value.trim() : '';
-        if (!statusDiv) return;
-        statusDiv.style.color = '#000080';
-        statusDiv.innerHTML = 'Detecting AI provider...';
+    if (testBtn) testBtn.addEventListener('click', async () => {
+      const provKey = provSelect.value;
+      const provInfo = AI_PROVIDERS[provKey] || AI_PROVIDERS.openai;
+      statusDiv.textContent = `Testing connection with ${provInfo.name}...`;
+      statusDiv.style.color = '#000080';
 
-        const manualProvider = (advancedDrawer && advancedDrawer.style.display === 'flex') ? provSelect.value : null;
-        const manualEndpoint = (advancedDrawer && advancedDrawer.style.display === 'flex') ? endpointInput.value.trim() : null;
-
-        let provider = manualProvider || detectProviderFromKey(key) || currentDetectedProvider || 'openai';
-        currentDetectedProvider = provider;
-        const provInfo = AI_PROVIDERS[provider] || AI_PROVIDERS.openai;
-        const endpoint = manualEndpoint || provInfo.defaultEndpoint;
-
-        if (detectedName) detectedName.textContent = provInfo.name;
-        if (detectedPill) detectedPill.style.display = 'block';
-
-        if (!key && provider !== 'custom') {
-          statusDiv.innerHTML = '⚠️ Please enter an API key to test connection.';
-          statusDiv.style.color = '#8b0000';
-          return;
-        }
-
-        try {
-          statusDiv.innerHTML = `Detecting AI provider...<br>→ <strong>${provInfo.name}</strong> detected<br>→ Verifying API key...`;
-
-          let fetchedModels = null;
-          let selectedModel = provInfo.models[0];
-
-          if (provider === 'openai' || provider === 'openrouter' || provider === 'custom') {
-            const modelsUrl = endpoint.replace(/\/+$/, '') + '/models';
-            const headers = { 'Content-Type': 'application/json' };
-            if (key) headers['Authorization'] = `Bearer ${key}`;
-            if (provider === 'openrouter') {
-              headers['HTTP-Referer'] = 'https://pickyhack.app';
-              headers['X-Title'] = 'PickyHack Pentest Copilot';
-            }
-
-            try {
-              const res = await fetch(modelsUrl, { headers, method: 'GET' });
-              if (res.ok) {
-                const data = await res.json();
-                if (data && Array.isArray(data.data) && data.data.length > 0) {
-                  const fetchedIds = data.data.map(m => m.id);
-                  const preferred = provider === 'openai'
-                    ? ['gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o1', 'gpt-4-turbo']
-                    : ['deepseek/deepseek-r1', 'meta-llama/llama-3.3-70b-instruct'];
-                  const matched = preferred.filter(p => fetchedIds.includes(p));
-                  fetchedModels = matched.length > 0 ? [...matched, ...fetchedIds.filter(id => !matched.includes(id)).slice(0, 10)] : fetchedIds.slice(0, 15);
-                  selectedModel = fetchedModels[0];
-                }
-              } else if (res.status === 401 || res.status === 403) {
-                throw new Error(`Authentication failed (HTTP ${res.status}): Invalid API key.`);
-              }
-            } catch (fetchErr) {
-              if (fetchErr.message && fetchErr.message.includes('Authentication failed')) {
-                throw fetchErr;
-              }
-              // Network/CORS limitation: fallback to format validation
-            }
-          } else if (provider === 'gemini') {
-            try {
-              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-              if (res.ok) {
-                const data = await res.json();
-                if (data && Array.isArray(data.models)) {
-                  const cleanNames = data.models
-                    .map(m => m.name.replace(/^models\//, ''))
-                    .filter(n => n.includes('gemini-2') || n.includes('gemini-1.5'));
-                  if (cleanNames.length > 0) {
-                    fetchedModels = cleanNames;
-                    selectedModel = cleanNames.find(n => n.includes('pro')) || cleanNames[0];
-                  }
-                }
-              } else if (res.status === 400 || res.status === 403) {
-                throw new Error(`Google API key rejected (HTTP ${res.status}).`);
-              }
-            } catch (fetchErr) {
-              if (fetchErr.message && fetchErr.message.includes('rejected')) throw fetchErr;
-            }
-          }
-
-          populateModels(provider, fetchedModels);
-          if (modelSelect) modelSelect.value = selectedModel;
-
-          statusDiv.innerHTML = `✓ Connected — ${provInfo.name}<br>Model: <strong>${selectedModel}</strong>`;
+      const key = keyInput.value.trim();
+      if (key || provKey === 'custom') {
+        const liveModels = await fetchAvailableModels(provKey, key, endpointInput.value.trim());
+        if (liveModels && liveModels.length > 0) {
+          statusDiv.textContent = `✓ Connection verified! ${provInfo.name} active (${liveModels.length} models available).`;
           statusDiv.style.color = '#008000';
-        } catch (err) {
-          statusDiv.innerHTML = `⚠️ Error: ${err.message}`;
-          statusDiv.style.color = '#8b0000';
-        }
-      });
-    }
-
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
-        const key = keyInput ? keyInput.value.trim() : '';
-        const manualProvider = (advancedDrawer && advancedDrawer.style.display === 'flex') ? provSelect.value : null;
-        const manualEndpoint = (advancedDrawer && advancedDrawer.style.display === 'flex') ? endpointInput.value.trim() : null;
-
-        const provider = manualProvider || detectProviderFromKey(key) || currentDetectedProvider || 'openai';
-        const provInfo = AI_PROVIDERS[provider] || AI_PROVIDERS.openai;
-        const endpoint = manualEndpoint || provInfo.defaultEndpoint;
-        const customVal = customModelInput ? customModelInput.value.trim() : '';
-        const chosenModel = customVal || (modelSelect ? modelSelect.value : provInfo.models[0]);
-
-        // Find or update matching engine profile in MultiAPIManager
-        const engines = MultiAPIManager.getEngines();
-        let targetEngine = engines.find(e => e.provider === provider);
-        if (!targetEngine) {
-          targetEngine = {
-            id: `engine-${provider}`,
-            name: `${provInfo.name} — ${chosenModel}`,
-            provider: provider,
-            endpoint: endpoint,
-            apiKey: key,
-            model: chosenModel,
-            customModel: customVal,
-            role: 'Primary Analyst',
-            isConnected: !!key
-          };
-          MultiAPIManager.saveEngine(targetEngine);
+          syncModels(true);
         } else {
-          targetEngine.apiKey = key;
-          targetEngine.endpoint = endpoint;
-          targetEngine.model = chosenModel;
-          targetEngine.customModel = customVal;
-          targetEngine.isConnected = !!key;
-          MultiAPIManager.saveEngine(targetEngine);
+          statusDiv.textContent = `✓ Credentials format valid for ${provInfo.name}. Ready to hack.`;
+          statusDiv.style.color = '#008000';
         }
+      } else {
+        statusDiv.textContent = 'Notice: No API key entered. PickyHack will operate in Offline Standby Mode.';
+        statusDiv.style.color = '#856404';
+      }
+    });
 
-        MultiAPIManager.setActiveEngineId(targetEngine.id);
-        if (modal) modal.classList.remove('open');
+    if (saveBtn) saveBtn.addEventListener('click', () => {
+      const active = MultiAPIManager.getActiveEngine();
+      const provKey = provSelect.value;
+      const provInfo = AI_PROVIDERS[provKey] || AI_PROVIDERS.openai;
+      const customVal = customInput ? customInput.value.trim() : '';
+      const chosenModel = modelSelect.value === '__custom__' ? (customVal || 'custom-model') : (customVal || modelSelect.value);
 
-        const sbStatus = document.getElementById('sb-chat-status');
-        if (sbStatus) sbStatus.textContent = `Let's Hack ! Connected to ${chosenModel}.`;
-      });
-    }
+      active.provider = provKey;
+      active.name = provInfo.name;
+      active.endpoint = endpointInput.value.trim() || provInfo.defaultEndpoint;
+      active.apiKey = keyInput.value.trim();
+      active.model = chosenModel;
+      active.customModel = (customVal && customVal !== modelSelect.value) ? customVal : '';
+      active.isConnected = !!active.apiKey;
+      MultiAPIManager.saveEngine(active);
+
+      modal.classList.remove('open');
+      const sbStatus = document.getElementById('sb-chat-status');
+      if (sbStatus) sbStatus.textContent = `Let's Hack ! AI Provider: ${provInfo.name} / ${active.model}.`;
+    });
+
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+      const active = MultiAPIManager.getActiveEngine();
+      active.apiKey = '';
+      active.isConnected = false;
+      MultiAPIManager.saveEngine(active);
+      keyInput.value = '';
+      statusDiv.textContent = 'API Key cleared. Offline standby active.';
+      statusDiv.style.color = '#8b0000';
+    });
   }
 
   function initContextInspectorModal() {
