@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/pickyhack-logo.png" alt="PickyHack Logo" width="220" />
+</p>
+
 # PickyHack — Stateless AI Context Harness for Pentesting
 
 > **Stateless by default. Context-driven by design.**
@@ -15,8 +19,9 @@ ANY LLM (OpenAI • Claude • Gemini • Mistral • Ollama • Custom)
         │  ─────────────────────────────────  │
         │   Project State    Context Engine   │
         │   Security Intel   Web Research     │
-        │   Pentest Workspace Notes.txt       │
-        │   Context Snapshots Multi-API       │
+        │   Attack Graph     Burp/ZAP Bridge  │
+        │   Token Optimizer  Deliverable PDF  │
+        │   Pentest Notes    Context Snapshot │
         └─────────────────────────────────────┘
                            │
                            ▼
@@ -43,16 +48,17 @@ PickyHack inserts a dedicated **Context Harness** into the loop:
 ```text
                        PickyHack Context Harness
                                    │
-                ┌──────────────────┼──────────────────┐
-                │                  │                  │
-                ▼                  ▼                  ▼
-          Project State      Security Intel     Web Research
-          (Target/Scope/     (CISA KEV / NVD /  (Live Exploits /
-          Findings/Notes)     PoC Database)      Write-ups)
-                │                  │                  │
-                └──────────────────┼──────────────────┘
+      ┌────────────────┬───────────┼───────────┬────────────────┐
+      │                │           │           │                │
+      ▼                ▼           ▼           ▼                ▼
+Project State    Attack Graph  Burp/ZAP   Security Intel   Web Research
+(Scope/Targets/  (Chains &     (Ingested  (CISA KEV /      (Live Exploits
+Findings/Notes)   Bottlenecks)  Traffic)   NVD / EPS)       & PoCs)
+      │                │           │           │                │
+      └────────────────┴───────────┼───────────┴────────────────┘
                                    ▼
                              Context Engine
+                        (Token Pruned & Enriched)
                                    ▼
                                 LLM API
                                    ▼
@@ -89,15 +95,15 @@ The chat interface is treated as a **temporary working session**:
 ```text
 Chat Session
 │
-├── User messages
-├── AI responses
+├── User messages & multimodal attachments
+├── AI responses & comparative cards
 └── Temporary conversation context
 ```
 
 When you reload the page, close your browser, or end an assessment, the chat history may reset. **This behavior is intentional and by design.**
 
 The continuity of your offensive operation does **not** rely on ephemeral chat logs. It relies strictly on two persistent pillars:
-1. **The Structured Project State** (Live scope, assets, findings, attack paths, notes).
+1. **The Structured Project State** (Live scope, assets, findings, attack paths, notes, attack graphs).
 2. **The Context Snapshot** (Portable, self-contained mission packets).
 
 ---
@@ -106,23 +112,23 @@ The continuity of your offensive operation does **not** rely on ephemeral chat l
 
 | Concept | Nature | Purpose |
 | :--- | :--- | :--- |
-| **Stateless Chat** | Ephemeral / Temporary | Rapid interactive dialogue, command ideation, and reasoning. Never treated as a permanent database. |
-| **Project State** | Structured / Persistent | Dedicated operational registry tracking targets, scope, open ports, fingerprinted services, validated findings, attack paths, and notes. |
+| **Stateless Chat** | Ephemeral / Temporary | Rapid interactive dialogue, command ideation, multimodal artifact inspection, and reasoning. Never treated as a permanent database. |
+| **Project State** | Structured / Persistent | Dedicated operational registry tracking targets, scope, open ports, fingerprinted services, validated findings, attack graph models, Burp/ZAP imports, and notes. |
 | **Context Snapshot** | Portable / Autonomous | Self-contained markdown prompt encapsulating the entire engagement state for instant resume anywhere. |
 
 ```text
-Temporary Conversation
-         │
-         ▼
-   Context Engine
-         │
-         ▼
-Structured Project State
-         │
-         ▼
-  Context Snapshot
-         │
-         ▼
+Temporary Conversation & Attachments
+                 │
+                 ▼
+          Context Engine (Token Pruned)
+                 │
+                 ▼
+      Structured Project State
+                 │
+                 ▼
+          Context Snapshot
+                 │
+                 ▼
 Portable AI Context (Ready for Any Model / Any Session)
 ```
 
@@ -155,7 +161,7 @@ DECISIONS & NEXT STEPS: Pivot to internal Active Directory subnet
 - **Attack Surface**: Discovered hosts, domain controllers, open ports, services, exact software versions.
 - **Vulnerabilities & Intelligence**: Correlated CVEs, CVSS scores, CISA KEV flags, public PoC references, EPS scores.
 - **Evidence & Findings**: Validated vulnerabilities, severity ratings, proof-of-concept outputs, remediation steps.
-- **Attack Chains**: Multi-stage vectors (`Initial Access → Foothold → Lateral Movement → Privilege Escalation`).
+- **Attack Graph & Breach Paths**: Multi-stage vectors (`Initial Access → Foothold → Lateral Movement → Crown Jewels`) with bottleneck choke-points.
 - **Negative Intelligence**: Tested exploits that failed, patched endpoints, eliminating duplicate effort.
 - **Operational Notes**: Raw command lines, hypotheses, captured flags, and tactical decisions.
 - **Security Guarantee**: **API keys, secrets, and private credentials are NEVER included in Snapshots.**
@@ -191,7 +197,7 @@ Configure and maintain multiple engine profiles simultaneously:
 Switching from **GPT-4o** to **Claude 3.7** or **Gemini 2.5 Pro** takes a single click via the dock model pill (`#dock-model-pill`). 
 
 Because the mission context is maintained inside the **Context Harness** and not trapped inside the vendor's chat thread:
-1. `GPT-4o` analyzes initial port scans.
+1. `GPT-4o` analyzes initial port scans and Burp Suite XML imports.
 2. Discovery updates the **Project State**.
 3. You switch active model to `Claude 3.7 (Deep Reasoning)`.
 4. Your next prompt automatically receives the full project context, scope, and findings.
@@ -202,65 +208,107 @@ Click **`[ ⚖️ Compare ]`** in the chat dock to broadcast a complex exploit q
 
 ---
 
-## Context Portability Workflow
+## Advanced Graph-Based Attack Simulation
 
-PickyHack ensures the offensive operator is never captive to a single AI ecosystem:
+PickyHack includes a visual, interactive **Attack Graph Simulator** (`#win-chains`) that models complex multi-stage network penetration paths:
 
 ```text
-OpenAI (GPT-4o)
-      │
-      ▼
-PickyHack Context Harness
-      │
-      ▼
-Context Snapshot (.md)
-      │
-      ▼
-Anthropic (Claude 3.7) or Offline Air-Gapped LLM
+[External Attacker]
+        │ (CVE-2024-3400 / PAN-OS RCE)
+        ▼
+[Edge Firewall / VPN]  ──(Stolen Admin SSH Key)──► [Internal Jumpbox]
+                                                           │
+                                             (Mimikatz Pass-The-Hash)
+                                                           ▼
+                                                 [Domain Controller] 
+                                                  ★ CROWN JEWELS ★
 ```
+
+### Key Capabilities:
+- **Interactive SVG Topology**: Drag and inspect hosts, workstations, services, credentials, and crown jewels.
+- **Breach Path Simulation**: Step-by-step traversal from Initial Access to Critical Assets.
+- **Choke-Point / Bottleneck Detection**: Automatically detects critical nodes where applying a single mitigation severes 100% of attack paths to crown jewels.
+- **Probability & Telemetry Telemetry**: Computes path success probabilities, hop count, and estimated attacker dwell time.
+- **Custom Scenarios**: Load pre-built scenarios (Active Directory Forest Breach, Cloud IAM Escalation, Web-to-Internal Pivot) or construct custom targets.
 
 ---
 
-## The Context Engine: Operational Workflow
+## In-Memory Context Window Optimizer (Token Pruning)
 
-The **Context Engine** is the algorithmic heart of PickyHack:
+Large security audits produce massive scan dumps (Nmap, Nikto, ffuf, Gobuster) that rapidly exhaust LLM context limits and drive up API bills. PickyHack introduces an in-memory **Token Pruning Optimizer**:
 
 ```text
-┌────────────────┐
-│   Pentester    │
-└───────┬────────┘
-        │ Prompt / Action
-        ▼
-┌────────────────┐
-│   PickyHack    │
-│   AI Harness   │
-└───────┬────────┘
-        │
-        ├─────────────────────────────┬─────────────────────────────┐
-        ▼                             ▼                             ▼
-  Project State                Security Intel                  Web Research
-(Scope, Findings, Notes)     (CISA KEV, CVEs, EPS)           (PoCs, Write-ups)
-        │                             │                             │
-        └─────────────────────────────┼─────────────────────────────┘
-                                      ▼
-                                Context Engine
-                                      │ (Retrieval & Assembly)
-                                      ▼
-                                   LLM API
-                                      │ (Inference)
-                                      ▼
-                                AI Response
-                                      │
-                                      ▼
-                         Structured State Update
+Raw Ingestion (14,200 tokens)
+            │
+            ▼
+┌─────────────────────────────────────────┐
+│       Token Window Optimizer            │
+│  - Strip repetitive ASCII banners       │
+│  - Filter closed/filtered port chatter  │
+│  - Deduplicate redundant web endpoints  │
+│  - Prioritize High/Critical findings    │
+└─────────────────────────────────────────┘
+            │
+            ▼
+Optimized Context Packet (1,850 tokens — 87% reduction)
 ```
 
-1. **Request Ingestion**: Analyzes the pentester's query for target references, CVE identifiers, or specific tasks.
-2. **Context Retrieval**: Selects relevant assets, active findings, scope constraints, and notes.
-3. **Intel Enrichment**: Injects matched CISA KEV vulnerabilities, CVSS scores, and known public exploit vectors.
-4. **Assembly**: Compiles a compact, token-efficient packet containing only the relevant intelligence.
-5. **Execution**: Dispatches to the active LLM engine.
-6. **State Assimilation**: Interactive context chips allow one-click extraction into `Notes.txt`, `Findings`, or `Attack Paths`.
+- **Live Token Counter**: Real-time token estimator (~4 chars/token) visible in the chat dock (`#token-optimizer-pill`).
+- **Semantic Pruning**: Automatic removal of noise while preserving 100% of exploitable indicators, credentials, and open vectors.
+- **Interactive Budget Manager**: View token breakdown across Target Scope, Findings, Intelligence, Notes, and Attachments.
+
+---
+
+## Automated Burp Suite / OWASP ZAP Ingestion Bridge
+
+Bridge the gap between proxy tooling and AI orchestration with the **Burp/ZAP Bridge** (`#win-burp-zap-import`):
+
+- **Direct File Ingestion**: Upload or paste Burp Suite XML/JSON issue exports or OWASP ZAP XML/JSON reports.
+- **Built-in Sample Loaders**: Instant testing with pre-loaded Burp and ZAP vulnerability payloads.
+- **Interactive Issue Grid**: View vulnerability names, paths, severity levels, confidence, and EPS exploitability ratings.
+- **1-Click Batch Import**: Seamlessly inject parsed findings directly into the active **Findings Registry** (`#win-findings`) with automated CVE linking and remediation templates.
+
+---
+
+## Export to Formal Pentest Deliverable (PDF / Markdown / HTML)
+
+Turn raw operational state into client-ready deliverables in seconds (`#win-report-export`):
+
+```text
+Project State + Findings + PoCs + Remediation
+                     │
+                     ▼
+       ┌───────────────────────────┐
+       │   Deliverable Generator   │
+       └───────────────────────────┘
+         │           │           │
+         ▼           ▼           ▼
+     Print PDF    Markdown     HTML5
+   (Formal Exec   (Git/Wiki    (Stand-alone
+     Summary)      Format)      Deliverable)
+```
+
+- **Executive Summary & Scope Boundaries**: High-level posture analysis, tested domains, and risk profile.
+- **CVSS v3.1 & EPS Risk Matrix**: Tabular breakdown of Critical, High, Medium, and Low severity issues with exploitability scores.
+- **Detailed Finding Dossiers**: Affected URLs, CVSS vectors, step-by-step PoC reproduction commands, and technical evidence.
+- **Prioritized Remediation Checklist**: Actionable patch matrix categorized by urgency.
+- **Browser Print-to-PDF**: Standardized `@media print` layout engineered for paper and PDF output with zero external dependencies.
+
+---
+
+## Window Management & Multimodal File Attachments
+
+### True 8-Direction Windows 98 Resizing
+Every window inside PickyHack can be freely manipulated:
+- **8-Direction Resizing**: Resize from any border (`n, s, e, w`) or corner (`nw, ne, sw, se`).
+- **Memory & Geometry Persistence**: Minimizing, maximizing, and restoring windows preserves custom dimensions in browser `localStorage`.
+- **Z-Index Elevation & Boundary Clamping**: Clean desktop organization with zero out-of-bounds overflow.
+
+### Multimodal File Attachments & Drag-and-Drop
+- **Instant Drag & Drop**: Drop files anywhere over the chat canvas or click `[ 📎 + ]`.
+- **Staging Shelf**: Multi-file preview chips with instant removal (`×`).
+- **Vision Model Dispatch**: Automatically dispatches image payloads to multimodal LLMs (OpenAI `gpt-4o`, Claude `claude-3-7-sonnet`, Gemini `gemini-2.5-pro`) and text summaries to text-only engines.
+- **1-Click Quick Actions**: Convert attachments to notes (`[ 📝 Send to Notes ]`) or findings (`[ 🎯 Create Finding ]`) directly from chat bubbles.
 
 ---
 
@@ -268,24 +316,27 @@ The **Context Engine** is the algorithmic heart of PickyHack:
 
 | Feature Area | Status | Description |
 | :--- | :---: | :--- |
-| **AI Context Harness** | `[x]` | Stateless orchestration layer between operator and LLM engines |
+| **AI Context Harness Core** | `[x]` | Stateless orchestration layer between operator and LLM engines |
 | **Stateless / Logless Architecture** | `[x]` | Zero server-side conversation logging; client-side temporary sessions |
 | **Multi-API Provider Manager** | `[x]` | Configure OpenAI, Claude, Gemini, Mistral, OpenRouter, and Local Ollama |
 | **On-the-Fly Model Switching** | `[x]` | Instant model hot-swapping with zero loss of pentest context |
 | **"Ask Multiple Models"** | `[x]` | Parallel multi-model evaluation with comparative cards & synthesis |
 | **Model Attribution Tags** | `[x]` | Every AI response tagged with originating model (e.g. `[PICKYHACK AI • gpt-4o]`) |
 | **Windows 98 Desktop Environment** | `[x]` | Fully functional retro OS: draggable windows, dynamic taskbar, start menu |
+| **8-Direction Window Resizing** | `[x]` | Free resize from all 8 borders/corners with persistent geometry memory |
+| **Multimodal File Attachments** | `[x]` | Drag & drop, staging shelf, vision dispatch, and log chunking |
 | **Target & Scope Management** | `[x]` | Pre-configured scoping templates for external, web, AD, and cloud audits |
 | **CVE & CISA KEV Intelligence** | `[x]` | Offline & real-time correlation against 1,600+ actively exploited CVEs |
 | **EPS Risk Scoring (0–100)** | `[x]` | Multi-factor Exploitability Priority Score prioritizing weaponized vulns |
 | **Attack Path Graph** | `[x]` | Multi-stage visual attack chains (`Initial Access → Root Shell`) |
+| **Advanced Graph-Based Attack Simulation** | `[x]` | Interactive SVG breach simulator, choke-point detection & telemetry |
+| **In-Memory Token Window Optimizer** | `[x]` | Real-time token estimator, semantic noise pruning & budget manager |
+| **Automated Burp / OWASP ZAP Bridge** | `[x]` | Direct ingestion of proxy scans with EPS calculation and batch import |
+| **Formal Deliverable Export (PDF/MD/HTML)**| `[x]` | Client-ready pentest reports with Executive Summary & Risk Matrix |
 | **Nuclei Studio** | `[x]` | Generates ready-to-run Nuclei YAML vulnerability detection templates |
 | **Notes.txt (Pentest Note Taker)** | `[x]` | Native scratchpad with 1-click finding conversion & autosave |
 | **Context Snapshot (Export/Import)** | `[x]` | Self-contained, portable markdown snapshots for session continuity |
 | **One-Click Code & Response Copy** | `[x]` | Dedicated copy buttons on all code blocks and markdown answers |
-| **Advanced Attack Graph Simulation** | `[ ]` | Graph-based probabilistic lateral movement pathfinder *(Roadmap)* |
-| **Automated Token Compression** | `[ ]` | Dynamic semantic pruning for large scan outputs *(Roadmap)* |
-| **Burp Suite / ZAP Extension** | `[ ]` | Direct traffic ingestion from security proxy tooling *(Roadmap)* |
 
 ---
 
@@ -317,15 +368,15 @@ PickyHack wraps high-powered offensive AI workflows inside a lightweight, nostal
 │ │ [ 🔍 View CVE-2024-3400 ] [ ⛓️ Attack Path ] [ 📝 Send to Notes ]        │ │
 │ └─────────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
-│ [Ask PickyHack a question or run a command...]               [Send] [⚖️Comp]│
+│ [📎 +] [Ask PickyHack a question or run a command...]         [Send] [⚖️Comp]│
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ ⊞ Start │ 🤖 PickyHack AI │ 📝 Notes.txt │ 📡 CISA KEV │  🤖 gpt-4o  14:40  │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Draggable & Resizable Windows**: Multi-tasking workspace with proper z-index elevation and active/inactive window states.
+- **Draggable & 8-Direction Resizable Windows**: Multi-tasking workspace with proper z-index elevation and active/inactive window states.
 - **Dynamic Taskbar**: Real-time window buttons that minimize, restore, and toggle focus.
-- **Start Menu & Desktop Icons**: Instant access to all pentest tools, settings, and snapshots.
+- **Start Menu & Desktop Icons**: Instant access to all pentest tools, settings, Burp/ZAP ingestion, attack simulator, and report generator.
 - **Native Notes.txt**: Real-time note-taking with instant finding extraction and template insertion.
 
 ---
@@ -382,14 +433,14 @@ PickyHack supports both external cloud models and local air-gapped instances.
 
 ### Supported Providers
 
-| Provider | Supported Models | Base URL |
-| :--- | :--- | :--- |
-| **OpenAI** | `gpt-4o`, `o3-mini`, `o1`, `gpt-4-turbo` | `https://api.openai.com/v1` |
-| **Anthropic** | `claude-3-7-sonnet-20250219`, `claude-3-5-sonnet` | `https://api.anthropic.com/v1` |
-| **Google Gemini** | `gemini-2.5-pro`, `gemini-2.5-flash` | `https://generativelanguage.googleapis.com/v1beta` |
-| **Mistral AI** | `mistral-large-latest`, `codestral-latest` | `https://api.mistral.ai/v1` |
-| **OpenRouter** | `deepseek/deepseek-r1`, `meta-llama/llama-3.3-70b` | `https://openrouter.ai/api/v1` |
-| **Custom / Local** | `llama3.3:70b`, `qwen2.5-coder:32b`, `mistral` | `http://localhost:11434/v1` |
+| Provider | Supported Models | Base URL | Multimodal Vision |
+| :--- | :--- | :--- | :---: |
+| **OpenAI** | `gpt-4o`, `o3-mini`, `o1`, `gpt-4-turbo` | `https://api.openai.com/v1` | `[x]` |
+| **Anthropic** | `claude-3-7-sonnet-20250219`, `claude-3-5-sonnet` | `https://api.anthropic.com/v1` | `[x]` |
+| **Google Gemini** | `gemini-2.5-pro`, `gemini-2.5-flash` | `https://generativelanguage.googleapis.com/v1beta` | `[x]` |
+| **Mistral AI** | `mistral-large-latest`, `codestral-latest` | `https://api.mistral.ai/v1` | `[ ]` (Text) |
+| **OpenRouter** | `deepseek/deepseek-r1`, `meta-llama/llama-3.3-70b` | `https://openrouter.ai/api/v1` | Model-dependent |
+| **Custom / Local** | `llama3.3:70b`, `qwen2.5-coder:32b`, `mistral` | `http://localhost:11434/v1` | Engine-dependent |
 
 ### Environment Variables Template (`.env.example`)
 ```env
@@ -426,16 +477,18 @@ AI_PROVIDER=openai
 - [x] On-the-Fly Model Switching (Zero Context Loss)
 - [x] "Ask Multiple Models" Parallel Evaluation
 - [x] Windows 98 Multi-Window Workstation & Dynamic Taskbar
+- [x] 8-Direction Resizable Windows with Persistent Memory
+- [x] Multimodal File Attachments & Drag-and-Drop
 - [x] Target & Scope Management Templates
 - [x] CISA KEV Intelligence & EPS Risk Scoring
 - [x] Exploit Attack Path Synthesis
+- [x] Advanced Graph-Based Attack Simulation
+- [x] In-Memory Context Window Optimizer (Token Pruning)
+- [x] Automated Burp Suite / OWASP ZAP Ingestion Bridge
+- [x] Export to Formal Pentest Deliverable (PDF / Markdown / HTML)
 - [x] Nuclei Studio (YAML Automation)
 - [x] Native Pentest Note Taker (`Notes.txt`)
 - [x] Context Snapshot (Export / Import / Copy)
-- [ ] Advanced Graph-Based Attack Simulation
-- [ ] In-Memory Context Window Optimizer (Token Pruning)
-- [ ] Automated Burp Suite / OWASP ZAP Ingestion Bridge
-- [ ] Export to Formal Pentest Deliverable (PDF / Markdown / HTML)
 
 ---
 

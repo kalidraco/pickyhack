@@ -108,6 +108,19 @@
         </svg>
         <span class="desktop-icon-label">Multi-API</span>
       </div>
+
+      <!-- 10. Pentest Deliverable -->
+      <div class="desktop-icon" id="icon-deliverable" data-window="win-report-export" title="Export Formal Pentest Deliverable (PDF / HTML / Markdown)">
+        <svg class="desktop-icon-img" viewBox="0 0 32 32">
+          <rect x="4" y="3" width="24" height="26" fill="#fff" stroke="#000" stroke-width="1.5"/>
+          <rect x="7" y="6" width="18" height="4" fill="#000080"/>
+          <line x1="7" y1="14" x2="25" y2="14" stroke="#808080" stroke-width="1"/>
+          <line x1="7" y1="18" x2="25" y2="18" stroke="#808080" stroke-width="1"/>
+          <line x1="7" y1="22" x2="20" y2="22" stroke="#808080" stroke-width="1"/>
+          <text x="13" y="27" font-family="'VT323', monospace" font-size="10" font-weight="bold" fill="#8b0000">PDF</text>
+        </svg>
+        <span class="desktop-icon-label">Deliverable</span>
+      </div>
     </div>
 
     <!-- =====================================================================
@@ -134,6 +147,8 @@
         <span class="win-menu-item" id="chat-menu-ai"><u>A</u>I Engine</span>
         <span class="win-menu-item" id="chat-menu-multiapi"><u>M</u>ulti-API</span>
         <span class="win-menu-item" id="chat-menu-context"><u>C</u>ontext</span>
+        <span class="win-menu-item" id="chat-menu-report"><u>D</u>eliverable</span>
+        <span class="win-menu-item" id="chat-menu-burp"><u>B</u>urp/ZAP</span>
         <span class="win-menu-item" id="chat-menu-snapshot"><u>S</u>napshot</span>
         <span class="win-menu-item" id="chat-menu-notes"><u>N</u>otes</span>
         <span class="win-menu-item" id="chat-menu-help"><u>H</u>elp</span>
@@ -174,6 +189,16 @@
 
         <div class="toolbar-separator"></div>
 
+        <!-- Deliverable & Burp/ZAP Bridge -->
+        <button class="win-btn btn-highlight" id="btn-open-report-from-chat" title="Export Formal Pentest Deliverable (PDF / Markdown / HTML)">
+          <span>📑</span> <strong>Deliverable</strong>
+        </button>
+        <button class="win-btn" id="btn-open-burp-from-chat" title="Ingest Burp Suite / OWASP ZAP Issues">
+          <span>🔌</span> Burp/ZAP
+        </button>
+
+        <div class="toolbar-separator"></div>
+
         <!-- Context Snapshot Actions (Persistence System) -->
         <button class="win-btn btn-highlight" id="btn-save-snapshot" title="Generate portable full context snapshot of current mission state">
           <span>💾</span> <strong>Save Snapshot</strong>
@@ -198,7 +223,16 @@
       </div>
 
       <!-- Main Chat Body: Centered Modern AI Column -->
-      <div class="win-chat-body">
+      <div class="win-chat-body" style="position: relative;">
+        <!-- Drag & Drop Overlay -->
+        <div id="chat-drop-overlay" class="chat-drop-overlay" style="display: none;">
+          <div class="drop-overlay-box win-outset">
+            <div style="font-size: 36px; margin-bottom: 6px;">📂</div>
+            <strong style="font-size: 13px; color: #000080;">DROP SECURITY FILES FOR CONTEXT HARNESS</strong>
+            <p style="font-size: 11px; margin-top: 4px; color: #444;">Nmap XML/JSON, Burp/ZAP, Logs, Code, Configs, Screenshots (Max 15MB)</p>
+          </div>
+        </div>
+
         <div class="chat-center-column">
 
           <!-- 1. EMPTY STATE (What we hack ? & Starter Chips) -->
@@ -286,19 +320,29 @@
                 <span class="dock-meta-pill" id="dock-target-pill" title="Click to edit Target Scope">
                   🎯 Scope: <strong id="dock-scope-label">No Target Defined</strong>
                 </span>
+                <span class="dock-meta-pill" id="token-optimizer-pill" title="In-Memory Context Window Optimizer & Token Pruning">
+                  🧠 Tokens: <strong id="token-budget-label">1,240 tok (~1%)</strong>
+                </span>
               </div>
               <div class="dock-meta-right">
                 <span style="font-size: 10px; color: #555;">Shift+Enter for newline</span>
               </div>
             </div>
 
+            <!-- Multimodal File Attachment Shelf (Staging before send) -->
+            <div id="chat-attachment-shelf" class="chat-attachment-shelf" style="display: none;"></div>
+
             <!-- Input Bar -->
             <div class="chat-dock-input-row">
+              <button class="win-btn" id="btn-attach-trigger" type="button" title="Attach security file, log or screenshot (Nmap, Burp, logs, images)">
+                <span>📎</span> +
+              </button>
+              <input type="file" id="chat-file-input" multiple style="display: none;" accept="image/*,.xml,.json,.txt,.log,.nmap,.gnmap,.py,.js,.sh,.yaml,.yml,.csv">
               <span class="chat-prompt-indicator">&gt;</span>
               <textarea 
                 id="chat-input" 
                 class="chat-textarea-field" 
-                placeholder="Ask PickyHack, analyze target, or test command... (e.g. nmap scan, CVE analysis)" 
+                placeholder="Ask PickyHack, analyze target, drop scan logs, or test command..." 
                 rows="1"
                 spellcheck="false"
                 autocomplete="off"
@@ -543,6 +587,12 @@
         <button class="win-btn btn-highlight" id="btn-add-finding-inline">
           <span>+</span> Add Finding
         </button>
+        <button class="win-btn btn-highlight" id="btn-open-burp-zap-import" title="Automated Burp Suite & OWASP ZAP Ingestion Bridge">
+          <span>🔌</span> Ingest Burp/ZAP
+        </button>
+        <button class="win-btn btn-highlight" id="btn-findings-export-report" title="Export Formal Pentest Deliverable (PDF / HTML / Markdown)">
+          <span>📑</span> Export Deliverable (PDF)
+        </button>
         <button class="win-btn" id="btn-export-findings-md">
           <span>📋</span> Copy Markdown
         </button>
@@ -669,9 +719,22 @@
       </div>
 
       <!-- Toolbar -->
-      <div class="win-toolbar">
-        <button class="win-btn btn-highlight" id="btn-synth-chain" title="Synthesize Attack Chains with AI">
-          <span>⚡</span> Synthesize Attack Path
+      <div class="win-toolbar" style="flex-wrap: wrap; gap: 4px;">
+        <button class="win-btn btn-highlight" id="btn-graph-simulate" title="Simulate breach path from Edge Access to Crown Jewels">
+          <span>▶</span> <strong>Run Simulation</strong>
+        </button>
+        <button class="win-btn" id="btn-graph-reset" title="Reset node state and simulated infection paths">
+          <span>↺</span> Reset
+        </button>
+        <button class="win-btn" id="btn-graph-add-node" title="Add custom target or asset node to graph">
+          <span>+</span> Add Node
+        </button>
+        <button class="win-btn" id="btn-graph-bottlenecks" title="Identify choke points and critical defense bottlenecks">
+          <span>🛡️</span> Bottleneck Analysis
+        </button>
+        <div class="toolbar-separator"></div>
+        <button class="win-btn" id="btn-synth-chain" title="Synthesize Attack Chains with AI">
+          <span>⚡</span> AI Synthesis
         </button>
         <button class="win-btn" id="btn-calc-eps" title="Recalculate EPS Score">
           <span>📊</span> Calc EPS
@@ -681,7 +744,46 @@
       </div>
 
       <!-- Chain Graph Body -->
-      <div class="chains-body-wrapper win-inset" style="padding: 10px; overflow-y: auto;">
+      <div class="chains-body-wrapper win-inset" style="padding: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+        
+        <!-- Interactive Graph Viewport -->
+        <div class="attack-graph-wrapper win-inset" id="attack-graph-container" style="height: 280px; position: relative; background: #14141e; overflow: hidden; border: 1px solid #000;">
+          <svg id="attack-graph-svg" class="attack-graph-svg" width="100%" height="100%"></svg>
+          
+          <div id="attack-graph-legend" class="attack-graph-legend win-outset-shallow" style="position: absolute; bottom: 6px; left: 6px; background: rgba(236,233,216,0.92); padding: 3px 8px; font-size: 10px; display: flex; gap: 8px; z-index: 10;">
+            <span><span style="display:inline-block; width:8px; height:8px; background:#b83b26; border-radius:50%; margin-right:3px;"></span>Edge Asset</span>
+            <span><span style="display:inline-block; width:8px; height:8px; background:#d35400; border-radius:50%; margin-right:3px;"></span>DMZ Pivot</span>
+            <span><span style="display:inline-block; width:8px; height:8px; background:#f39c12; border-radius:50%; margin-right:3px;"></span>PrivEsc / Creds</span>
+            <span><span style="display:inline-block; width:8px; height:8px; background:#8b0000; border-radius:50%; margin-right:3px;"></span>Crown Jewels</span>
+          </div>
+          
+          <div id="graph-node-tooltip" class="graph-tooltip win-outset" style="display: none; position: absolute; z-index: 20; padding: 6px; max-width: 240px; font-size: 11px; background: #ffffd0;"></div>
+        </div>
+
+        <!-- Simulation Telemetry & Choke Points -->
+        <div class="intel-card win-inset" id="graph-simulation-metrics">
+          <div class="intel-card-title">
+            <span>ATTACK PATH SIMULATION &amp; CHOKE POINT TELEMETRY</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; font-size: 11px; padding: 4px 0;">
+            <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
+              <span style="color:#666;">Breach Probability:</span><br>
+              <strong id="metric-breach-prob" style="color:#b83b26; font-size: 13px;">88.6%</strong>
+            </div>
+            <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
+              <span style="color:#666;">Optimal Attack Path:</span><br>
+              <strong id="metric-fastest-path" style="color:#000080; font-size: 11px;">Edge → VPN → DC</strong>
+            </div>
+            <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
+              <span style="color:#666;">Primary Bottleneck:</span><br>
+              <strong id="metric-bottleneck" style="color:#8b0000; font-size: 11px;">ADCS ESC1 (srv-pki01)</strong>
+            </div>
+            <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
+              <span style="color:#666;">Chained EPS:</span><br>
+              <strong id="metric-combined-eps" style="color:#b83b26; font-size: 13px;">96 / 100</strong>
+            </div>
+          </div>
+        </div>
         <div class="intel-card win-inset">
           <div class="intel-card-title">
             <span>EXPLOIT INTELLIGENCE CHAIN (INITIAL ACCESS → ENTERPRISE TAKEOVER)</span>
@@ -1013,11 +1115,11 @@ http:
       <div class="start-menu-item" id="sm-compare-models">
         <span>⚖️</span> Ask Multiple Models...
       </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-chains">
-        <span>⛓️</span> Attack Paths &amp; Exploit Graph
+      <div class="start-menu-item" data-action="open-window" data-window="win-burp-zap-import" id="sm-burp-zap">
+        <span>🔌</span> Ingest Burp / ZAP Scans...
       </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-nuclei">
-        <span>⚙️</span> Nuclei Studio
+      <div class="start-menu-item" data-action="open-window" data-window="win-report-export" id="sm-deliverable">
+        <span>📑</span> Formal Pentest Deliverable (PDF)...
       </div>
       
       <div class="start-separator"></div>
@@ -1395,6 +1497,232 @@ http:
         </button>
         <button class="win-btn" id="compare-models-cancel-btn" style="min-width: 70px;">
           Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       WINDOW: BURP SUITE & OWASP ZAP INGESTION BRIDGE (#win-burp-zap-import)
+       ======================================================================= -->
+  <div class="win-window win-outset-deep" id="win-burp-zap-import" data-window-id="win-burp-zap-import" style="display: none; top: 50px; left: 180px; width: 720px; height: 520px; z-index: 125;">
+    <div class="win-titlebar" data-drag-handle="win-burp-zap-import">
+      <div class="win-title-left">
+        <span>🔌</span>
+        <span class="win-title-text">Burp Suite &amp; OWASP ZAP Ingestion Bridge — [Vulnerability Ingest]</span>
+      </div>
+      <div class="win-title-controls">
+        <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
+        <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
+        <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
+      </div>
+    </div>
+    <div class="win-toolbar">
+      <label class="win-btn" style="cursor: pointer;">
+        <span>📂</span> Load Scan File...
+        <input type="file" id="burp-zap-file-input" accept=".xml,.json,.txt" style="display: none;">
+      </label>
+      <button class="win-btn" id="btn-load-sample-burp"><span>🧪</span> Load Sample Burp Scan</button>
+      <button class="win-btn" id="btn-load-sample-zap"><span>🧪</span> Load Sample ZAP Scan</button>
+      <div class="toolbar-separator"></div>
+      <button class="win-btn btn-highlight" id="btn-commit-burp-zap" style="font-weight: bold;">
+        <span>📥</span> Ingest All to Findings (<span id="burp-zap-count-badge">0</span>)
+      </button>
+    </div>
+    <div class="multiapi-body-wrapper win-inset" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 8px; gap: 8px; background: #ece9d8;">
+      <!-- Drag & drop zone -->
+      <div id="burp-zap-dropzone" class="win-inset-shallow" style="border: 2px dashed #808080; background: #fff; padding: 14px; text-align: center; cursor: pointer;">
+        <div style="font-size: 24px; margin-bottom: 4px;">📥</div>
+        <strong style="font-size: 12px; color: #000080;">Drop Burp Suite (.xml / .json) or OWASP ZAP (.json / .xml) Export Here</strong>
+        <p style="font-size: 10.5px; color: #555; margin-top: 2px;">Automatically parses vulnerability names, affected paths/hosts, severity ratings, and calculates EPS scores.</p>
+      </div>
+
+      <!-- Raw text fallback -->
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span style="font-size: 11px; font-weight: bold;">Format:</span>
+        <select id="burp-zap-format-select" class="win-inset-shallow" style="padding: 2px 6px; font-size: 11px;">
+          <option value="auto">Auto-Detect Format</option>
+          <option value="burp-xml">Burp Suite XML (base64/plain)</option>
+          <option value="burp-json">Burp Suite JSON</option>
+          <option value="zap-json">OWASP ZAP JSON</option>
+          <option value="zap-xml">OWASP ZAP XML</option>
+        </select>
+        <span style="font-size: 10.5px; color: #666; margin-left: auto;">Or paste XML/JSON in Notes/Chat directly.</span>
+      </div>
+
+      <!-- Staged Parsed Issues Table -->
+      <div class="win-inset" style="flex: 1; overflow-y: auto; background: #fff;">
+        <table class="cve-table burp-zap-table" id="burp-zap-preview-table">
+          <thead>
+            <tr>
+              <th style="width: 75px;">Severity</th>
+              <th>Vulnerability Title</th>
+              <th>Host / Endpoint</th>
+              <th style="width: 65px;">CVSS/EPS</th>
+              <th style="width: 70px;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="burp-zap-table-body">
+            <tr>
+              <td colspan="5" style="text-align: center; color: #777; padding: 20px;">
+                No scan data loaded yet. Drop a Burp or ZAP export above or click a sample button.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <footer class="win-statusbar">
+      <div class="status-panel win-inset-shallow status-flex" id="sb-burp-zap-status">
+        Ready. Supports Burp Suite Pro/Community XML &amp; OWASP ZAP XML/JSON reports.
+      </div>
+      <div class="status-panel win-inset-shallow" id="sb-burp-zap-count">
+        Detected: 0
+      </div>
+    </footer>
+  </div>
+
+  <!-- =======================================================================
+       WINDOW: FORMAL PENTEST DELIVERABLE GENERATOR (#win-report-export)
+       ======================================================================= -->
+  <div class="win-window win-outset-deep" id="win-report-export" data-window-id="win-report-export" style="display: none; top: 30px; left: 120px; width: 860px; height: 620px; z-index: 130;">
+    <div class="win-titlebar" data-drag-handle="win-report-export">
+      <div class="win-title-left">
+        <img src="assets/pickyhack-logo.png" alt="" class="win-title-icon">
+        <span class="win-title-text">Formal Pentest Deliverable Generator — [Executive &amp; Technical Report]</span>
+      </div>
+      <div class="win-title-controls">
+        <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
+        <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
+        <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
+      </div>
+    </div>
+    <div class="win-toolbar" style="flex-wrap: wrap; gap: 6px;">
+      <button class="win-btn btn-highlight" id="btn-report-print-pdf" title="Open print dialog configured for multi-page executive PDF">
+        <span>🖨️</span> <strong>Print / Save as PDF</strong>
+      </button>
+      <button class="win-btn" id="btn-report-download-md" title="Download report as standard Markdown deliverable">
+        <span>💾</span> Download Markdown (.md)
+      </button>
+      <button class="win-btn" id="btn-report-download-html" title="Download standalone HTML report">
+        <span>🌐</span> Download HTML
+      </button>
+      <button class="win-btn" id="btn-report-copy-all" title="Copy report text to clipboard">
+        <span>📋</span> Copy Report
+      </button>
+      <div class="toolbar-separator"></div>
+      <button class="win-btn" id="btn-report-refresh" title="Regenerate deliverable with latest findings &amp; notes">
+        <span>🔄</span> Refresh Report
+      </button>
+    </div>
+    
+    <div class="multiapi-body-wrapper win-inset" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 8px; gap: 6px; background: #ece9d8;">
+      <!-- Report Controls Bar -->
+      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 11px;">
+        <label><strong>Target Client / Org:</strong> <input type="text" id="report-client-name" class="chat-input-field" value="Acme Cyber Corp" style="font-size: 11px; width: 140px; padding: 2px 4px;"></label>
+        <label><strong>Lead Assessor:</strong> <input type="text" id="report-assessor-name" class="chat-input-field" value="PickyHack Offensive Team" style="font-size: 11px; width: 160px; padding: 2px 4px;"></label>
+        <label><strong>Assessment Type:</strong> 
+          <select id="report-assessment-type" class="win-inset-shallow" style="padding: 2px 4px; font-size: 11px;">
+            <option>External Network &amp; Web Application Pentest</option>
+            <option>Internal Active Directory &amp; Infrastructure Pentest</option>
+            <option>Cloud Infrastructure &amp; API Security Review</option>
+            <option>Red Team Adversary Simulation</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Report Live Printable Document Viewport -->
+      <div class="win-inset report-page-preview-wrapper" style="flex: 1; overflow-y: auto; background: #555; padding: 14px;">
+        <div id="pentest-deliverable-doc" class="report-deliverable-sheet win-outset" style="background: #fff; max-width: 800px; margin: 0 auto; padding: 36px 44px; color: #1a1a1a; font-family: 'Segoe UI', Arial, sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.35);">
+          <!-- Dynamically populated by DeliverableGenerator -->
+        </div>
+      </div>
+    </div>
+
+    <footer class="win-statusbar">
+      <div class="status-panel win-inset-shallow status-flex" id="sb-report-status">
+        Ready. Generates standardized Executive Summary, CVSS/EPS Risk Matrix, Findings with PoC &amp; Remediation.
+      </div>
+      <div class="status-panel win-inset-shallow" id="sb-report-findings-count">
+        Findings Included: 0
+      </div>
+    </footer>
+  </div>
+
+  <!-- =======================================================================
+       MODAL: SCREENSHOT & EVIDENCE LIGHTBOX (#image-lightbox-modal)
+       ======================================================================= -->
+  <div class="win-modal-backdrop" id="image-lightbox-modal" style="z-index: 9999;">
+    <div class="win-dialog win-outset-deep" style="max-width: 92vw; max-height: 92vh; padding: 6px; display: flex; flex-direction: column;">
+      <div class="win-titlebar">
+        <div class="win-title-left">
+          <span>🖼️</span>
+          <span id="image-lightbox-title">Pentest Evidence Viewer</span>
+        </div>
+        <button class="win-title-btn" id="image-lightbox-close">✕</button>
+      </div>
+      <div style="flex: 1; overflow: auto; text-align: center; padding: 10px; background: #111;">
+        <img id="image-lightbox-img" src="" alt="Screenshot" style="max-width: 100%; max-height: 75vh; object-fit: contain;">
+      </div>
+      <div class="dialog-buttons" style="margin-top: 6px; justify-content: space-between;">
+        <span id="image-lightbox-meta" style="font-size: 11px; color: #444; align-self: center;">Evidence preview</span>
+        <button class="win-btn" id="image-lightbox-close-btn" style="min-width: 70px;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL: IN-MEMORY CONTEXT WINDOW OPTIMIZER & TOKEN PRUNER (#token-optimizer-modal)
+       ======================================================================= -->
+  <div class="win-modal-backdrop" id="token-optimizer-modal">
+    <div class="win-dialog win-outset-deep" style="width: 580px; max-width: 95vw;">
+      <div class="win-titlebar">
+        <div class="win-title-left">
+          <span>🧠</span>
+          <span>In-Memory Context Window Optimizer &amp; Token Pruning</span>
+        </div>
+        <button class="win-title-btn" id="token-optimizer-close-x">✕</button>
+      </div>
+      <div class="dialog-body">
+        <p style="font-size: 11px; color: #333; margin-bottom: 6px;">
+          PickyHack continuously optimizes token usage so requests never hit context window limits or dilute LLM reasoning:
+        </p>
+
+        <!-- Token Allocation Bars -->
+        <div class="win-inset" style="padding: 10px; background: #fff; display: flex; flex-direction: column; gap: 8px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 2px;">
+              <span>Total Context Consumption:</span>
+              <span id="token-total-ratio">1,450 / 128,000 tokens (1.1%)</span>
+            </div>
+            <div style="background: #e0e0e0; height: 14px; border: 1px solid #777; position: relative;">
+              <div id="token-progress-bar" style="background: linear-gradient(90deg, #27ae60, #2980b9); height: 100%; width: 2%;"></div>
+            </div>
+          </div>
+
+          <div style="font-family: var(--font-mono); font-size: 11px; line-height: 1.5; color: #333;" id="token-breakdown-details">
+            • System &amp; Persona Instructions: ~350 tokens<br>
+            • Scope &amp; Target Context: ~220 tokens<br>
+            • Verified Findings (prioritized): ~380 tokens<br>
+            • Ephemeral Conversation Stream: ~400 tokens<br>
+            • Attached Security Artifacts: ~100 tokens<br>
+            <strong style="color: #000080;">=&gt; Available Headroom: ~126,550 tokens</strong>
+          </div>
+        </div>
+
+        <div style="margin-top: 8px; font-size: 11px; color: #444;">
+          <strong>Automatic Optimizations Active:</strong><br>
+          ✓ <em>Banner Pruning:</em> Strips repetitive Nmap, Burp, and curl ASCII banners.<br>
+          ✓ <em>Turn Compression:</em> Truncates older tool outputs while preserving findings.<br>
+          ✓ <em>Context Harness Deduplication:</em> Prevents duplicated asset entries across turns.
+        </div>
+      </div>
+      <div class="dialog-buttons">
+        <button class="win-btn btn-highlight" id="btn-run-token-prune" style="font-weight: bold;">
+          ⚡ Prune Inactive Turns Now
+        </button>
+        <button class="win-btn" id="token-optimizer-close-btn" style="min-width: 70px;">
+          Close
         </button>
       </div>
     </div>

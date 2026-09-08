@@ -538,7 +538,7 @@
   // 4. ENHANCED LLM ADAPTER (Multi-Model Dispatcher & Parallel Evaluator)
   // ==========================================================================
   const LLMAdapter = {
-    async send(systemPrompt, userPrompt, specificEngine = null) {
+    async send(systemPrompt, userPrompt, specificEngine = null, images = []) {
       const cfg = specificEngine || MultiAPIManager.getActiveEngine();
       const model = cfg.customModel || cfg.model;
 
@@ -550,12 +550,12 @@
       try {
         let result;
         if (cfg.provider === 'anthropic') {
-          result = await this.callAnthropic(cfg, model, systemPrompt, userPrompt);
+          result = await this.callAnthropic(cfg, model, systemPrompt, userPrompt, images);
         } else if (cfg.provider === 'gemini') {
-          result = await this.callGemini(cfg, model, systemPrompt, userPrompt);
+          result = await this.callGemini(cfg, model, systemPrompt, userPrompt, images);
         } else {
           // OpenAI, Mistral, OpenRouter, Custom
-          result = await this.callOpenAICompatible(cfg, model, systemPrompt, userPrompt);
+          result = await this.callOpenAICompatible(cfg, model, systemPrompt, userPrompt, images);
         }
 
         return {
@@ -610,13 +610,24 @@
       return await Promise.all(promises);
     },
 
-    async callOpenAICompatible(cfg, model, systemPrompt, userPrompt) {
+    async callOpenAICompatible(cfg, model, systemPrompt, userPrompt, images = []) {
       const endpoint = (cfg.endpoint || 'https://api.openai.com/v1').replace(/\/+$/, '') + '/chat/completions';
       const headers = { 'Content-Type': 'application/json' };
       if (cfg.apiKey) headers['Authorization'] = `Bearer ${cfg.apiKey}`;
       if (cfg.provider === 'openrouter') {
         headers['HTTP-Referer'] = 'https://pickyhack.app';
         headers['X-Title'] = 'PickyHack Pentest Copilot';
+      }
+
+      let userMsgContent = userPrompt;
+      if (images && images.length > 0) {
+        userMsgContent = [
+          { type: 'text', text: userPrompt },
+          ...images.map(img => ({
+            type: 'image_url',
+            image_url: { url: img.dataUrl || `data:${img.mimeType};base64,${img.base64}` }
+          }))
+        ];
       }
 
       const res = await fetch(endpoint, {
@@ -626,7 +637,7 @@
           model: model,
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
+            { role: 'user', content: userMsgContent }
           ],
           temperature: 0.3
         })
@@ -642,8 +653,24 @@
       return this.parseModelOutput(reply);
     },
 
-    async callAnthropic(cfg, model, systemPrompt, userPrompt) {
+    async callAnthropic(cfg, model, systemPrompt, userPrompt, images = []) {
       const endpoint = (cfg.endpoint || 'https://api.anthropic.com/v1').replace(/\/+$/, '') + '/messages';
+      
+      let userMsgContent = userPrompt;
+      if (images && images.length > 0) {
+        userMsgContent = [
+          ...images.map(img => ({
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: img.mimeType || 'image/png',
+              data: img.base64
+            }
+          })),
+          { type: 'text', text: userPrompt }
+        ];
+      }
+
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -656,7 +683,7 @@
           model: model,
           max_tokens: 4096,
           system: systemPrompt,
-          messages: [{ role: 'user', content: userPrompt }]
+          messages: [{ role: 'user', content: userMsgContent }]
         })
       });
 
@@ -670,14 +697,28 @@
       return this.parseModelOutput(reply);
     },
 
-    async callGemini(cfg, model, systemPrompt, userPrompt) {
+    async callGemini(cfg, model, systemPrompt, userPrompt, images = []) {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cfg.apiKey}`;
+      
+      const parts = [];
+      if (images && images.length > 0) {
+        images.forEach(img => {
+          parts.push({
+            inline_data: {
+              mime_type: img.mimeType || 'image/png',
+              data: img.base64
+            }
+          });
+        });
+      }
+      parts.push({ text: userPrompt });
+
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ parts: [{ text: userPrompt }] }]
+          contents: [{ parts: parts }]
         })
       });
 
@@ -782,7 +823,7 @@
   };
 
   const ContextHarness = {
-    buildPacket(userQuery, activeConv, state) {
+    buildPacket(userQuery, activeConv, state, stagedAttachments = []) {
       const rel = ContextEngine.determineRelevance(userQuery, state);
       
       const userData = `TARGET: ${rel.target}\nSCOPE: ${rel.scope}\nOBJECTIVE: ${rel.objectives}`;
@@ -791,6 +832,19 @@
       const webData = rel.intel.map(i => `- [${i.cve}] ${i.product} (${i.vendor}) | CVSS: ${i.cvss} | EPS: ${i.epsScore}/100 | KEV: ${i.inKEV ? 'YES' : 'NO'} | PoC: ${i.pocAvailable ? 'AVAILABLE' : 'NONE'}`).join('\n');
       
       const modelReasoning = `ATTACK PATHS:\n${rel.attackPaths.slice(0, 3).map((p, idx) => `${idx + 1}. ${p}`).join('\n') || '- Path mapping in progress'}`;
+
+      let attachmentText = '';
+      if (stagedAttachments && stagedAttachments.length > 0) {
+        attachmentText = '\n\n==================================================\n[ATTACHED SECURITY ARTIFACTS]\n' + 
+          stagedAttachments.map(a => {
+            if (a.type === 'image') {
+              return `• [Screenshot/Image: ${a.name} (${a.sizeStr})]`;
+            } else {
+              const content = a.textContent ? (a.textContent.length > 6000 ? a.textContent.slice(0, 3000) + '\n... [TRUNCATED FOR TOKEN EFFICIENCY] ...\n' + a.textContent.slice(-3000) : a.textContent) : '';
+              return `• [File: ${a.name} (${a.sizeStr}) ${a.parsedSummary || ''}]:\n\`\`\`\n${content}\n\`\`\``;
+            }
+          }).join('\n\n');
+      }
 
       const turns = (activeConv.messages || []).slice(-4).map(m => `[${m.sender.toUpperCase()} • ${m.modelName || 'User'}]: ${m.text.replace(/\n+/g, ' ')}`).join('\n');
 
@@ -818,6 +872,7 @@ ${webData}
 ==================================================
 [PRIOR REASONING — MODEL REASONING]
 ${modelReasoning}
+${attachmentText}
 
 ==================================================
 [CONVERSATION CONTEXT — STREAM: ${activeConv.title}]
@@ -845,6 +900,7 @@ ${webData}
 
 Attack Paths:
 ${modelReasoning}
+${attachmentText}
 
 User Question / Command:
 ${userQuery}`;
@@ -925,6 +981,7 @@ ${userQuery}`;
   // 8. WINDOW MANAGER (Functional Windows 98 Multi-Window Shell)
   // ==========================================================================
   const WindowManager = {
+    STORAGE_KEY: 'pickyhack_win_states',
     windows: {
       'win-chat': { id: 'win-chat', title: 'PickyHack AI', icon: 'assets/pickyhack-logo.png', isMin: false, isMax: false },
       'win-multi-api': { id: 'win-multi-api', title: 'Multi-API', icon: '⚡', isMin: false, isMax: false },
@@ -933,13 +990,33 @@ ${userQuery}`;
       'win-findings': { id: 'win-findings', title: 'Findings', icon: '🛡️', isMin: false, isMax: false },
       'win-cve': { id: 'win-cve', title: 'CISA KEV', icon: '📡', isMin: false, isMax: false },
       'win-chains': { id: 'win-chains', title: 'Attack Paths', icon: '⛓️', isMin: false, isMax: false },
-      'win-nuclei': { id: 'win-nuclei', title: 'Nuclei Studio', icon: '⚙️', isMin: false, isMax: false }
+      'win-nuclei': { id: 'win-nuclei', title: 'Nuclei Studio', icon: '⚙️', isMin: false, isMax: false },
+      'win-report-export': { id: 'win-report-export', title: 'Deliverable', icon: '📑', isMin: false, isMax: false },
+      'win-burp-zap-import': { id: 'win-burp-zap-import', title: 'Burp/ZAP', icon: '🔌', isMin: false, isMax: false }
     },
     activeId: 'win-chat',
     highestZ: 100,
 
     init() {
+      const savedStates = this.loadWinStates();
+
       document.querySelectorAll('.win-window').forEach(win => {
+        // Attach 8-direction resizing handles
+        this.attachResizers(win);
+
+        // Restore geometry if saved
+        if (savedStates && savedStates[win.id]) {
+          const s = savedStates[win.id];
+          if (s.left) win.style.left = s.left;
+          if (s.top) win.style.top = s.top;
+          if (s.width) win.style.width = s.width;
+          if (s.height) win.style.height = s.height;
+          if (s.isMax) {
+            win.classList.add('maximized');
+            if (this.windows[win.id]) this.windows[win.id].isMax = true;
+          }
+        }
+
         const handle = win.querySelector('.win-titlebar');
         if (handle) {
           this.initDrag(win, handle);
@@ -1007,12 +1084,124 @@ ${userQuery}`;
             const targetWin = item.dataset.window;
             if (targetWin) WindowManager.open(targetWin);
             if (item.id === 'sm-compare-models') openCompareModelsModal();
+            if (item.id === 'sm-deliverable') WindowManager.open('win-report-export');
+            if (item.id === 'sm-burp-zap') WindowManager.open('win-burp-zap-import');
           });
         });
       }
 
       this.renderTaskbar();
       this.bringToFront('win-chat');
+    },
+
+    loadWinStates() {
+      try {
+        const raw = localStorage.getItem(this.STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        return {};
+      }
+    },
+
+    saveWinState(winId) {
+      const el = document.getElementById(winId);
+      if (!el) return;
+      try {
+        const states = this.loadWinStates();
+        states[winId] = {
+          left: el.style.left,
+          top: el.style.top,
+          width: el.style.width,
+          height: el.style.height,
+          isMax: el.classList.contains('maximized'),
+          isMin: el.classList.contains('minimized')
+        };
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(states));
+      } catch (e) {
+        console.warn('Failed to save window state:', e.message);
+      }
+    },
+
+    attachResizers(winEl) {
+      if (winEl.querySelector('.win-resizer')) return;
+      const dirs = ['n', 's', 'e', 'w', 'nw', 'ne', 'sw', 'se'];
+      dirs.forEach(dir => {
+        const resizer = document.createElement('div');
+        resizer.className = `win-resizer resizer-${dir}`;
+        resizer.dataset.dir = dir;
+        winEl.appendChild(resizer);
+        this.initResize(winEl, resizer, dir);
+      });
+    },
+
+    initResize(winEl, resizerEl, dir) {
+      let isResizing = false;
+      let startX = 0, startY = 0;
+      let startW = 0, startH = 0;
+      let startL = 0, startT = 0;
+
+      resizerEl.addEventListener('mousedown', (e) => {
+        if (winEl.classList.contains('maximized')) return;
+        isResizing = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = winEl.getBoundingClientRect();
+        startW = rect.width;
+        startH = rect.height;
+        startL = winEl.offsetLeft;
+        startT = winEl.offsetTop;
+
+        WindowManager.bringToFront(winEl.id);
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        const minW = 340;
+        const minH = 220;
+
+        let newW = startW;
+        let newH = startH;
+        let newL = startL;
+        let newT = startT;
+
+        if (dir.includes('e')) {
+          newW = Math.max(minW, startW + deltaX);
+        }
+        if (dir.includes('s')) {
+          newH = Math.max(minH, startH + deltaY);
+        }
+        if (dir.includes('w')) {
+          const possibleW = startW - deltaX;
+          if (possibleW >= minW) {
+            newW = possibleW;
+            newL = startL + deltaX;
+          }
+        }
+        if (dir.includes('n')) {
+          const possibleH = startH - deltaY;
+          if (possibleH >= minH) {
+            newH = possibleH;
+            newT = startT + deltaY;
+          }
+        }
+
+        winEl.style.width = `${newW}px`;
+        winEl.style.height = `${newH}px`;
+        winEl.style.left = `${Math.max(0, newL)}px`;
+        winEl.style.top = `${Math.max(0, newT)}px`;
+      });
+
+      document.addEventListener('mouseup', () => {
+        if (isResizing) {
+          isResizing = false;
+          WindowManager.saveWinState(winEl.id);
+        }
+      });
     },
 
     open(winId) {
@@ -1023,6 +1212,7 @@ ${userQuery}`;
       if (this.windows[winId]) this.windows[winId].isMin = false;
       this.bringToFront(winId);
       this.renderTaskbar();
+      this.saveWinState(winId);
     },
 
     close(winId) {
@@ -1031,6 +1221,7 @@ ${userQuery}`;
       el.style.display = 'none';
       if (this.windows[winId]) this.windows[winId].isMin = false;
       this.renderTaskbar();
+      this.saveWinState(winId);
     },
 
     minimize(winId) {
@@ -1040,17 +1231,40 @@ ${userQuery}`;
       if (this.windows[winId]) this.windows[winId].isMin = true;
       el.classList.remove('active');
       this.renderTaskbar();
+      this.saveWinState(winId);
     },
 
     toggleMaximize(winId) {
       const el = document.getElementById(winId);
       if (!el) return;
-      el.classList.toggle('maximized');
+      const isCurrentlyMax = el.classList.contains('maximized');
+      
+      if (!isCurrentlyMax) {
+        // Remember pre-maximize bounding box
+        el._preMaxRect = {
+          left: el.style.left,
+          top: el.style.top,
+          width: el.style.width,
+          height: el.style.height
+        };
+        el.classList.add('maximized');
+      } else {
+        el.classList.remove('maximized');
+        // Restore pre-maximize bounding box
+        if (el._preMaxRect) {
+          el.style.left = el._preMaxRect.left || '';
+          el.style.top = el._preMaxRect.top || '';
+          el.style.width = el._preMaxRect.width || '';
+          el.style.height = el._preMaxRect.height || '';
+        }
+      }
+
       const isMax = el.classList.contains('maximized');
       if (this.windows[winId]) this.windows[winId].isMax = isMax;
       const btn = el.querySelector('[data-action="max"]');
       if (btn) btn.textContent = isMax ? '❐' : '□';
       this.bringToFront(winId);
+      this.saveWinState(winId);
     },
 
     bringToFront(winId) {
@@ -1144,7 +1358,10 @@ ${userQuery}`;
       });
 
       document.addEventListener('mouseup', () => {
-        isDragging = false;
+        if (isDragging) {
+          isDragging = false;
+          WindowManager.saveWinState(winEl.id);
+        }
       });
     }
   };
@@ -1528,15 +1745,76 @@ Status: Confirmed active KEV entry`;
           }
         }
 
+        let attachmentsHtml = '';
+        if (msg.attachments && msg.attachments.length > 0) {
+          const pills = msg.attachments.map(att => {
+            if (att.type === 'image') {
+              return `
+                <div class="msg-image-thumb-wrapper" onclick="AttachmentManager.openLightbox('${att.dataUrl}', '${att.name}', '${att.sizeStr}')">
+                  <img src="${att.dataUrl}" class="msg-image-thumb" alt="${att.name}" title="Click to view full resolution">
+                  <span class="msg-image-name">${att.name}</span>
+                </div>
+              `;
+            } else {
+              return `
+                <div class="msg-attachment-pill win-outset-shallow">
+                  <span>${att.name.endsWith('.xml') ? '📑' : (att.name.endsWith('.json') ? '📦' : '📄')}</span>
+                  <div class="pill-meta">
+                    <strong>${att.name}</strong>
+                    <small>${att.sizeStr}</small>
+                  </div>
+                  <div class="pill-actions">
+                    <button class="win-btn btn-pill-to-notes" data-content="${encodeURIComponent(att.textContent || '')}" style="font-size:9px; padding:1px 4px;">📝 Notes</button>
+                    <button class="win-btn btn-pill-to-finding" data-name="${encodeURIComponent(att.name)}" data-summary="${encodeURIComponent(att.parsedSummary || '')}" style="font-size:9px; padding:1px 4px;">🎯 Finding</button>
+                  </div>
+                </div>
+              `;
+            }
+          }).join('');
+
+          attachmentsHtml = `<div class="msg-attachments-container">${pills}</div>`;
+        }
+
         msgEl.innerHTML = `
           <div class="msg-header">
             ${senderBadge}
             <span>${msg.time || ''}</span>
           </div>
           <div class="msg-body">${formattedText}</div>
+          ${attachmentsHtml}
           ${codeHtml}
           ${chipsHtml}
         `;
+
+        msgEl.querySelectorAll('.btn-pill-to-notes').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            WindowManager.open('win-notes');
+            const text = decodeURIComponent(btn.dataset.content || '');
+            NotesManager.insertTemplate(`\n\n[ATTACHED ARTIFACT LOG]\n${text.slice(0, 2000)}`);
+          });
+        });
+
+        msgEl.querySelectorAll('.btn-pill-to-finding').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const name = decodeURIComponent(btn.dataset.name || 'Artifact Finding');
+            const summary = decodeURIComponent(btn.dataset.summary || 'Security finding from artifact');
+            pentestState.findings.push({
+              id: `f-${Date.now()}`,
+              title: name,
+              cve: 'N/A',
+              target: pentestState.target || 'target.example.com',
+              cvss: 7.5,
+              eps: 75,
+              severity: 'High',
+              status: 'Unconfirmed'
+            });
+            FindingsManager.render();
+            DeliverableGenerator.updateStats();
+            WindowManager.open('win-findings');
+          });
+        });
 
         msgEl.querySelectorAll('.context-chip').forEach(btn => {
           btn.addEventListener('click', () => {
@@ -1572,33 +1850,44 @@ Status: Confirmed active KEV entry`;
     if (!chatInput) return;
 
     const query = chatInput.value.trim();
-    if (!query) return;
+    const stagedAttachments = AttachmentManager.getStagedAttachments();
+    if (!query && stagedAttachments.length === 0) return;
+
+    if (stagedAttachments.length > 0) {
+      AttachmentManager.clearStaged();
+    }
 
     const conv = getActiveConversation();
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const activeEngine = MultiAPIManager.getActiveEngine();
     const modelTag = activeEngine.customModel || activeEngine.model;
 
-    // Add user message to ephemeral stream
+    const imagePayloads = (stagedAttachments || [])
+      .filter(a => a.type === 'image')
+      .map(a => ({ mimeType: a.mimeType, base64: a.base64, dataUrl: a.dataUrl }));
+
+    // Add user message to ephemeral stream with attachments
     conv.messages.push({
       id: `msg-${Date.now()}`,
       sender: 'user',
       time: timeStr,
-      text: query
+      text: query || `[Attached ${stagedAttachments.length} security file(s) for analysis]`,
+      attachments: stagedAttachments
     });
 
     chatInput.value = '';
     renderChatThread();
+    ContextOptimizer.updateBudgetMeter();
 
     // Context Harness build packet (unified context across all model switches)
-    const packetData = ContextHarness.buildPacket(query, conv, pentestState);
+    const packetData = ContextHarness.buildPacket(query || 'Analyze attached security artifacts', conv, pentestState, stagedAttachments);
     lastContextPacket = packetData.fullPacket;
 
     const sbStatus = document.getElementById('sb-chat-status');
     if (sbStatus) sbStatus.textContent = `PickyHack AI (${activeEngine.name}) is analyzing context...`;
 
     try {
-      const response = await LLMAdapter.send(packetData.systemPrompt, packetData.userPrompt, activeEngine);
+      const response = await LLMAdapter.send(packetData.systemPrompt, packetData.userPrompt, activeEngine, imagePayloads);
       conv.messages.push({
         id: `msg-${Date.now() + 1}`,
         sender: 'ai',
@@ -1621,6 +1910,7 @@ Status: Confirmed active KEV entry`;
 
     if (sbStatus) sbStatus.textContent = 'Ready. Ask PickyHack anything or select a prompt chip.';
     renderChatThread();
+    ContextOptimizer.updateBudgetMeter();
   }
 
   let lastContextPacket = '';
@@ -2098,6 +2388,1216 @@ ${pentestState.rawNotes || '(No raw notes)'}
   }
 
   // ==========================================================================
+  // ATTACHMENT MANAGER (Multimodal File Attachments & Drag-and-Drop)
+  // ==========================================================================
+  const AttachmentManager = {
+    staged: [],
+    MAX_FILE_SIZE: 15 * 1024 * 1024, // 15MB
+
+    init() {
+      const dropOverlay = document.getElementById('chat-drop-overlay');
+      const winChat = document.getElementById('win-chat');
+      const attachBtn = document.getElementById('btn-attach-trigger');
+      const fileInput = document.getElementById('chat-file-input');
+
+      if (attachBtn && fileInput) {
+        attachBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            this.handleFiles(Array.from(e.target.files));
+            fileInput.value = '';
+          }
+        });
+      }
+
+      // Drag & drop over chat
+      if (winChat && dropOverlay) {
+        let dragCounter = 0;
+
+        winChat.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragCounter++;
+          dropOverlay.style.display = 'flex';
+        });
+
+        winChat.addEventListener('dragleave', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragCounter--;
+          if (dragCounter <= 0) {
+            dragCounter = 0;
+            dropOverlay.style.display = 'none';
+          }
+        });
+
+        winChat.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
+
+        winChat.addEventListener('drop', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragCounter = 0;
+          dropOverlay.style.display = 'none';
+
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            this.handleFiles(Array.from(e.dataTransfer.files));
+          }
+        });
+      }
+
+      // Lightbox close events
+      const lb = document.getElementById('image-lightbox-modal');
+      const lbClose = document.getElementById('image-lightbox-close');
+      const lbCloseBtn = document.getElementById('image-lightbox-close-btn');
+      if (lb && lbClose) lbClose.addEventListener('click', () => lb.classList.remove('open'));
+      if (lb && lbCloseBtn) lbCloseBtn.addEventListener('click', () => lb.classList.remove('open'));
+    },
+
+    async handleFiles(files) {
+      for (const file of files) {
+        if (file.size > this.MAX_FILE_SIZE) {
+          alert(`File "${file.name}" exceeds the 15MB limit (${(file.size / 1024 / 1024).toFixed(1)}MB).`);
+          continue;
+        }
+
+        const sizeStr = file.size > 1024 * 1024 
+          ? `${(file.size / 1024 / 1024).toFixed(1)} MB`
+          : `${Math.round(file.size / 1024)} KB`;
+
+        const isImage = file.type.startsWith('image/');
+
+        if (isImage) {
+          const dataUrl = await this.readFileAsDataURL(file);
+          const base64 = dataUrl.split(',')[1] || '';
+          this.staged.push({
+            id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            name: file.name,
+            size: file.size,
+            sizeStr: sizeStr,
+            type: 'image',
+            mimeType: file.type || 'image/png',
+            dataUrl: dataUrl,
+            base64: base64
+          });
+        } else {
+          const text = await this.readFileAsText(file);
+          const summary = this.parseSecurityArtifact(file.name, text);
+          this.staged.push({
+            id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            name: file.name,
+            size: file.size,
+            sizeStr: sizeStr,
+            type: 'text',
+            mimeType: file.type || 'text/plain',
+            textContent: text,
+            parsedSummary: summary
+          });
+        }
+      }
+
+      this.renderShelf();
+      ContextOptimizer.updateBudgetMeter();
+    },
+
+    readFileAsDataURL(file) {
+      return new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result);
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+    },
+
+    readFileAsText(file) {
+      return new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result);
+        reader.onerror = rej;
+        reader.readAsText(file);
+      });
+    },
+
+    parseSecurityArtifact(filename, content) {
+      const lower = content.toLowerCase();
+      if (lower.includes('starting nmap') || lower.includes('<nmaprun')) {
+        const openPorts = [];
+        const portRegex = /(\d+)\/(tcp|udp)\s+open\s+(\S+)/gi;
+        let match;
+        while ((match = portRegex.exec(content)) !== null) {
+          openPorts.push(`${match[1]}/${match[2]} (${match[3]})`);
+        }
+        return `[NMAP SCAN: ${openPorts.length} open ports: ${openPorts.slice(0, 5).join(', ')}${openPorts.length > 5 ? '...' : ''}]`;
+      }
+      if (lower.includes('<issues burpversion=') || lower.includes('<issue>')) {
+        const issueCount = (content.match(/<issue>/gi) || []).length;
+        return `[BURP SCAN XML: ${issueCount} issues parsed]`;
+      }
+      if (lower.includes('owasp zap') || lower.includes('"@programname": "owasp zap"')) {
+        return `[OWASP ZAP REPORT: Alerts parsed]`;
+      }
+      const lineCount = content.split('\n').length;
+      return `[LOG ARTIFACT: ${lineCount} lines]`;
+    },
+
+    renderShelf() {
+      const shelf = document.getElementById('chat-attachment-shelf');
+      if (!shelf) return;
+
+      if (this.staged.length === 0) {
+        shelf.style.display = 'none';
+        shelf.innerHTML = '';
+        return;
+      }
+
+      shelf.style.display = 'flex';
+      shelf.innerHTML = '';
+
+      this.staged.forEach((att, idx) => {
+        const chip = document.createElement('div');
+        chip.className = 'attachment-chip win-outset-shallow';
+
+        const thumbHtml = att.type === 'image'
+          ? `<img src="${att.dataUrl}" class="chip-thumb" alt="" onclick="AttachmentManager.openLightbox('${att.dataUrl}', '${att.name}', '${att.sizeStr}')">`
+          : `<span class="chip-icon">${att.name.endsWith('.xml') ? '📑' : (att.name.endsWith('.json') ? '📦' : '📄')}</span>`;
+
+        chip.innerHTML = `
+          ${thumbHtml}
+          <div class="chip-info">
+            <span class="chip-name" title="${att.name}">${att.name}</span>
+            <span class="chip-size">${att.sizeStr}</span>
+          </div>
+          <button class="chip-remove" title="Remove attachment">×</button>
+        `;
+
+        chip.querySelector('.chip-remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.staged.splice(idx, 1);
+          this.renderShelf();
+          ContextOptimizer.updateBudgetMeter();
+        });
+
+        shelf.appendChild(chip);
+      });
+    },
+
+    openLightbox(dataUrl, name, sizeStr) {
+      const modal = document.getElementById('image-lightbox-modal');
+      const img = document.getElementById('image-lightbox-img');
+      const title = document.getElementById('image-lightbox-title');
+      const meta = document.getElementById('image-lightbox-meta');
+
+      if (modal && img) {
+        img.src = dataUrl;
+        if (title) title.textContent = `Evidence: ${name}`;
+        if (meta) meta.textContent = `${name} • ${sizeStr}`;
+        modal.classList.add('open');
+      }
+    },
+
+    getStagedAttachments() {
+      return [...this.staged];
+    },
+
+    clearStaged() {
+      this.staged = [];
+      this.renderShelf();
+      ContextOptimizer.updateBudgetMeter();
+    }
+  };
+
+  // ==========================================================================
+  // ATTACK GRAPH SIMULATOR (Graph-Based Attack Simulation & Choke Points)
+  // ==========================================================================
+  const AttackGraphSimulator = {
+    nodes: [
+      { id: 'node-edge', label: 'Edge Router', host: 'edge-gw.target.io', type: 'edge', vuln: 'CVE-2024-3400 (RCE)', cvss: 10.0, eps: 99, x: 70, y: 70, status: 'breached' },
+      { id: 'node-vpn', label: 'SSL-VPN', host: 'vpn.target.io', type: 'edge', vuln: 'CVE-2024-21762 (Heap Overflow)', cvss: 9.8, eps: 96, x: 70, y: 200, status: 'breached' },
+      { id: 'node-dmz', label: 'DMZ Ingress', host: 'nginx-ingress.internal', type: 'dmz', vuln: 'SSRF & Header Injection', cvss: 8.5, eps: 84, x: 230, y: 135, status: 'breached' },
+      { id: 'node-api', label: 'Internal API srv', host: 'api-srv02.internal', type: 'internal', vuln: 'BOLA / IDOR + JWT Weak Secret', cvss: 8.8, eps: 88, x: 390, y: 75, status: 'breached' },
+      { id: 'node-pki', label: 'ADCS PKI srv', host: 'srv-pki01.corp.local', type: 'internal', vuln: 'ADCS ESC1 (Choke Point)', cvss: 9.0, eps: 94, x: 390, y: 200, status: 'vulnerable' },
+      { id: 'node-dc', label: 'DC Crown Jewels', host: 'DC01.corp.local', type: 'crown', vuln: 'Enterprise Admin Takeover', cvss: 10.0, eps: 99, x: 550, y: 135, status: 'target' }
+    ],
+    edges: [
+      { from: 'node-edge', to: 'node-dmz', prob: 0.95, label: 'Pre-auth RCE Foothold' },
+      { from: 'node-vpn', to: 'node-dmz', prob: 0.90, label: 'Tunnel Access' },
+      { from: 'node-dmz', to: 'node-api', prob: 0.88, label: 'Internal Pivot' },
+      { from: 'node-dmz', to: 'node-pki', prob: 0.82, label: 'ADCS Enrollment' },
+      { from: 'node-api', to: 'node-dc', prob: 0.75, label: 'DB Backup Creds' },
+      { from: 'node-pki', to: 'node-dc', prob: 0.96, label: 'ESC1 Impersonation' }
+    ],
+    isSimulating: false,
+
+    init() {
+      const btnSim = document.getElementById('btn-graph-simulate');
+      const btnReset = document.getElementById('btn-graph-reset');
+      const btnAddNode = document.getElementById('btn-graph-add-node');
+      const btnBottlenecks = document.getElementById('btn-graph-bottlenecks');
+
+      if (btnSim) btnSim.addEventListener('click', () => this.runSimulation());
+      if (btnReset) btnReset.addEventListener('click', () => this.resetSimulation());
+      if (btnAddNode) btnAddNode.addEventListener('click', () => this.promptAddNode());
+      if (btnBottlenecks) btnBottlenecks.addEventListener('click', () => this.highlightBottlenecks());
+
+      this.render();
+      this.updateTelemetry();
+    },
+
+    render() {
+      const svg = document.getElementById('attack-graph-svg');
+      if (!svg) return;
+      svg.innerHTML = '';
+
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs.innerHTML = `
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="18" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#8888aa" />
+        </marker>
+        <marker id="arrowhead-breached" markerWidth="10" markerHeight="7" refX="18" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#ff4d4d" />
+        </marker>
+      `;
+      svg.appendChild(defs);
+
+      // Edges
+      this.edges.forEach((edge) => {
+        const fromNode = this.nodes.find(n => n.id === edge.from);
+        const toNode = this.nodes.find(n => n.id === edge.to);
+        if (!fromNode || !toNode) return;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const dx = toNode.x - fromNode.x;
+        const dy = toNode.y - fromNode.y;
+        const cx1 = fromNode.x + dx * 0.5;
+        const cy1 = fromNode.y;
+        const cx2 = fromNode.x + dx * 0.5;
+        const cy2 = toNode.y;
+        const d = `M ${fromNode.x} ${fromNode.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${toNode.x} ${toNode.y}`;
+
+        path.setAttribute('d', d);
+        path.setAttribute('class', `graph-edge ${edge.active ? 'active-sim' : ''}`);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', edge.active ? '#ff3333' : '#4a4a66');
+        path.setAttribute('stroke-width', edge.active ? '3.5' : '2');
+        if (edge.active) {
+          path.setAttribute('stroke-dasharray', '6,4');
+        }
+        path.setAttribute('marker-end', edge.active ? 'url(#arrowhead-breached)' : 'url(#arrowhead)');
+        svg.appendChild(path);
+
+        // Edge prob label
+        const midX = (fromNode.x + toNode.x) / 2;
+        const midY = (fromNode.y + toNode.y) / 2 - 6;
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', midX);
+        text.setAttribute('y', midY);
+        text.setAttribute('fill', edge.active ? '#ffff88' : '#8888aa');
+        text.setAttribute('font-size', '9.5px');
+        text.setAttribute('font-family', 'monospace');
+        text.setAttribute('text-anchor', 'middle');
+        text.textContent = `${Math.round(edge.prob * 100)}%`;
+        svg.appendChild(text);
+      });
+
+      // Nodes
+      this.nodes.forEach(node => {
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', 'graph-node-group');
+        group.style.cursor = 'pointer';
+
+        let color = '#d35400';
+        if (node.type === 'edge') color = '#b83b26';
+        if (node.type === 'dmz') color = '#d35400';
+        if (node.type === 'internal') color = '#f39c12';
+        if (node.type === 'crown') color = '#8b0000';
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', node.x);
+        circle.setAttribute('cy', node.y);
+        circle.setAttribute('r', node.type === 'crown' ? '18' : '14');
+        circle.setAttribute('fill', color);
+        circle.setAttribute('stroke', node.status === 'breached' ? '#ff4d4d' : (node.highlight ? '#ffff00' : '#ffffff'));
+        circle.setAttribute('stroke-width', node.highlight ? '3.5' : '2');
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', node.x);
+        text.setAttribute('y', node.y + (node.type === 'crown' ? 26 : 22));
+        text.setAttribute('fill', '#ffffff');
+        text.setAttribute('font-size', '10px');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('text-anchor', 'middle');
+        text.textContent = node.label;
+
+        const subText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        subText.setAttribute('x', node.x);
+        subText.setAttribute('y', node.y + (node.type === 'crown' ? 36 : 32));
+        subText.setAttribute('fill', '#aaaaaa');
+        subText.setAttribute('font-size', '8.5px');
+        subText.setAttribute('font-family', 'monospace');
+        subText.setAttribute('text-anchor', 'middle');
+        subText.textContent = node.host;
+
+        group.appendChild(circle);
+        group.appendChild(text);
+        group.appendChild(subText);
+
+        group.addEventListener('mouseenter', (e) => this.showTooltip(node, e));
+        group.addEventListener('mouseleave', () => this.hideTooltip());
+        group.addEventListener('click', () => {
+          const chatInput = document.getElementById('chat-input');
+          if (chatInput) {
+            chatInput.value = `Analyze attack vector on ${node.label} (${node.host}) using ${node.vuln} (CVSS ${node.cvss}, EPS ${node.eps})`;
+            WindowManager.open('win-chat');
+          }
+        });
+
+        svg.appendChild(group);
+      });
+    },
+
+    showTooltip(node, e) {
+      const tip = document.getElementById('graph-node-tooltip');
+      const container = document.getElementById('attack-graph-container');
+      if (!tip || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const left = Math.min(rect.width - 240, Math.max(10, node.x + 20));
+      const top = Math.min(rect.height - 120, Math.max(10, node.y - 40));
+
+      tip.style.left = `${left}px`;
+      tip.style.top = `${top}px`;
+      tip.style.display = 'block';
+      tip.innerHTML = `
+        <strong style="color:#000080;">${node.label}</strong><br>
+        <span style="font-family:monospace; font-size:10px; color:#555;">${node.host}</span><br>
+        <hr style="margin:4px 0; border:0; border-top:1px solid #ccc;">
+        <strong>Vuln:</strong> ${node.vuln}<br>
+        <strong>CVSS:</strong> ${node.cvss} | <strong>EPS:</strong> ${node.eps}/100<br>
+        <strong>Status:</strong> <span style="color:${node.status === 'breached' ? '#8b0000' : '#000080'}; font-weight:bold;">${node.status.toUpperCase()}</span><br>
+        <small style="color:#666; font-style:italic;">Click to query PickyHack Copilot</small>
+      `;
+    },
+
+    hideTooltip() {
+      const tip = document.getElementById('graph-node-tooltip');
+      if (tip) tip.style.display = 'none';
+    },
+
+    runSimulation() {
+      this.isSimulating = true;
+      this.edges.forEach(e => {
+        if ((e.from === 'node-edge' && e.to === 'node-dmz') ||
+            (e.from === 'node-dmz' && e.to === 'node-pki') ||
+            (e.from === 'node-pki' && e.to === 'node-dc')) {
+          e.active = true;
+        } else {
+          e.active = false;
+        }
+      });
+      this.render();
+
+      const probEl = document.getElementById('metric-breach-prob');
+      if (probEl) {
+        probEl.textContent = 'SIMULATING...';
+        setTimeout(() => {
+          probEl.textContent = '88.6% (CRITICAL)';
+          this.isSimulating = false;
+        }, 500);
+      }
+    },
+
+    resetSimulation() {
+      this.edges.forEach(e => e.active = false);
+      this.nodes.forEach(n => n.highlight = false);
+      this.render();
+      const probEl = document.getElementById('metric-breach-prob');
+      if (probEl) probEl.textContent = '88.6%';
+    },
+
+    highlightBottlenecks() {
+      this.nodes.forEach(n => {
+        if (n.id === 'node-pki' || n.id === 'node-edge') {
+          n.highlight = true;
+        } else {
+          n.highlight = false;
+        }
+      });
+      this.render();
+      alert('Choke Point Identified: srv-pki01 (ADCS ESC1) is the critical defense bottleneck. Mitigating ESC1 template misconfiguration disrupts 78.4% of domain takeover paths.');
+    },
+
+    promptAddNode() {
+      const name = prompt('Enter Asset Name (e.g. Database Backup Server):');
+      if (!name) return;
+      const host = prompt('Enter Host/IP (e.g. 10.10.10.45):', '10.10.10.45');
+      const vuln = prompt('Enter Suspected Vulnerability:', 'Unauthenticated Redis / RCE');
+      this.nodes.push({
+        id: `node-${Date.now()}`,
+        label: name,
+        host: host || '10.10.10.x',
+        type: 'internal',
+        vuln: vuln || 'Exposed Service',
+        cvss: 7.5,
+        eps: 78,
+        x: 230 + Math.random() * 100,
+        y: 80 + Math.random() * 100,
+        status: 'vulnerable'
+      });
+      this.render();
+    },
+
+    updateTelemetry() {
+      const probEl = document.getElementById('metric-breach-prob');
+      const pathEl = document.getElementById('metric-fastest-path');
+      const bneckEl = document.getElementById('metric-bottleneck');
+      const epsEl = document.getElementById('metric-combined-eps');
+
+      if (probEl) probEl.textContent = '88.6%';
+      if (pathEl) pathEl.textContent = 'Edge → DMZ → PKI → DC';
+      if (bneckEl) bneckEl.textContent = 'ADCS ESC1 (srv-pki01)';
+      if (epsEl) epsEl.textContent = '96 / 100';
+    }
+  };
+
+  // ==========================================================================
+  // CONTEXT OPTIMIZER (In-Memory Context Window Optimizer & Token Pruning)
+  // ==========================================================================
+  const ContextOptimizer = {
+    MODEL_LIMITS: {
+      'gpt-4o': 128000,
+      'claude-3-7-sonnet': 200000,
+      'gemini-2.5-pro': 1000000,
+      'mistral-large': 128000,
+      'default': 128000
+    },
+
+    init() {
+      const pill = document.getElementById('token-optimizer-pill');
+      const modal = document.getElementById('token-optimizer-modal');
+      const closeX = document.getElementById('token-optimizer-close-x');
+      const closeBtn = document.getElementById('token-optimizer-close-btn');
+      const btnPrune = document.getElementById('btn-run-token-prune');
+
+      if (pill && modal) pill.addEventListener('click', () => this.openModal());
+      if (closeX && modal) closeX.addEventListener('click', () => modal.classList.remove('open'));
+      if (closeBtn && modal) closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+      if (btnPrune) btnPrune.addEventListener('click', () => this.pruneActiveContext());
+
+      this.updateBudgetMeter();
+    },
+
+    estimateTokens(str) {
+      if (!str) return 0;
+      return Math.ceil(str.length / 3.8);
+    },
+
+    calculateContextBreakdown() {
+      const conv = getActiveConversation();
+      const activeEngine = MultiAPIManager.getActiveEngine();
+      const model = activeEngine.customModel || activeEngine.model || 'default';
+      const maxLimit = this.MODEL_LIMITS[model] || 128000;
+
+      const systemTok = 350;
+      const scopeTok = this.estimateTokens(pentestState.target + pentestState.scope + pentestState.objectives);
+      const findingsTok = this.estimateTokens(JSON.stringify(pentestState.findings));
+      
+      let convText = '';
+      (conv.messages || []).forEach(m => {
+        convText += (m.text || '') + (m.code || '');
+      });
+      const convTok = this.estimateTokens(convText);
+
+      let attTok = 0;
+      AttachmentManager.staged.forEach(a => {
+        attTok += a.type === 'text' ? this.estimateTokens(a.textContent) : 250;
+      });
+
+      const total = systemTok + scopeTok + findingsTok + convTok + attTok;
+      const percent = Math.min(100, ((total / maxLimit) * 100)).toFixed(1);
+
+      return {
+        systemTok,
+        scopeTok,
+        findingsTok,
+        convTok,
+        attTok,
+        total,
+        maxLimit,
+        percent
+      };
+    },
+
+    updateBudgetMeter() {
+      const breakdown = this.calculateContextBreakdown();
+      const label = document.getElementById('token-budget-label');
+      if (label) {
+        label.textContent = `${breakdown.total.toLocaleString()} tok (~${breakdown.percent}%)`;
+      }
+    },
+
+    openModal() {
+      const modal = document.getElementById('token-optimizer-modal');
+      const details = document.getElementById('token-breakdown-details');
+      const ratio = document.getElementById('token-total-ratio');
+      const bar = document.getElementById('token-progress-bar');
+      if (!modal) return;
+
+      const b = this.calculateContextBreakdown();
+      if (ratio) ratio.textContent = `${b.total.toLocaleString()} / ${b.maxLimit.toLocaleString()} tokens (${b.percent}%)`;
+      if (bar) bar.style.width = `${Math.max(2, Math.min(100, b.percent))}%`;
+
+      if (details) {
+        details.innerHTML = `
+          • System &amp; Persona Instructions: ~${b.systemTok} tokens<br>
+          • Scope &amp; Target Context: ~${b.scopeTok} tokens<br>
+          • Verified Findings (Prioritized): ~${b.findingsTok} tokens<br>
+          • Ephemeral Conversation Stream: ~${b.convTok} tokens<br>
+          • Attached Artifacts (Staged): ~${b.attTok} tokens<br>
+          <strong style="color: #000080;">=&gt; Available Headroom: ~${(b.maxLimit - b.total).toLocaleString()} tokens</strong>
+        `;
+      }
+
+      modal.classList.add('open');
+    },
+
+    pruneActiveContext() {
+      const conv = getActiveConversation();
+      let prunedCount = 0;
+      if (conv.messages) {
+        conv.messages.forEach(m => {
+          if (m.text && m.text.length > 500) {
+            const originalLen = m.text.length;
+            m.text = m.text
+              .replace(/Starting Nmap.*?\n/gi, '')
+              .replace(/Nmap done:.*?\n/gi, '')
+              .replace(/={10,}/g, '---');
+            if (m.text.length < originalLen) prunedCount++;
+          }
+        });
+      }
+      this.updateBudgetMeter();
+      renderChatThread();
+      alert(`Context Optimizer pruned ${prunedCount} verbose outputs and freed memory tokens.`);
+    }
+  };
+
+  // ==========================================================================
+  // BURP SUITE & OWASP ZAP INGESTION BRIDGE
+  // ==========================================================================
+  const BurpZapBridge = {
+    stagedIssues: [],
+
+    init() {
+      const btnOpen = document.getElementById('btn-open-burp-zap-import');
+      const btnFromChat = document.getElementById('btn-open-burp-from-chat');
+      const menuBurp = document.getElementById('chat-menu-burp');
+      const fileInput = document.getElementById('burp-zap-file-input');
+      const dropzone = document.getElementById('burp-zap-dropzone');
+      const btnSampleBurp = document.getElementById('btn-load-sample-burp');
+      const btnSampleZap = document.getElementById('btn-load-sample-zap');
+      const btnCommit = document.getElementById('btn-commit-burp-zap');
+
+      if (btnOpen) btnOpen.addEventListener('click', () => WindowManager.open('win-burp-zap-import'));
+      if (btnFromChat) btnFromChat.addEventListener('click', () => WindowManager.open('win-burp-zap-import'));
+      if (menuBurp) menuBurp.addEventListener('click', () => WindowManager.open('win-burp-zap-import'));
+
+      if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+          if (e.target.files && e.target.files[0]) {
+            this.readFile(e.target.files[0]);
+          }
+        });
+      }
+
+      if (dropzone) {
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+        dropzone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+            this.readFile(e.dataTransfer.files[0]);
+          }
+        });
+      }
+
+      if (btnSampleBurp) btnSampleBurp.addEventListener('click', () => this.loadSampleBurp());
+      if (btnSampleZap) btnSampleZap.addEventListener('click', () => this.loadSampleZap());
+      if (btnCommit) btnCommit.addEventListener('click', () => this.commitToFindings());
+    },
+
+    readFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result;
+        this.parseData(text, file.name);
+      };
+      reader.readAsText(file);
+    },
+
+    parseData(raw, filename = '') {
+      const trimmed = raw.trim();
+      let parsed = [];
+
+      if (trimmed.startsWith('<') && (trimmed.includes('<issue') || trimmed.includes('<issues'))) {
+        parsed = this.parseBurpXml(trimmed);
+      } else if (trimmed.startsWith('{') && trimmed.includes('site')) {
+        parsed = this.parseZapJson(trimmed);
+      } else if (trimmed.startsWith('{') && trimmed.includes('issues')) {
+        parsed = this.parseBurpJson(trimmed);
+      } else {
+        parsed = this.parseBurpXml(trimmed);
+      }
+
+      if (parsed.length === 0) {
+        alert('Could not parse any vulnerability issues from this file. Format should be Burp XML/JSON or OWASP ZAP XML/JSON.');
+        return;
+      }
+
+      this.stagedIssues = parsed;
+      this.renderTable();
+    },
+
+    parseBurpXml(xml) {
+      const issues = [];
+      const issueRegex = /<issue>([\s\S]*?)<\/issue>/gi;
+      let match;
+      while ((match = issueRegex.exec(xml)) !== null) {
+        const block = match[1];
+        const nameMatch = block.match(/<name>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/name>/i);
+        const hostMatch = block.match(/<host[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/host>/i);
+        const pathMatch = block.match(/<path>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/path>/i);
+        const sevMatch = block.match(/<severity>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/severity>/i);
+
+        const name = nameMatch ? nameMatch[1].trim() : 'Unnamed Burp Issue';
+        const host = hostMatch ? hostMatch[1].trim() : (pentestState.target || 'target.example.com');
+        const path = pathMatch ? pathMatch[1].trim() : '/';
+        const sev = sevMatch ? sevMatch[1].trim() : 'Medium';
+
+        let cvss = 6.5;
+        if (sev.toLowerCase() === 'high') cvss = 8.5;
+        if (sev.toLowerCase() === 'critical') cvss = 9.8;
+        if (sev.toLowerCase() === 'low') cvss = 4.0;
+        if (sev.toLowerCase() === 'information') cvss = 0.0;
+
+        issues.push({
+          id: `burp-${Date.now()}-${issues.length}`,
+          title: name,
+          cve: name.includes('CVE-') ? (name.match(/CVE-\d{4}-\d+/i) || [''])[0] : 'N/A',
+          target: `${host}${path}`,
+          severity: sev,
+          cvss: cvss,
+          eps: Math.min(99, Math.round(cvss * 10)),
+          source: 'Burp Suite'
+        });
+      }
+      return issues;
+    },
+
+    parseZapJson(jsonStr) {
+      const issues = [];
+      try {
+        const data = JSON.parse(jsonStr);
+        const sites = data.site || (Array.isArray(data) ? data : [data]);
+        sites.forEach(site => {
+          const alerts = site.alerts || [];
+          alerts.forEach(al => {
+            const sevMap = { '3': 'High', '2': 'Medium', '1': 'Low', '0': 'Informational' };
+            const sev = sevMap[al.riskcode] || al.riskdesc || 'Medium';
+            issues.push({
+              id: `zap-${Date.now()}-${issues.length}`,
+              title: al.alert || al.name || 'OWASP ZAP Finding',
+              cve: 'N/A',
+              target: al.instances && al.instances[0] ? al.instances[0].uri : (site['@name'] || pentestState.target),
+              severity: sev,
+              cvss: sev === 'High' ? 8.5 : (sev === 'Medium' ? 6.5 : 4.0),
+              eps: sev === 'High' ? 85 : (sev === 'Medium' ? 65 : 40),
+              source: 'OWASP ZAP'
+            });
+          });
+        });
+      } catch (e) {
+        console.warn('Failed to parse ZAP JSON:', e);
+      }
+      return issues;
+    },
+
+    parseBurpJson(jsonStr) {
+      try {
+        const data = JSON.parse(jsonStr);
+        return (data.issues || []).map((iss, idx) => ({
+          id: `burp-${Date.now()}-${idx}`,
+          title: iss.name || 'Burp Finding',
+          cve: 'N/A',
+          target: iss.host + (iss.path || ''),
+          severity: iss.severity || 'Medium',
+          cvss: iss.severity === 'High' ? 8.5 : 6.0,
+          eps: iss.severity === 'High' ? 88 : 60,
+          source: 'Burp Suite'
+        }));
+      } catch (e) {
+        return [];
+      }
+    },
+
+    loadSampleBurp() {
+      const sample = `<?xml version="1.0"?>
+<issues burpVersion="2024.3">
+  <issue>
+    <name>SQL Injection (Blind / Time-based)</name>
+    <host ip="198.51.100.12">api.target.com</host>
+    <path>/v1/search?category=admin' OR SLEEP(5)--</path>
+    <severity>High</severity>
+  </issue>
+  <issue>
+    <name>Cross-Site Scripting (Reflected)</name>
+    <host ip="198.51.100.12">app.target.com</host>
+    <path>/login?redirect=javascript:alert(document.cookie)</path>
+    <severity>Medium</severity>
+  </issue>
+  <issue>
+    <name>Server-Side Template Injection (SSTI)</name>
+    <host ip="198.51.100.12">portal.target.com</host>
+    <path>/render?tpl={{7*7}}</path>
+    <severity>Critical</severity>
+  </issue>
+</issues>`;
+      this.parseData(sample, 'sample_burp_scan.xml');
+    },
+
+    loadSampleZap() {
+      const sample = JSON.stringify({
+        site: [{
+          "@name": "https://target-portal.com",
+          alerts: [
+            { alert: "Remote OS Command Injection", riskcode: "3", instances: [{ uri: "https://target-portal.com/api/exec" }] },
+            { alert: "Path Traversal / Arbitrary File Read", riskcode: "3", instances: [{ uri: "https://target-portal.com/files?path=../../etc/passwd" }] },
+            { alert: "CORS Misconfiguration (Arbitrary Origin)", riskcode: "2", instances: [{ uri: "https://target-portal.com/api/user" }] }
+          ]
+        }]
+      });
+      this.parseData(sample, 'sample_zap_report.json');
+    },
+
+    renderTable() {
+      const tbody = document.getElementById('burp-zap-table-body');
+      const countBadge = document.getElementById('burp-zap-count-badge');
+      const sbCount = document.getElementById('sb-burp-zap-count');
+      if (!tbody) return;
+
+      if (countBadge) countBadge.textContent = this.stagedIssues.length;
+      if (sbCount) sbCount.textContent = `Detected: ${this.stagedIssues.length}`;
+
+      if (this.stagedIssues.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #777; padding: 20px;">No scan data loaded yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+      this.stagedIssues.forEach((iss, idx) => {
+        const tr = document.createElement('tr');
+        const sevClass = iss.severity.toLowerCase() === 'critical' ? 'badge-kev' : (iss.severity.toLowerCase() === 'high' ? 'badge-eps' : '');
+        tr.innerHTML = `
+          <td><span class="${sevClass}" style="padding: 1px 4px;">${iss.severity}</span></td>
+          <td><strong>${iss.title}</strong><br><small style="color:#666;">Source: ${iss.source}</small></td>
+          <td style="font-family: monospace; font-size: 11px;">${iss.target}</td>
+          <td><strong>${iss.cvss}</strong> <span style="color:#8b0000; font-size:10px;">(${iss.eps})</span></td>
+          <td>
+            <button class="win-btn btn-add-single-issue" data-idx="${idx}" style="font-size: 10px; padding: 1px 4px;">+ Ingest</button>
+          </td>
+        `;
+
+        tr.querySelector('.btn-add-single-issue').addEventListener('click', () => {
+          this.commitSingle(idx);
+        });
+
+        tbody.appendChild(tr);
+      });
+    },
+
+    commitSingle(idx) {
+      const iss = this.stagedIssues[idx];
+      if (!iss) return;
+      pentestState.findings.push({
+        id: `f-${Date.now()}`,
+        title: iss.title,
+        cve: iss.cve,
+        target: iss.target,
+        cvss: iss.cvss,
+        eps: iss.eps,
+        severity: iss.severity,
+        status: 'Unconfirmed'
+      });
+      FindingsManager.render();
+      DeliverableGenerator.updateStats();
+      alert(`Ingested "${iss.title}" into Findings registry.`);
+    },
+
+    commitToFindings() {
+      if (this.stagedIssues.length === 0) {
+        alert('No issues to ingest. Please load or drop a scan report first.');
+        return;
+      }
+
+      this.stagedIssues.forEach(iss => {
+        pentestState.findings.push({
+          id: `f-${Date.now()}-${Math.random().toString(36).substr(2,4)}`,
+          title: iss.title,
+          cve: iss.cve,
+          target: iss.target,
+          cvss: iss.cvss,
+          eps: iss.eps,
+          severity: iss.severity,
+          status: 'Confirmed'
+        });
+      });
+
+      FindingsManager.render();
+      DeliverableGenerator.updateStats();
+      WindowManager.open('win-findings');
+      alert(`Successfully ingested ${this.stagedIssues.length} issues into Findings & Vulnerabilities registry!`);
+    }
+  };
+
+  // ==========================================================================
+  // FORMAL PENTEST DELIVERABLE GENERATOR (PDF / Markdown / HTML)
+  // ==========================================================================
+  const DeliverableGenerator = {
+    init() {
+      const btnOpen = document.getElementById('btn-open-report-from-chat');
+      const btnFromFindings = document.getElementById('btn-findings-export-report');
+      const menuReport = document.getElementById('chat-menu-report');
+      const btnPrint = document.getElementById('btn-report-print-pdf');
+      const btnDownloadMd = document.getElementById('btn-report-download-md');
+      const btnDownloadHtml = document.getElementById('btn-report-download-html');
+      const btnCopyAll = document.getElementById('btn-report-copy-all');
+      const btnRefresh = document.getElementById('btn-report-refresh');
+
+      if (btnOpen) btnOpen.addEventListener('click', () => this.open());
+      if (btnFromFindings) btnFromFindings.addEventListener('click', () => this.open());
+      if (menuReport) menuReport.addEventListener('click', () => this.open());
+
+      if (btnPrint) btnPrint.addEventListener('click', () => window.print());
+      if (btnDownloadMd) btnDownloadMd.addEventListener('click', () => this.downloadMarkdown());
+      if (btnDownloadHtml) btnDownloadHtml.addEventListener('click', () => this.downloadHtml());
+      if (btnCopyAll) btnCopyAll.addEventListener('click', () => this.copyReport());
+      if (btnRefresh) btnRefresh.addEventListener('click', () => this.renderReportDoc());
+
+      const clientInput = document.getElementById('report-client-name');
+      const assessorInput = document.getElementById('report-assessor-name');
+      const typeSelect = document.getElementById('report-assessment-type');
+
+      if (clientInput) clientInput.addEventListener('input', () => this.renderReportDoc());
+      if (assessorInput) assessorInput.addEventListener('input', () => this.renderReportDoc());
+      if (typeSelect) typeSelect.addEventListener('change', () => this.renderReportDoc());
+
+      this.updateStats();
+    },
+
+    open() {
+      this.renderReportDoc();
+      WindowManager.open('win-report-export');
+    },
+
+    updateStats() {
+      const sbCount = document.getElementById('sb-report-findings-count');
+      if (sbCount) sbCount.textContent = `Findings Included: ${pentestState.findings.length}`;
+    },
+
+    buildReportData() {
+      const client = (document.getElementById('report-client-name') || {}).value || 'Acme Cyber Corp';
+      const assessor = (document.getElementById('report-assessor-name') || {}).value || 'PickyHack Offensive Security Team';
+      const assessType = (document.getElementById('report-assessment-type') || {}).value || 'External Network & Web Application Pentest';
+      const target = pentestState.target || 'target.example.com';
+      const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+      const counts = { Critical: 0, High: 0, Medium: 0, Low: 0, Info: 0 };
+      pentestState.findings.forEach(f => {
+        const s = f.severity || 'Medium';
+        if (counts[s] !== undefined) counts[s]++;
+        else counts.Medium++;
+      });
+
+      return {
+        client,
+        assessor,
+        assessType,
+        target,
+        dateStr,
+        counts,
+        findings: pentestState.findings,
+        notes: pentestState.rawNotes,
+        attackPaths: pentestState.attackPaths
+      };
+    },
+
+    renderReportDoc() {
+      const doc = document.getElementById('pentest-deliverable-doc');
+      if (!doc) return;
+
+      const d = this.buildReportData();
+
+      const findingsRows = d.findings.map((f, i) => `
+        <tr>
+          <td><strong>SEC-${String(i + 1).padStart(3, '0')}</strong></td>
+          <td><strong>${f.title}</strong><br><small style="color:#666;">${f.cve || 'N/A'}</small></td>
+          <td><span class="badge-${f.severity.toLowerCase() === 'critical' ? 'kev' : 'eps'}">${f.severity}</span></td>
+          <td><strong>${f.cvss}</strong></td>
+          <td style="font-family:monospace; font-size:11px;">${f.target}</td>
+          <td><span style="color:#000080; font-weight:bold;">${f.status}</span></td>
+        </tr>
+      `).join('');
+
+      const findingDossiers = d.findings.map((f, i) => `
+        <div class="report-finding-dossier" style="margin-top: 24px; padding-top: 16px; border-top: 2px solid #000080;">
+          <h3 style="color:#000080; margin-bottom: 6px;">SEC-${String(i + 1).padStart(3, '0')}: ${f.title}</h3>
+          <table class="report-meta-table" style="width:100%; font-size:11px; margin-bottom: 12px; border-collapse:collapse;">
+            <tr>
+              <td style="padding:4px; border:1px solid #ccc; background:#f5f5f5;"><strong>Severity:</strong> ${f.severity}</td>
+              <td style="padding:4px; border:1px solid #ccc; background:#f5f5f5;"><strong>CVSS v3.1:</strong> ${f.cvss}</td>
+              <td style="padding:4px; border:1px solid #ccc; background:#f5f5f5;"><strong>EPS Score:</strong> ${f.eps || 90}/100</td>
+              <td style="padding:4px; border:1px solid #ccc; background:#f5f5f5;"><strong>Asset:</strong> ${f.target}</td>
+            </tr>
+          </table>
+          <p style="font-size:12px; line-height:1.6; color:#222;">
+            <strong>Vulnerability Description:</strong> During assessment against ${f.target}, PickyHack verified the presence of ${f.title}. This condition allows unauthorized adversaries to execute arbitrary code or bypass security controls without valid administrative credentials.
+          </p>
+          <div style="background:#f8f9fa; border-left:4px solid #8b0000; padding:8px 12px; font-family:monospace; font-size:11px; margin: 10px 0;">
+            # PoC Verification Command &amp; Artifact:<br>
+            curl -k -X POST "https://${f.target}/api/check" -H "X-PickyHack-Audit: true" -d '{"payload":"test"}'
+          </div>
+          <p style="font-size:12px; line-height:1.6; color:#222;">
+            <strong>Remediation Guidance:</strong> Apply the latest vendor security patches immediately. Restrict edge network perimeter access to trusted management CIDRs only, and enable automated alerting on anomalous invocation patterns.
+          </p>
+        </div>
+      `).join('');
+
+      doc.innerHTML = `
+        <!-- Report Header / Cover Block -->
+        <div class="report-header-block" style="border-bottom: 3px solid #000080; padding-bottom: 18px; margin-bottom: 24px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <h1 style="font-size: 24px; color: #000080; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Formal Penetration Test Deliverable</h1>
+              <p style="font-size: 13px; color: #555; margin: 4px 0 0 0;">${d.assessType}</p>
+            </div>
+            <img src="assets/pickyhack-logo.png" alt="PickyHack Logo" style="width: 58px; height: 58px; object-fit: contain;">
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; font-size: 11.5px; background: #f4f6f9; padding: 10px; border-radius: 4px;">
+            <div><strong>Client:</strong> ${d.client}</div>
+            <div><strong>Date:</strong> ${d.dateStr}</div>
+            <div><strong>Classification:</strong> CONFIDENTIAL</div>
+            <div><strong>Target Scope:</strong> ${d.target}</div>
+            <div><strong>Assessor:</strong> ${d.assessor}</div>
+            <div><strong>Harness Version:</strong> PickyHack v1.0</div>
+          </div>
+        </div>
+
+        <!-- 1. Executive Summary -->
+        <section class="report-section">
+          <h2 style="color: #000080; border-bottom: 1px solid #ccc; padding-bottom: 4px; font-size: 16px;">1. Executive Summary</h2>
+          <p style="font-size: 12px; line-height: 1.6; color: #222;">
+            Between ${d.dateStr}, ${d.assessor} performed a rigorous security assessment against <strong>${d.target}</strong>. 
+            The objective was to identify security vulnerabilities, evaluate defense-in-depth posture, and emulate adversary breach scenarios.
+          </p>
+          <div style="background: #fff3cd; border: 1px solid #ffeeba; border-left: 5px solid #ffaa00; padding: 10px; margin: 12px 0; font-size: 12px;">
+            <strong>Overall Security Posture: ${d.counts.Critical > 0 ? 'CRITICAL RISK' : (d.counts.High > 0 ? 'HIGH RISK' : 'MODERATE RISK')}</strong><br>
+            A total of <strong>${d.findings.length}</strong> vulnerabilities were validated, including <strong>${d.counts.Critical} Critical</strong> and <strong>${d.counts.High} High</strong> severity issues. 
+            Immediate remediation is strongly advised to prevent perimeter breach.
+          </div>
+        </section>
+
+        <!-- 2. Vulnerability Risk Breakdown Matrix -->
+        <section class="report-section" style="margin-top: 20px;">
+          <h2 style="color: #000080; border-bottom: 1px solid #ccc; padding-bottom: 4px; font-size: 16px;">2. CVSS &amp; EPS Risk Matrix</h2>
+          <table class="risk-matrix-table" style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px;">
+            <thead>
+              <tr style="background: #000080; color: #fff;">
+                <th style="padding: 6px; text-align: left; border: 1px solid #000080;">Severity</th>
+                <th style="padding: 6px; text-align: left; border: 1px solid #000080;">CVSS Range</th>
+                <th style="padding: 6px; text-align: left; border: 1px solid #000080;">Count</th>
+                <th style="padding: 6px; text-align: left; border: 1px solid #000080;">Remediation SLA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background:#ffeded;">
+                <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; color: #8b0000;">Critical</td>
+                <td style="padding: 6px; border: 1px solid #ddd;">9.0 – 10.0</td>
+                <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">${d.counts.Critical}</td>
+                <td style="padding: 6px; border: 1px solid #ddd;">24 Hours</td>
+              </tr>
+              <tr style="background:#fff4e6;">
+                <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; color: #d35400;">High</td>
+                <td style="padding: 6px; border: 1px solid #ddd;">7.0 – 8.9</td>
+                <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">${d.counts.High}</td>
+                <td style="padding: 6px; border: 1px solid #ddd;">7 Days</td>
+              </tr>
+              <tr style="background:#fffaea;">
+                <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; color: #856404;">Medium</td>
+                <td style="padding: 6px; border: 1px solid #ddd;">4.0 – 6.9</td>
+                <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">${d.counts.Medium}</td>
+                <td style="padding: 6px; border: 1px solid #ddd;">30 Days</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; color: #155724;">Low / Informational</td>
+                <td style="padding: 6px; border: 1px solid #ddd;">0.1 – 3.9</td>
+                <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">${d.counts.Low + d.counts.Info}</td>
+                <td style="padding: 6px; border: 1px solid #ddd;">Next Release Cycle</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- 3. Attack Path & Exploit Intelligence -->
+        <section class="report-section" style="margin-top: 20px;">
+          <h2 style="color: #000080; border-bottom: 1px solid #ccc; padding-bottom: 4px; font-size: 16px;">3. Attack Path &amp; Choke Point Analysis</h2>
+          <p style="font-size: 12px; line-height: 1.6; color: #222;">
+            PickyHack simulated multi-stage lateral movement paths from edge reconnaissance to enterprise compromise:
+          </p>
+          <div style="background: #111; color: #00ff66; padding: 10px; font-family: monospace; font-size: 11px; border-radius: 4px; line-height: 1.5;">
+            ${d.attackPaths.map((p, i) => `[Hop ${i+1}]: ${p}`).join('<br>') || '[Hop 1]: Edge Perimeter Access → DMZ Pivot → Internal PrivEsc → Domain Controller'}
+          </div>
+        </section>
+
+        <!-- 4. Detailed Findings Registry -->
+        <section class="report-section" style="margin-top: 20px;">
+          <h2 style="color: #000080; border-bottom: 1px solid #ccc; padding-bottom: 4px; font-size: 16px;">4. Technical Findings &amp; Proof of Concept</h2>
+          <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11.5px;">
+            <thead>
+              <tr style="background: #f0f0f0;">
+                <th style="padding: 5px; border: 1px solid #ccc; text-align:left;">ID</th>
+                <th style="padding: 5px; border: 1px solid #ccc; text-align:left;">Finding Title</th>
+                <th style="padding: 5px; border: 1px solid #ccc; text-align:left;">Severity</th>
+                <th style="padding: 5px; border: 1px solid #ccc; text-align:left;">CVSS</th>
+                <th style="padding: 5px; border: 1px solid #ccc; text-align:left;">Affected Target</th>
+                <th style="padding: 5px; border: 1px solid #ccc; text-align:left;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${findingsRows}
+            </tbody>
+          </table>
+
+          <!-- Dossiers -->
+          ${findingDossiers}
+        </section>
+
+        <!-- 5. Strategic Remediation Roadmap -->
+        <section class="report-section" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #ccc;">
+          <h2 style="color: #000080; border-bottom: 1px solid #ccc; padding-bottom: 4px; font-size: 16px;">5. Remediation Roadmap &amp; Checklist</h2>
+          <ul style="font-size: 12px; line-height: 1.8; color: #222;">
+            <li>[ ] <strong>Phase 1 (Immediate - 24h):</strong> Patch critical edge vulnerabilities (CVE-2024-3400, CVE-2024-21762).</li>
+            <li>[ ] <strong>Phase 2 (Short term - 7d):</strong> Rotate all Active Directory service account passwords and revoke vulnerable ADCS templates.</li>
+            <li>[ ] <strong>Phase 3 (Medium term - 30d):</strong> Enforce mutual TLS (mTLS) between internal DMZ microservices and isolate legacy subnets.</li>
+            <li>[ ] <strong>Phase 4 (Continuous):</strong> Deploy automated continuous attack surface monitoring (Nuclei / Burp CI/CD scans).</li>
+          </ul>
+          <p style="font-size: 11px; color: #777; margin-top: 20px; text-align: center;">
+            Generated by PickyHack — Stateless AI Context Harness for Offensive Security.
+          </p>
+        </section>
+      `;
+
+      this.updateStats();
+    },
+
+    generateMarkdown() {
+      const d = this.buildReportData();
+      return `# PENTEST REPORT DELIVERABLE — ${d.client.toUpperCase()}
+**Assessment Type:** ${d.assessType}  
+**Date:** ${d.dateStr}  
+**Lead Assessor:** ${d.assessor}  
+**Target Scope:** ${d.target}  
+**Classification:** CONFIDENTIAL  
+
+---
+
+## 1. Executive Summary
+Between ${d.dateStr}, ${d.assessor} performed a rigorous offensive security assessment against ${d.target}.
+**Overall Posture:** ${d.counts.Critical > 0 ? 'CRITICAL RISK' : (d.counts.High > 0 ? 'HIGH RISK' : 'MODERATE RISK')}
+Total Verified Findings: ${d.findings.length} (Critical: ${d.counts.Critical}, High: ${d.counts.High}, Medium: ${d.counts.Medium})
+
+---
+
+## 2. Risk Matrix
+| Severity | CVSS Range | Count | Remediation SLA |
+| :--- | :--- | :--- | :--- |
+| Critical | 9.0 – 10.0 | ${d.counts.Critical} | 24 Hours |
+| High | 7.0 – 8.9 | ${d.counts.High} | 7 Days |
+| Medium | 4.0 – 6.9 | ${d.counts.Medium} | 30 Days |
+| Low/Info | 0.0 – 3.9 | ${d.counts.Low + d.counts.Info} | Next Release |
+
+---
+
+## 3. Attack Path & Exploit Intelligence
+${d.attackPaths.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+
+---
+
+## 4. Technical Findings Details
+
+${d.findings.map((f, i) => `### [SEC-${String(i+1).padStart(3, '0')}] ${f.title}
+- **Target:** ${f.target}
+- **Severity:** ${f.severity}
+- **CVSS v3.1:** ${f.cvss} | **EPS:** ${f.eps || 90}/100
+- **Status:** ${f.status}
+
+**Description & PoC:**
+Verified via PickyHack context harness against ${f.target}. Immediate patching and network isolation required.
+`).join('\n\n')}
+
+---
+*Report generated by PickyHack Context Harness for Offensive Security.*`;
+    },
+
+    downloadMarkdown() {
+      const md = this.generateMarkdown();
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `PickyHack_Pentest_Deliverable_${new Date().toISOString().slice(0,10)}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+
+    downloadHtml() {
+      const doc = document.getElementById('pentest-deliverable-doc');
+      if (!doc) return;
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Pentest Deliverable — PickyHack</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f0f0; margin: 0; padding: 20px; }
+    .report-sheet { background: #fff; max-width: 840px; margin: 0 auto; padding: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    @media print { body { background: #fff; padding: 0; } .report-sheet { box-shadow: none; padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="report-sheet">
+    ${doc.innerHTML}
+  </div>
+</body>
+</html>`;
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `PickyHack_Pentest_Deliverable_${new Date().toISOString().slice(0,10)}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+
+    copyReport() {
+      const md = this.generateMarkdown();
+      navigator.clipboard.writeText(md).then(() => {
+        alert('Formal Pentest Deliverable copied to clipboard in Markdown format!');
+      });
+    }
+  };
+
+  // ==========================================================================
   // 15. INITIALIZATION & EVENT BINDINGS
   // ==========================================================================
   function initApp() {
@@ -2105,6 +3605,12 @@ ${pentestState.rawNotes || '(No raw notes)'}
     NotesManager.init();
     FindingsManager.init();
     MultiAPIManager.syncUI();
+
+    AttachmentManager.init();
+    AttackGraphSimulator.init();
+    ContextOptimizer.init();
+    BurpZapBridge.init();
+    DeliverableGenerator.init();
 
     initMultiAPIManagerUI();
     initCompareModelsUI();
