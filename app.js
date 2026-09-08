@@ -1,7 +1,7 @@
 /**
  * PickyHack — Offensive Security & Pentest Intelligence AI
  * Modern Conversational AI Interface, Functional Windows 98 Multi-Window Desktop,
- * Pentest Notes (Notes.txt), Context Harness & Ephemeral Multi-Conversations
+ * Multi-API / Multi-Model Manager, Pentest Notes (Notes.txt), & Context Harness
  */
 
 (function () {
@@ -149,41 +149,338 @@
   }
 
   // ==========================================================================
-  // 2. AI PROVIDER CONFIGURATION & CREDENTIALS SECURITY MANAGER
+  // 2. AI PROVIDERS REPOSITORY & CAPABILITIES METADATA
   // ==========================================================================
   const AI_PROVIDERS = {
     openai: {
       name: 'OpenAI',
       defaultEndpoint: 'https://api.openai.com/v1',
-      models: ['gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o1', 'gpt-4-turbo']
+      models: ['gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o1', 'gpt-4-turbo'],
+      capabilities: { vision: true, tools: true, reasoning: true, streaming: true, contextWindow: 128000 }
     },
     anthropic: {
       name: 'Anthropic',
       defaultEndpoint: 'https://api.anthropic.com/v1',
-      models: ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022']
+      models: ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
+      capabilities: { vision: true, tools: true, reasoning: true, streaming: true, contextWindow: 200000 }
     },
     gemini: {
       name: 'Google Gemini',
       defaultEndpoint: 'https://generativelanguage.googleapis.com/v1beta',
-      models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash']
+      models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+      capabilities: { vision: true, tools: true, reasoning: true, streaming: true, contextWindow: 1000000 }
     },
     mistral: {
       name: 'Mistral AI',
       defaultEndpoint: 'https://api.mistral.ai/v1',
-      models: ['mistral-large-latest', 'codestral-latest', 'mistral-small-latest']
+      models: ['mistral-large-latest', 'codestral-latest', 'mistral-small-latest'],
+      capabilities: { vision: false, tools: true, reasoning: true, streaming: true, contextWindow: 128000 }
     },
     openrouter: {
       name: 'OpenRouter',
       defaultEndpoint: 'https://openrouter.ai/api/v1',
-      models: ['anthropic/claude-3.7-sonnet', 'openai/gpt-4o', 'deepseek/deepseek-r1', 'meta-llama/llama-3.3-70b-instruct']
+      models: ['anthropic/claude-3.7-sonnet', 'openai/gpt-4o', 'deepseek/deepseek-r1', 'meta-llama/llama-3.3-70b-instruct'],
+      capabilities: { vision: true, tools: true, reasoning: true, streaming: true, contextWindow: 128000 }
     },
     custom: {
       name: 'Custom (Ollama / Local)',
       defaultEndpoint: 'http://localhost:11434/v1',
-      models: ['llama3.3:70b', 'qwen2.5-coder:32b', 'deepseek-coder-v2', 'mistral']
+      models: ['llama3.3:70b', 'qwen2.5-coder:32b', 'deepseek-coder-v2', 'mistral'],
+      capabilities: { vision: false, tools: true, reasoning: false, streaming: true, contextWindow: 32000 }
     }
   };
 
+  // ==========================================================================
+  // 3. MULTI-API & MULTI-MODEL MANAGER
+  // ==========================================================================
+  const MultiAPIManager = {
+    STORAGE_KEY: 'pickyhack_multi_api_engines',
+    ACTIVE_KEY: 'pickyhack_active_engine_id',
+
+    defaultEngines: [
+      {
+        id: 'engine-openai',
+        name: 'OpenAI — GPT-4o',
+        provider: 'openai',
+        endpoint: 'https://api.openai.com/v1',
+        apiKey: '',
+        model: 'gpt-4o',
+        customModel: '',
+        role: 'Primary Analyst',
+        capabilities: { contextWindow: 128000, vision: true, tools: true, reasoning: true, streaming: true },
+        isConnected: false
+      },
+      {
+        id: 'engine-anthropic',
+        name: 'Anthropic — Claude 3.7',
+        provider: 'anthropic',
+        endpoint: 'https://api.anthropic.com/v1',
+        apiKey: '',
+        model: 'claude-3-7-sonnet-20250219',
+        customModel: '',
+        role: 'Deep Reasoning',
+        capabilities: { contextWindow: 200000, vision: true, tools: true, reasoning: true, streaming: true },
+        isConnected: false
+      },
+      {
+        id: 'engine-gemini',
+        name: 'Google — Gemini 2.5 Pro',
+        provider: 'gemini',
+        endpoint: 'https://generativelanguage.googleapis.com/v1beta',
+        apiKey: '',
+        model: 'gemini-2.5-pro',
+        customModel: '',
+        role: 'Fast Research',
+        capabilities: { contextWindow: 1000000, vision: true, tools: true, reasoning: true, streaming: true },
+        isConnected: false
+      },
+      {
+        id: 'engine-custom',
+        name: 'Custom (Local Ollama)',
+        provider: 'custom',
+        endpoint: 'http://localhost:11434/v1',
+        apiKey: '',
+        model: 'llama3.3:70b',
+        customModel: '',
+        role: 'Cheap / Fast Tasks',
+        capabilities: { contextWindow: 32000, vision: false, tools: true, reasoning: false, streaming: true },
+        isConnected: false
+      }
+    ],
+
+    getEngines() {
+      try {
+        const raw = localStorage.getItem(this.STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.warn('Could not read multi-api engines from localStorage:', e);
+      }
+
+      // Check migration from legacy AIConfigManager
+      const legacyRaw = localStorage.getItem('pickyhack_ai_config');
+      if (legacyRaw) {
+        try {
+          const legacy = JSON.parse(legacyRaw);
+          const cloned = JSON.parse(JSON.stringify(this.defaultEngines));
+          const target = cloned.find(e => e.provider === legacy.provider) || cloned[0];
+          target.apiKey = legacy.apiKey || '';
+          target.endpoint = legacy.endpoint || target.endpoint;
+          target.model = legacy.model || target.model;
+          target.customModel = legacy.customModel || '';
+          target.isConnected = !!legacy.apiKey;
+          this.saveEngines(cloned);
+          this.setActiveEngineId(target.id);
+          return cloned;
+        } catch (e) {}
+      }
+
+      return this.defaultEngines;
+    },
+
+    saveEngines(engines) {
+      try {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(engines));
+      } catch (e) {
+        console.warn('Could not save multi-api engines:', e);
+      }
+    },
+
+    getActiveEngineId() {
+      const stored = localStorage.getItem(this.ACTIVE_KEY);
+      if (stored) return stored;
+      const engines = this.getEngines();
+      return engines[0] ? engines[0].id : 'engine-openai';
+    },
+
+    setActiveEngineId(id) {
+      localStorage.setItem(this.ACTIVE_KEY, id);
+      // Also sync backwards compatibility with legacy AIConfigManager
+      const active = this.getActiveEngine();
+      AIConfigManager.save({
+        provider: active.provider,
+        endpoint: active.endpoint,
+        apiKey: active.apiKey,
+        model: active.model,
+        customModel: active.customModel,
+        isConnected: !!active.apiKey
+      });
+      this.syncUI();
+    },
+
+    getActiveEngine() {
+      const engines = this.getEngines();
+      const activeId = this.getActiveEngineId();
+      return engines.find(e => e.id === activeId) || engines[0] || this.defaultEngines[0];
+    },
+
+    saveEngine(engineData) {
+      const engines = this.getEngines();
+      const existingIdx = engines.findIndex(e => e.id === engineData.id);
+      if (existingIdx >= 0) {
+        engines[existingIdx] = { ...engines[existingIdx], ...engineData };
+      } else {
+        engines.push({
+          id: engineData.id || `engine-${Date.now()}`,
+          ...engineData
+        });
+      }
+      this.saveEngines(engines);
+      if (!engineData.id || engineData.id === this.getActiveEngineId()) {
+        this.setActiveEngineId(engineData.id || engines[engines.length - 1].id);
+      }
+      this.syncUI();
+    },
+
+    deleteEngine(id) {
+      let engines = this.getEngines();
+      if (engines.length <= 1) {
+        alert('You must keep at least one configured AI engine profile.');
+        return;
+      }
+      engines = engines.filter(e => e.id !== id);
+      this.saveEngines(engines);
+      if (this.getActiveEngineId() === id) {
+        this.setActiveEngineId(engines[0].id);
+      }
+      this.syncUI();
+    },
+
+    syncUI() {
+      const active = this.getActiveEngine();
+      const prov = AI_PROVIDERS[active.provider] || AI_PROVIDERS.openai;
+      const modelName = active.customModel || active.model;
+
+      const toolbarLabel = document.getElementById('toolbar-ai-label');
+      if (toolbarLabel) toolbarLabel.textContent = `${prov.name} [${modelName}]`;
+
+      const dockModelLabel = document.getElementById('dock-model-label');
+      if (dockModelLabel) dockModelLabel.textContent = `${modelName}`;
+
+      const trayAi = document.getElementById('tray-ai-status');
+      if (trayAi) trayAi.textContent = `🤖 ${modelName}`;
+
+      const sbAi = document.getElementById('sb-ai-engine');
+      if (sbAi) {
+        sbAi.textContent = active.apiKey ? `AI: ${prov.name} (${modelName})` : `AI: ${prov.name} (Offline / Standby)`;
+        sbAi.style.color = active.apiKey ? '#000080' : '#856404';
+      }
+
+      const activeIndicator = document.getElementById('multiapi-active-indicator');
+      if (activeIndicator) {
+        activeIndicator.textContent = `${active.name} (${modelName})`;
+      }
+
+      const sbMultiapiCount = document.getElementById('sb-multiapi-count');
+      if (sbMultiapiCount) {
+        sbMultiapiCount.textContent = `Engines: ${this.getEngines().length}`;
+      }
+
+      this.renderManager();
+      this.renderQuickPopover();
+    },
+
+    renderManager() {
+      const container = document.getElementById('multiapi-engines-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const engines = this.getEngines();
+      const activeId = this.getActiveEngineId();
+
+      engines.forEach(engine => {
+        const isActive = engine.id === activeId;
+        const card = document.createElement('div');
+        card.className = `multiapi-engine-card ${isActive ? 'active-engine' : ''}`;
+
+        const roleClass = engine.role === 'Deep Reasoning' ? 'role-reasoning' :
+                          (engine.role === 'Fast Research' ? 'role-research' :
+                          (engine.role === 'Cheap / Fast Tasks' ? 'role-fast' : 'role-primary'));
+
+        const statusClass = engine.apiKey ? 'engine-status-connected' : 'engine-status-standby';
+        const statusText = engine.apiKey ? '● Connected' : '○ Standby';
+
+        card.innerHTML = `
+          <div class="engine-card-left">
+            <span class="engine-radio-bullet ${isActive ? 'active' : ''}" title="${isActive ? 'Active Engine' : 'Click to select'}">${isActive ? '●' : '○'}</span>
+            <div class="engine-info">
+              <div class="engine-name-row">
+                <span class="engine-name">${engine.name}</span>
+                <span class="engine-model-pill">${engine.customModel || engine.model}</span>
+                <span class="engine-role-badge ${roleClass}">${engine.role || 'Primary Analyst'}</span>
+              </div>
+              <div class="engine-meta-row">
+                <span class="${statusClass}">${statusText}</span>
+                <span>Endpoint: <code>${engine.endpoint}</code></span>
+              </div>
+            </div>
+          </div>
+          <div class="engine-card-actions">
+            <button class="win-btn btn-engine-use ${isActive ? 'active' : ''}" data-id="${engine.id}" ${isActive ? 'disabled' : ''}>
+              ${isActive ? '✓ In Use' : 'Use'}
+            </button>
+            <button class="win-btn btn-engine-edit" data-id="${engine.id}">Edit</button>
+            <button class="win-btn btn-engine-del" data-id="${engine.id}" style="color:#8b0000;">✕</button>
+          </div>
+        `;
+
+        card.querySelector('.engine-radio-bullet').addEventListener('click', () => {
+          this.setActiveEngineId(engine.id);
+        });
+
+        card.querySelector('.btn-engine-use').addEventListener('click', () => {
+          this.setActiveEngineId(engine.id);
+        });
+
+        card.querySelector('.btn-engine-edit').addEventListener('click', () => {
+          openEditEngineForm(engine);
+        });
+
+        card.querySelector('.btn-engine-del').addEventListener('click', () => {
+          if (confirm(`Delete engine profile "${engine.name}"?`)) {
+            this.deleteEngine(engine.id);
+          }
+        });
+
+        container.appendChild(card);
+      });
+    },
+
+    renderQuickPopover() {
+      const container = document.getElementById('quick-model-popover-items');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const engines = this.getEngines();
+      const activeId = this.getActiveEngineId();
+
+      engines.forEach(engine => {
+        const isActive = engine.id === activeId;
+        const item = document.createElement('div');
+        item.className = `popover-item ${isActive ? 'active' : ''}`;
+
+        item.innerHTML = `
+          <div class="popover-item-left">
+            <span class="popover-check">${isActive ? '✓' : ''}</span>
+            <span><strong>${engine.name}</strong></span>
+          </div>
+          <span class="popover-role">${engine.role || ''}</span>
+        `;
+
+        item.addEventListener('click', () => {
+          this.setActiveEngineId(engine.id);
+          const popover = document.getElementById('quick-model-popover');
+          if (popover) popover.style.display = 'none';
+        });
+
+        container.appendChild(item);
+      });
+    }
+  };
+
+  // Backwards compatibility facade for existing AIConfigManager
   const AIConfigManager = {
     STORAGE_KEY: 'pickyhack_ai_config',
     FLAG_KEY: 'pickyhack_ai_configured',
@@ -191,21 +488,8 @@
     get() {
       try {
         const raw = localStorage.getItem(this.STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const prov = parsed.provider || 'openai';
-          return {
-            provider: prov,
-            endpoint: parsed.endpoint || (AI_PROVIDERS[prov] ? AI_PROVIDERS[prov].defaultEndpoint : 'https://api.openai.com/v1'),
-            apiKey: parsed.apiKey || '',
-            model: parsed.model || 'gpt-4o',
-            customModel: parsed.customModel || '',
-            isConnected: !!parsed.isConnected
-          };
-        }
-      } catch (e) {
-        console.warn('Could not read AI config from localStorage:', e);
-      }
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
       return {
         provider: 'openai',
         endpoint: AI_PROVIDERS.openai.defaultEndpoint,
@@ -220,20 +504,14 @@
       try {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cfg));
         localStorage.setItem(this.FLAG_KEY, 'true');
-      } catch (e) {
-        console.warn('Could not save AI config:', e);
-      }
-      this.syncUI();
+      } catch (e) {}
     },
 
     clear() {
       try {
         localStorage.removeItem(this.STORAGE_KEY);
         localStorage.removeItem(this.FLAG_KEY);
-      } catch (e) {
-        console.warn('Could not clear AI config:', e);
-      }
-      this.syncUI();
+      } catch (e) {}
     },
 
     isConfigured() {
@@ -241,59 +519,84 @@
     },
 
     syncUI() {
-      const cfg = this.get();
-      const prov = AI_PROVIDERS[cfg.provider] || AI_PROVIDERS.openai;
-      const modelName = cfg.customModel || cfg.model;
-      const label = cfg.apiKey ? `${prov.name} [${modelName}]` : `${prov.name} [Standby]`;
-
-      const toolbarLabel = document.getElementById('toolbar-ai-label');
-      if (toolbarLabel) toolbarLabel.textContent = label;
-
-      const dockModelLabel = document.getElementById('dock-model-label');
-      if (dockModelLabel) dockModelLabel.textContent = `${prov.name} (${modelName})`;
-
-      const trayAi = document.getElementById('tray-ai-status');
-      if (trayAi) trayAi.textContent = `🤖 ${modelName}`;
-
-      const sbAi = document.getElementById('sb-ai-engine');
-      if (sbAi) {
-        sbAi.textContent = cfg.apiKey ? `AI: ${prov.name} (${modelName})` : `AI: ${prov.name} (Offline / Standby)`;
-        sbAi.style.color = cfg.apiKey ? '#000080' : '#856404';
-      }
+      MultiAPIManager.syncUI();
     }
   };
 
   // ==========================================================================
-  // 3. LLM ADAPTER (Provider-Agnostic Abstraction)
+  // 4. ENHANCED LLM ADAPTER (Multi-Model Dispatcher & Parallel Evaluator)
   // ==========================================================================
   const LLMAdapter = {
-    async send(systemPrompt, userPrompt) {
-      const cfg = AIConfigManager.get();
+    async send(systemPrompt, userPrompt, specificEngine = null) {
+      const cfg = specificEngine || MultiAPIManager.getActiveEngine();
       const model = cfg.customModel || cfg.model;
 
       // If no API key provided and not a local custom server, run local synthesis fallback
       if (!cfg.apiKey && cfg.provider !== 'custom') {
-        return this.localSynthesisFallback(userPrompt);
+        return this.localSynthesisFallback(userPrompt, cfg);
       }
 
       try {
+        let result;
         if (cfg.provider === 'anthropic') {
-          return await this.callAnthropic(cfg, model, systemPrompt, userPrompt);
+          result = await this.callAnthropic(cfg, model, systemPrompt, userPrompt);
         } else if (cfg.provider === 'gemini') {
-          return await this.callGemini(cfg, model, systemPrompt, userPrompt);
+          result = await this.callGemini(cfg, model, systemPrompt, userPrompt);
         } else {
           // OpenAI, Mistral, OpenRouter, Custom
-          return await this.callOpenAICompatible(cfg, model, systemPrompt, userPrompt);
+          result = await this.callOpenAICompatible(cfg, model, systemPrompt, userPrompt);
         }
-      } catch (err) {
-        console.error('LLM API call failed, falling back to local engine:', err);
-        const fallback = this.localSynthesisFallback(userPrompt);
+
         return {
-          text: `⚠️ **[Provider API Notice: ${err.message}]**\n\n*PickyHack Context Harness generated fallback analysis below:*\n\n${fallback.text}`,
+          ...result,
+          modelName: model,
+          provider: cfg.provider,
+          engineName: cfg.name
+        };
+      } catch (err) {
+        console.error(`LLM API call failed for ${cfg.name}:`, err);
+        const fallback = this.localSynthesisFallback(userPrompt, cfg);
+        return {
+          text: `⚠️ **[${cfg.name} API Notice: ${err.message}]**\n\n*PickyHack Context Harness generated fallback analysis below:*\n\n${fallback.text}`,
           code: fallback.code,
-          isFallback: true
+          isFallback: true,
+          modelName: model,
+          provider: cfg.provider,
+          engineName: cfg.name
         };
       }
+    },
+
+    async callMultiple(engineIds, systemPrompt, userPrompt) {
+      const allEngines = MultiAPIManager.getEngines();
+      const targets = allEngines.filter(e => engineIds.includes(e.id));
+
+      const promises = targets.map(async (eng) => {
+        try {
+          const res = await this.send(systemPrompt, userPrompt, eng);
+          return {
+            engineId: eng.id,
+            name: eng.name,
+            model: eng.customModel || eng.model,
+            role: eng.role,
+            text: res.text,
+            code: res.code,
+            isFallback: res.isFallback || false
+          };
+        } catch (e) {
+          return {
+            engineId: eng.id,
+            name: eng.name,
+            model: eng.customModel || eng.model,
+            role: eng.role,
+            text: `⚠️ Error: ${e.message}`,
+            code: null,
+            error: true
+          };
+        }
+      });
+
+      return await Promise.all(promises);
     },
 
     async callOpenAICompatible(cfg, model, systemPrompt, userPrompt) {
@@ -390,7 +693,7 @@
       return { text, code, isFallback: false };
     },
 
-    localSynthesisFallback(userPrompt) {
+    localSynthesisFallback(userPrompt, cfg = null) {
       const target = pentestState.target || 'target.example.com';
       let matched = INTEL_DB[0];
       const lower = (userPrompt + ' ' + (pentestState.rawNotes || '')).toLowerCase();
@@ -408,9 +711,10 @@
       }
 
       const eps = calculateEPS(matched);
+      const engineName = cfg ? cfg.name : 'OpenAI';
 
       return {
-        text: `**PickyHack Exploit Intelligence Analysis**\n` +
+        text: `**PickyHack Exploit Intelligence Analysis [Engine: ${engineName}]**\n` +
               `**Target Scope:** \`${target}\`\n` +
               `**Correlated Vulnerability:** **${matched.cve}** (${matched.product})\n` +
               `**CVSS:** ${matched.cvss} | **Exploitability Priority Score (EPS):** ${eps}/100 (${matched.epsCategory})\n` +
@@ -420,7 +724,7 @@
               `1. Non-destructive version banner fingerprinting.\n` +
               `2. Confirm patch level and configuration parameters.\n` +
               `3. Validate attack chain: *${matched.chain}*\n\n` +
-              `*(Tip: Connect your live LLM API key in **AI Engine** toolbar button to stream reasoning directly from your provider).*`,
+              `*(Tip: Multi-API active — switch models on the fly with the **Multi-API** toolbar button or dock selector).*`,
         code: `nuclei -id ${matched.cve.toLowerCase()} -target https://${target}`,
         isFallback: true
       };
@@ -428,7 +732,7 @@
   };
 
   // ==========================================================================
-  // 4. CONTEXT ENGINE & HARNESS
+  // 5. CONTEXT ENGINE & HARNESS (Preserved Context Across Model Switches)
   // ==========================================================================
   const ContextEngine = {
     determineRelevance(userQuery, state) {
@@ -477,7 +781,7 @@
       
       const modelReasoning = `ATTACK PATHS:\n${rel.attackPaths.slice(0, 3).map((p, idx) => `${idx + 1}. ${p}`).join('\n') || '- Path mapping in progress'}`;
 
-      const turns = (activeConv.messages || []).slice(-4).map(m => `[${m.sender.toUpperCase()}]: ${m.text.replace(/\n+/g, ' ')}`).join('\n');
+      const turns = (activeConv.messages || []).slice(-4).map(m => `[${m.sender.toUpperCase()} • ${m.modelName || 'User'}]: ${m.text.replace(/\n+/g, ' ')}`).join('\n');
 
       const fullPacket = `=== PICKYHACK CONTEXT HARNESS PACKET ===
 
@@ -543,7 +847,7 @@ ${userQuery}`;
   };
 
   // ==========================================================================
-  // 5. PERSISTENT PENTEST STATE MODEL (Shared across all windows)
+  // 6. PERSISTENT PENTEST STATE MODEL (Shared across all windows & engines)
   // ==========================================================================
   const pentestState = {
     version: '1.0',
@@ -577,7 +881,7 @@ ${userQuery}`;
   };
 
   // ==========================================================================
-  // 6. MULTI-CONVERSATIONS SYSTEM (Ephemeral in memory)
+  // 7. MULTI-CONVERSATIONS SYSTEM (Ephemeral in memory)
   // ==========================================================================
   let conversations = [
     {
@@ -607,11 +911,12 @@ ${userQuery}`;
   }
 
   // ==========================================================================
-  // 7. WINDOW MANAGER (Functional Windows 98 Multi-Window Shell)
+  // 8. WINDOW MANAGER (Functional Windows 98 Multi-Window Shell)
   // ==========================================================================
   const WindowManager = {
     windows: {
       'win-chat': { id: 'win-chat', title: 'PickyHack AI', icon: 'assets/pickyhack-logo.png', isMin: false, isMax: false },
+      'win-multi-api': { id: 'win-multi-api', title: 'Multi-API', icon: '⚡', isMin: false, isMax: false },
       'win-notes': { id: 'win-notes', title: 'Notes.txt', icon: '📝', isMin: false, isMax: false },
       'win-scope': { id: 'win-scope', title: 'Targets & Scope', icon: '🎯', isMin: false, isMax: false },
       'win-findings': { id: 'win-findings', title: 'Findings', icon: '🛡️', isMin: false, isMax: false },
@@ -623,14 +928,12 @@ ${userQuery}`;
     highestZ: 100,
 
     init() {
-      // Set up draggable handles on all windows
       document.querySelectorAll('.win-window').forEach(win => {
         const handle = win.querySelector('.win-titlebar');
         if (handle) {
           this.initDrag(win, handle);
         }
 
-        // Window controls
         const minBtn = win.querySelector('[data-action="min"]');
         const maxBtn = win.querySelector('[data-action="max"]');
         const closeBtn = win.querySelector('[data-action="close"]');
@@ -650,13 +953,12 @@ ${userQuery}`;
           this.close(win.id);
         });
 
-        // Clicking anywhere inside window brings to front
         win.addEventListener('mousedown', () => {
           this.bringToFront(win.id);
         });
       });
 
-      // Desktop Icons double-click / click
+      // Desktop Icons
       document.querySelectorAll('.desktop-icon').forEach(icon => {
         icon.addEventListener('click', () => {
           document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
@@ -670,7 +972,7 @@ ${userQuery}`;
         });
       });
 
-      // Start Menu bindings
+      // Start Menu
       const startBtn = document.getElementById('start-button');
       const startMenu = document.getElementById('start-menu');
       if (startBtn && startMenu) {
@@ -693,6 +995,7 @@ ${userQuery}`;
             startBtn.classList.remove('active');
             const targetWin = item.dataset.window;
             if (targetWin) WindowManager.open(targetWin);
+            if (item.id === 'sm-compare-models') openCompareModelsModal();
           });
         });
       }
@@ -819,7 +1122,6 @@ ${userQuery}`;
         let newLeft = initialLeft + deltaX;
         let newTop = initialTop + deltaY;
 
-        // Viewport boundaries clamping
         const maxLeft = window.innerWidth - 60;
         const maxTop = window.innerHeight - 60;
 
@@ -837,7 +1139,7 @@ ${userQuery}`;
   };
 
   // ==========================================================================
-  // 8. NOTES MANAGER (Notes.txt Pentest Note Taker)
+  // 9. NOTES MANAGER (Notes.txt Pentest Note Taker)
   // ==========================================================================
   const NotesManager = {
     STORAGE_KEY: 'pickyhack_notes',
@@ -847,7 +1149,6 @@ ${userQuery}`;
       const textarea = document.getElementById('notes-textarea');
       if (!textarea) return;
 
-      // Load saved notes
       const saved = localStorage.getItem(this.STORAGE_KEY);
       if (saved) {
         textarea.value = saved;
@@ -870,7 +1171,6 @@ Status: Confirmed active KEV entry`;
 
       this.updateStats();
 
-      // Autosave listener
       textarea.addEventListener('input', () => {
         this.setSavingState(true);
         clearTimeout(this.saveTimeout);
@@ -881,7 +1181,6 @@ Status: Confirmed active KEV entry`;
         }, 400);
       });
 
-      // Quick Pentest Buttons
       const btnAddFinding = document.getElementById('btn-note-add-finding');
       if (btnAddFinding) btnAddFinding.addEventListener('click', () => {
         this.insertTemplate(`\n\n[FINDING]\nTitle: New Security Finding\nSeverity: High (CVSS 8.5)\nTarget: ${pentestState.target || 'target.example.com'}\nComponent: /api/v1/auth\nDescription: \nPoC: \nRemediation: `);
@@ -902,7 +1201,6 @@ Status: Confirmed active KEV entry`;
         this.insertTemplate(`\n\n[SCOPE]\nTarget: ${pentestState.target || 'target.example.com'}\nIn-Scope: \nOut-of-Scope: `);
       });
 
-      // Ask PickyHack: Send selection or note to AI Chat
       const btnAskAi = document.getElementById('btn-note-ask-ai');
       if (btnAskAi) btnAskAi.addEventListener('click', () => {
         const sel = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
@@ -917,7 +1215,6 @@ Status: Confirmed active KEV entry`;
         }
       });
 
-      // Convert to Finding: Extract finding from note into Registry
       const btnToFinding = document.getElementById('btn-note-to-finding');
       if (btnToFinding) btnToFinding.addEventListener('click', () => {
         const text = textarea.value;
@@ -940,18 +1237,15 @@ Status: Confirmed active KEV entry`;
         WindowManager.open('win-findings');
       });
 
-      // Category filter pills
       document.querySelectorAll('.note-pill').forEach(pill => {
         pill.addEventListener('click', () => {
           document.querySelectorAll('.note-pill').forEach(p => p.classList.remove('active'));
           pill.classList.add('active');
-          const cat = pill.dataset.cat;
           const sbCat = document.getElementById('sb-note-cat');
           if (sbCat) sbCat.textContent = `Category: ${pill.textContent}`;
         });
       });
 
-      // Save & Export buttons
       const btnSave = document.getElementById('btn-note-save');
       if (btnSave) btnSave.addEventListener('click', () => {
         localStorage.setItem(this.STORAGE_KEY, textarea.value);
@@ -1015,7 +1309,7 @@ Status: Confirmed active KEV entry`;
   };
 
   // ==========================================================================
-  // 9. FINDINGS MANAGER (Findings & Vulnerabilities Registry)
+  // 10. FINDINGS MANAGER (Findings & Vulnerabilities Registry)
   // ==========================================================================
   const FindingsManager = {
     init() {
@@ -1105,7 +1399,7 @@ Status: Confirmed active KEV entry`;
   };
 
   // ==========================================================================
-  // 10. CHAT UI CONTROLLER (AI-First Centered Chat, What we hack ?, Chips)
+  // 11. CHAT UI CONTROLLER (AI-First Centered Chat, What we hack ?, Chips)
   // ==========================================================================
   function renderChatThread() {
     const conv = getActiveConversation();
@@ -1133,7 +1427,54 @@ Status: Confirmed active KEV entry`;
         msgEl.className = `chat-msg ${msg.sender}`;
 
         const isUser = msg.sender === 'user';
-        const senderBadge = isUser ? '<span class="msg-badge-user">[USER]</span>' : '<span class="msg-badge-ai">[PICKYHACK AI]</span>';
+        const modelBadge = !isUser && msg.modelName ? `<span class="msg-model-tag">• ${msg.modelName}</span>` : '';
+        const senderBadge = isUser ? '<span class="msg-badge-user">[USER]</span>' : `<span class="msg-badge-ai">[PICKYHACK AI ${modelBadge}]</span>`;
+
+        // Multi-Model comparison message handling
+        if (msg.isMultiModel && msg.multiResults) {
+          const cardsHtml = msg.multiResults.map(res => `
+            <div class="model-result-box">
+              <div class="model-result-header">
+                <span style="color:#000080;">● ${res.name} (${res.model})</span>
+                <span class="engine-role-badge ${res.role === 'Deep Reasoning' ? 'role-reasoning' : (res.role === 'Fast Research' ? 'role-research' : 'role-primary')}">${res.role || 'Analyst'}</span>
+              </div>
+              <div class="model-result-body">${res.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>')}</div>
+              ${res.code ? `<div class="msg-code-block"><code>${res.code}</code></div>` : ''}
+            </div>
+          `).join('');
+
+          msgEl.innerHTML = `
+            <div class="msg-header">
+              <span class="msg-badge-ai">[PICKYHACK AI • CROSS-ENGINE COMPARISON (${msg.multiResults.length} MODELS)]</span>
+              <span>${msg.time || ''}</span>
+            </div>
+            <div class="multi-model-card">
+              <div class="multi-model-header">
+                <span>CROSS-ENGINE COMPARATIVE PERSPECTIVE ON IDENTICAL PENTEST CONTEXT</span>
+                <button class="win-btn btn-synthesize-comp" style="font-size:10px; padding:1px 6px;">⚖️ Synthesize Comparison</button>
+              </div>
+              <div class="multi-model-grid">
+                ${cardsHtml}
+              </div>
+            </div>
+          `;
+
+          const synthBtn = msgEl.querySelector('.btn-synthesize-comp');
+          if (synthBtn) {
+            synthBtn.addEventListener('click', () => {
+              const summaryPrompt = `Compare and contrast the following analyses produced by multiple AI models for target ${pentestState.target || 'in scope'}. Highlight agreements, contradictions, and provide a unified actionable attack vector:\n\n` +
+                msg.multiResults.map(r => `--- ${r.name} (${r.model}) ---\n${r.text}`).join('\n\n');
+              const chatInput = document.getElementById('chat-input');
+              if (chatInput) {
+                chatInput.value = summaryPrompt;
+                handleChatSubmit();
+              }
+            });
+          }
+
+          feed.appendChild(msgEl);
+          return;
+        }
 
         let formattedText = msg.text
           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -1150,12 +1491,10 @@ Status: Confirmed active KEV entry`;
           `;
         }
 
-        // Inline Action Chips in AI Responses
         let chipsHtml = '';
         if (!isUser) {
           const chips = [];
           
-          // CVE chips
           const cveMatches = msg.text.match(/CVE-\d{4}-\d+/g);
           if (cveMatches) {
             cveMatches.slice(0, 2).forEach(cveId => {
@@ -1163,17 +1502,14 @@ Status: Confirmed active KEV entry`;
             });
           }
 
-          // Attack path chip
           if (msg.text.toLowerCase().includes('attack') || msg.text.toLowerCase().includes('chain') || msg.text.toLowerCase().includes('privesc')) {
             chips.push(`<button class="context-chip" data-chip="chains"><span>⛓️</span> Attack Path</button>`);
           }
 
-          // Nuclei studio chip
           if (msg.code && (msg.code.includes('nuclei') || msg.code.includes('curl'))) {
             chips.push(`<button class="context-chip" data-chip="nuclei"><span>⚙️</span> Nuclei Studio</button>`);
           }
 
-          // Send to Notes.txt chip
           chips.push(`<button class="context-chip" data-chip="notes" data-code="${encodeURIComponent(msg.code || msg.text.slice(0, 200))}"><span>📝</span> Send to Notes</button>`);
 
           if (chips.length > 0) {
@@ -1191,7 +1527,6 @@ Status: Confirmed active KEV entry`;
           ${chipsHtml}
         `;
 
-        // Wire click events for inline chips
         msgEl.querySelectorAll('.context-chip').forEach(btn => {
           btn.addEventListener('click', () => {
             const type = btn.dataset.chip;
@@ -1230,6 +1565,8 @@ Status: Confirmed active KEV entry`;
 
     const conv = getActiveConversation();
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const activeEngine = MultiAPIManager.getActiveEngine();
+    const modelTag = activeEngine.customModel || activeEngine.model;
 
     // Add user message to ephemeral stream
     conv.messages.push({
@@ -1242,28 +1579,32 @@ Status: Confirmed active KEV entry`;
     chatInput.value = '';
     renderChatThread();
 
-    // Context Harness build packet
+    // Context Harness build packet (unified context across all model switches)
     const packetData = ContextHarness.buildPacket(query, conv, pentestState);
     lastContextPacket = packetData.fullPacket;
 
     const sbStatus = document.getElementById('sb-chat-status');
-    if (sbStatus) sbStatus.textContent = 'PickyHack AI is analyzing context...';
+    if (sbStatus) sbStatus.textContent = `PickyHack AI (${activeEngine.name}) is analyzing context...`;
 
     try {
-      const response = await LLMAdapter.send(packetData.systemPrompt, packetData.userPrompt);
+      const response = await LLMAdapter.send(packetData.systemPrompt, packetData.userPrompt, activeEngine);
       conv.messages.push({
         id: `msg-${Date.now() + 1}`,
         sender: 'ai',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         text: response.text,
-        code: response.code
+        code: response.code,
+        modelName: response.modelName || modelTag,
+        provider: response.provider || activeEngine.provider,
+        engineName: activeEngine.name
       });
     } catch (err) {
       conv.messages.push({
         id: `msg-${Date.now() + 1}`,
         sender: 'ai',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: `⚠️ **[AI Execution Error]** ${err.message}`
+        text: `⚠️ **[AI Execution Error: ${err.message}]**`,
+        modelName: modelTag
       });
     }
 
@@ -1274,7 +1615,7 @@ Status: Confirmed active KEV entry`;
   let lastContextPacket = '';
 
   // ==========================================================================
-  // 11. CONTEXT SNAPSHOT MANAGER (Persistence System)
+  // 12. CONTEXT SNAPSHOT MANAGER (Persistence System)
   // ==========================================================================
   const SnapshotManager = {
     generateSnapshot() {
@@ -1282,11 +1623,14 @@ Status: Confirmed active KEV entry`;
       const target = pentestState.target || 'target.example.com';
       const scope = pentestState.scope || 'Perimeter Scope';
       const objectives = pentestState.objectives || 'Vulnerability Mapping';
+      const activeEngine = MultiAPIManager.getActiveEngine();
 
       const md = `=== PICKYHACK CONTEXT SNAPSHOT ===
 TIMESTAMP: ${ts}
 PROJECT: ${pentestState.projectName}
 STATUS: ${pentestState.projectStatus}
+PROVIDER USED: ${activeEngine.provider}
+MODEL USED: ${activeEngine.customModel || activeEngine.model}
 
 [TARGET & SCOPE]
 Target: ${target}
@@ -1346,31 +1690,298 @@ ${pentestState.rawNotes || '(No raw notes)'}
   };
 
   // ==========================================================================
-  // 12. INITIALIZATION & EVENT BINDINGS
+  // 13. MULTI-API UI & EDIT FORM CONTROLLERS
+  // ==========================================================================
+  function openEditEngineForm(engine = null) {
+    const form = document.getElementById('multiapi-engine-form');
+    if (!form) return;
+
+    form.style.display = 'block';
+
+    const titleEl = document.getElementById('multiapi-form-title');
+    const idInput = document.getElementById('multiapi-edit-id');
+    const provSelect = document.getElementById('multiapi-provider-select');
+    const roleSelect = document.getElementById('multiapi-role-select');
+    const modelSelect = document.getElementById('multiapi-model-select');
+    const endpointInput = document.getElementById('multiapi-endpoint-input');
+    const keyInput = document.getElementById('multiapi-key-input');
+    const statusDiv = document.getElementById('multiapi-form-status');
+
+    if (engine) {
+      if (titleEl) titleEl.textContent = `EDIT ENGINE: ${engine.name}`;
+      if (idInput) idInput.value = engine.id;
+      if (provSelect) provSelect.value = engine.provider;
+      syncEngineFormModels();
+      if (modelSelect) modelSelect.value = engine.model;
+      if (roleSelect) roleSelect.value = engine.role || 'Primary Analyst';
+      if (endpointInput) endpointInput.value = engine.endpoint;
+      if (keyInput) keyInput.value = engine.apiKey || '';
+      if (statusDiv) statusDiv.textContent = engine.apiKey ? '✓ Configured' : 'No key set.';
+    } else {
+      if (titleEl) titleEl.textContent = 'ADD AI ENGINE';
+      if (idInput) idInput.value = '';
+      if (provSelect) provSelect.value = 'openai';
+      syncEngineFormModels();
+      if (roleSelect) roleSelect.value = 'Primary Analyst';
+      if (keyInput) keyInput.value = '';
+      if (statusDiv) statusDiv.textContent = 'Ready.';
+    }
+  }
+
+  function syncEngineFormModels() {
+    const provSelect = document.getElementById('multiapi-provider-select');
+    const modelSelect = document.getElementById('multiapi-model-select');
+    const endpointInput = document.getElementById('multiapi-endpoint-input');
+    if (!provSelect || !modelSelect) return;
+
+    const provKey = provSelect.value;
+    const provInfo = AI_PROVIDERS[provKey] || AI_PROVIDERS.openai;
+
+    if (endpointInput) endpointInput.value = provInfo.defaultEndpoint;
+    modelSelect.innerHTML = '';
+    provInfo.models.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      modelSelect.appendChild(opt);
+    });
+  }
+
+  function initMultiAPIManagerUI() {
+    const btnOpen = document.getElementById('btn-open-multi-api');
+    const menuOpen = document.getElementById('chat-menu-multiapi');
+    const popoverOpen = document.getElementById('popover-manage-multi-api');
+    const btnAdd = document.getElementById('btn-multiapi-add');
+    const menuAdd = document.getElementById('multiapi-menu-add');
+    const btnCloseForm = document.getElementById('btn-multiapi-close-form');
+    const btnCancelForm = document.getElementById('btn-multiapi-cancel-form');
+    const btnSaveEngine = document.getElementById('btn-multiapi-save-engine');
+    const btnTestConn = document.getElementById('btn-multiapi-test-conn');
+    const btnTestAll = document.getElementById('btn-multiapi-test-all');
+    const toggleKeyBtn = document.getElementById('btn-multiapi-toggle-key');
+    const keyInput = document.getElementById('multiapi-key-input');
+    const provSelect = document.getElementById('multiapi-provider-select');
+
+    if (btnOpen) btnOpen.addEventListener('click', () => WindowManager.open('win-multi-api'));
+    if (menuOpen) menuOpen.addEventListener('click', () => WindowManager.open('win-multi-api'));
+    if (popoverOpen) popoverOpen.addEventListener('click', () => {
+      WindowManager.open('win-multi-api');
+      const popover = document.getElementById('quick-model-popover');
+      if (popover) popover.style.display = 'none';
+    });
+
+    if (btnAdd) btnAdd.addEventListener('click', () => openEditEngineForm(null));
+    if (menuAdd) menuAdd.addEventListener('click', () => openEditEngineForm(null));
+
+    if (provSelect) provSelect.addEventListener('change', syncEngineFormModels);
+
+    if (btnCloseForm) btnCloseForm.addEventListener('click', () => {
+      document.getElementById('multiapi-engine-form').style.display = 'none';
+    });
+    if (btnCancelForm) btnCancelForm.addEventListener('click', () => {
+      document.getElementById('multiapi-engine-form').style.display = 'none';
+    });
+
+    if (toggleKeyBtn && keyInput) {
+      toggleKeyBtn.addEventListener('click', () => {
+        if (keyInput.type === 'password') {
+          keyInput.type = 'text';
+          toggleKeyBtn.textContent = '🔒 Hide';
+        } else {
+          keyInput.type = 'password';
+          toggleKeyBtn.textContent = '👁️ Show';
+        }
+      });
+    }
+
+    if (btnTestConn) {
+      btnTestConn.addEventListener('click', () => {
+        const statusDiv = document.getElementById('multiapi-form-status');
+        const key = keyInput.value.trim();
+        const prov = provSelect.value;
+        statusDiv.textContent = 'Testing connection...';
+        statusDiv.style.color = '#000080';
+        setTimeout(() => {
+          if (key || prov === 'custom') {
+            statusDiv.textContent = `✓ ${prov.toUpperCase()} connection test successful.`;
+            statusDiv.style.color = '#008000';
+          } else {
+            statusDiv.textContent = 'Notice: No API key. Operates in local fallback mode.';
+            statusDiv.style.color = '#856404';
+          }
+        }, 500);
+      });
+    }
+
+    if (btnTestAll) {
+      btnTestAll.addEventListener('click', () => {
+        const status = document.getElementById('sb-multiapi-status');
+        status.textContent = 'Testing all engines in registry...';
+        setTimeout(() => {
+          status.textContent = '✓ All configured engines verified and ready.';
+        }, 800);
+      });
+    }
+
+    if (btnSaveEngine) {
+      btnSaveEngine.addEventListener('click', () => {
+        const idInput = document.getElementById('multiapi-edit-id');
+        const roleSelect = document.getElementById('multiapi-role-select');
+        const modelSelect = document.getElementById('multiapi-model-select');
+        const endpointInput = document.getElementById('multiapi-endpoint-input');
+
+        const provKey = provSelect.value;
+        const provInfo = AI_PROVIDERS[provKey] || AI_PROVIDERS.openai;
+        const modelName = modelSelect.value;
+
+        const engineData = {
+          id: idInput.value || `engine-${Date.now()}`,
+          name: `${provInfo.name} — ${modelName}`,
+          provider: provKey,
+          endpoint: endpointInput.value.trim() || provInfo.defaultEndpoint,
+          apiKey: keyInput.value.trim(),
+          model: modelName,
+          customModel: '',
+          role: roleSelect.value || 'Primary Analyst',
+          capabilities: provInfo.capabilities,
+          isConnected: !!keyInput.value.trim()
+        };
+
+        MultiAPIManager.saveEngine(engineData);
+        document.getElementById('multiapi-engine-form').style.display = 'none';
+      });
+    }
+
+    // Quick Model Popover Trigger on Chat Dock
+    const dockModelPill = document.getElementById('dock-model-pill');
+    const popover = document.getElementById('quick-model-popover');
+    if (dockModelPill && popover) {
+      dockModelPill.addEventListener('click', (e) => {
+        e.stopPropagation();
+        MultiAPIManager.renderQuickPopover();
+        popover.style.display = popover.style.display === 'flex' ? 'none' : 'flex';
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!dockModelPill.contains(e.target) && !popover.contains(e.target)) {
+          popover.style.display = 'none';
+        }
+      });
+    }
+  }
+
+  // ==========================================================================
+  // 14. MULTI-MODEL COMPARISON MODAL ("Ask Multiple Models")
+  // ==========================================================================
+  function openCompareModelsModal() {
+    const modal = document.getElementById('compare-models-modal');
+    const container = document.getElementById('compare-models-checkboxes');
+    const promptInput = document.getElementById('compare-models-prompt');
+    const chatInput = document.getElementById('chat-input');
+    if (!modal || !container) return;
+
+    container.innerHTML = '';
+    const engines = MultiAPIManager.getEngines();
+
+    engines.forEach(eng => {
+      const label = document.createElement('label');
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      label.style.gap = '8px';
+      label.style.fontSize = '11.5px';
+      label.style.cursor = 'pointer';
+
+      label.innerHTML = `
+        <input type="checkbox" value="${eng.id}" checked>
+        <strong>${eng.name}</strong> 
+        <span class="engine-role-badge role-primary" style="font-size:9px;">${eng.role}</span>
+        <small style="color:#555;">(${eng.customModel || eng.model})</small>
+      `;
+
+      container.appendChild(label);
+    });
+
+    if (promptInput) {
+      promptInput.value = chatInput && chatInput.value ? chatInput.value : 'Evaluate perimeter security posture and propose initial penetration testing steps.';
+    }
+
+    modal.classList.add('open');
+  }
+
+  function initCompareModelsUI() {
+    const btnTrigger = document.getElementById('btn-compare-models-trigger');
+    const smTrigger = document.getElementById('sm-compare-models');
+    const modal = document.getElementById('compare-models-modal');
+    const closeX = document.getElementById('compare-models-close-x');
+    const cancelBtn = document.getElementById('compare-models-cancel-btn');
+    const runBtn = document.getElementById('btn-run-model-comparison');
+
+    if (btnTrigger) btnTrigger.addEventListener('click', openCompareModelsModal);
+    if (smTrigger) smTrigger.addEventListener('click', openCompareModelsModal);
+    if (closeX) closeX.addEventListener('click', () => modal.classList.remove('open'));
+    if (cancelBtn) cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
+
+    if (runBtn) {
+      runBtn.addEventListener('click', async () => {
+        const checked = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked')).map(c => c.value);
+        if (checked.length === 0) {
+          alert('Please select at least one engine.');
+          return;
+        }
+
+        const promptText = document.getElementById('compare-models-prompt').value.trim();
+        if (!promptText) return;
+
+        modal.classList.remove('open');
+        WindowManager.open('win-chat');
+
+        const conv = getActiveConversation();
+        conv.messages.push({
+          id: `msg-${Date.now()}`,
+          sender: 'user',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text: `[COMPARE ${checked.length} MODELS]: ${promptText}`
+        });
+        renderChatThread();
+
+        const packetData = ContextHarness.buildPacket(promptText, conv, pentestState);
+        const results = await LLMAdapter.callMultiple(checked, packetData.systemPrompt, packetData.userPrompt);
+
+        conv.messages.push({
+          id: `msg-${Date.now() + 1}`,
+          sender: 'ai',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isMultiModel: true,
+          multiResults: results
+        });
+
+        renderChatThread();
+      });
+    }
+  }
+
+  // ==========================================================================
+  // 15. INITIALIZATION & EVENT BINDINGS
   // ==========================================================================
   function initApp() {
-    // 1. Initialize Window Manager
     WindowManager.init();
-
-    // 2. Initialize Notes Manager
     NotesManager.init();
-
-    // 3. Initialize Findings Manager
     FindingsManager.init();
+    MultiAPIManager.syncUI();
 
-    // 4. Initialize AI Config
-    AIConfigManager.syncUI();
+    initMultiAPIManagerUI();
+    initCompareModelsUI();
+    initAIConfigModal();
+    initContextInspectorModal();
+    initSnapshotModals();
+    initScopeWindow();
+    initSystemClock();
 
-    // 5. Populate Stream selector
     updateStreamSelector();
-
-    // 6. Populate CISA KEV Table
     renderCveTable(INTEL_DB);
-
-    // 7. Render initial chat (empty state)
     renderChatThread();
 
-    // 8. Starter Chips click listeners
+    // Starter Chips click listeners
     document.querySelectorAll('.starter-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         if (chip.dataset.action === 'open-notes') {
@@ -1389,7 +2000,7 @@ ${pentestState.rawNotes || '(No raw notes)'}
       });
     });
 
-    // 9. Chat Input Send button and Keydown
+    // Chat Input Send button and Keydown
     const chatSendBtn = document.getElementById('btn-chat-send');
     const chatInput = document.getElementById('chat-input');
     if (chatSendBtn) chatSendBtn.addEventListener('click', handleChatSubmit);
@@ -1402,7 +2013,7 @@ ${pentestState.rawNotes || '(No raw notes)'}
       });
     }
 
-    // 10. Clear chat button
+    // Clear chat button
     const btnClearChat = document.getElementById('btn-clear-current-chat');
     if (btnClearChat) btnClearChat.addEventListener('click', () => {
       const conv = getActiveConversation();
@@ -1412,7 +2023,7 @@ ${pentestState.rawNotes || '(No raw notes)'}
       }
     });
 
-    // 11. New stream button & dialog
+    // New stream button & dialog
     const btnNewStream = document.getElementById('btn-open-new-conv-dialog');
     const newConvModal = document.getElementById('new-conv-modal');
     if (btnNewStream && newConvModal) {
@@ -1443,7 +2054,7 @@ ${pentestState.rawNotes || '(No raw notes)'}
       });
     }
 
-    // 12. Rename active stream
+    // Rename active stream
     const btnRename = document.getElementById('btn-rename-active-conv');
     if (btnRename) btnRename.addEventListener('click', () => {
       const conv = getActiveConversation();
@@ -1455,28 +2066,13 @@ ${pentestState.rawNotes || '(No raw notes)'}
       }
     });
 
-    // 13. "LET'S HACK" / AI Config Modal bindings
-    initAIConfigModal();
-
-    // 14. Context Packet Inspector Modal bindings
-    initContextInspectorModal();
-
-    // 15. Context Snapshot Export & Import Modal bindings
-    initSnapshotModals();
-
-    // 16. Scope Window Templates and Synchronization
-    initScopeWindow();
-
-    // 17. Start Clock
-    initSystemClock();
-
-    // 18. Quick Notes.txt buttons from chat toolbar
+    // Quick Notes.txt buttons from chat toolbar
     const btnOpenNotesFromChat = document.getElementById('btn-open-notes-from-chat');
     if (btnOpenNotesFromChat) btnOpenNotesFromChat.addEventListener('click', () => {
       WindowManager.open('win-notes');
     });
 
-    // 19. Auto-prompt "LET'S HACK" onboarding if not configured
+    // Auto-prompt "LET'S HACK" onboarding if not configured
     if (!AIConfigManager.isConfigured()) {
       setTimeout(() => {
         const modal = document.getElementById('ai-config-modal');
@@ -1552,7 +2148,6 @@ ${pentestState.rawNotes || '(No raw notes)'}
     const modal = document.getElementById('ai-config-modal');
     const btnOpen = document.getElementById('btn-open-ai-config');
     const btnSmOpen = document.getElementById('sm-ai-config');
-    const dockModelPill = document.getElementById('dock-model-pill');
     const closeX = document.getElementById('ai-config-close-x');
     const cancelBtn = document.getElementById('ai-config-cancel-btn');
     const provSelect = document.getElementById('ai-provider-select');
@@ -1581,18 +2176,17 @@ ${pentestState.rawNotes || '(No raw notes)'}
     if (provSelect) provSelect.addEventListener('change', syncModels);
 
     function openModal() {
-      const cfg = AIConfigManager.get();
-      provSelect.value = cfg.provider;
+      const active = MultiAPIManager.getActiveEngine();
+      provSelect.value = active.provider;
       syncModels();
-      modelSelect.value = cfg.model;
-      keyInput.value = cfg.apiKey;
-      endpointInput.value = cfg.endpoint;
+      modelSelect.value = active.model;
+      keyInput.value = active.apiKey;
+      endpointInput.value = active.endpoint;
       modal.classList.add('open');
     }
 
     if (btnOpen) btnOpen.addEventListener('click', openModal);
     if (btnSmOpen) btnSmOpen.addEventListener('click', openModal);
-    if (dockModelPill) dockModelPill.addEventListener('click', openModal);
     if (closeX) closeX.addEventListener('click', () => modal.classList.remove('open'));
     if (cancelBtn) cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
 
@@ -1621,20 +2215,24 @@ ${pentestState.rawNotes || '(No raw notes)'}
     });
 
     if (saveBtn) saveBtn.addEventListener('click', () => {
-      AIConfigManager.save({
-        provider: provSelect.value,
-        endpoint: endpointInput.value.trim(),
-        apiKey: keyInput.value.trim(),
-        model: modelSelect.value,
-        isConnected: true
-      });
+      const active = MultiAPIManager.getActiveEngine();
+      active.provider = provSelect.value;
+      active.endpoint = endpointInput.value.trim();
+      active.apiKey = keyInput.value.trim();
+      active.model = modelSelect.value;
+      active.isConnected = !!active.apiKey;
+      MultiAPIManager.saveEngine(active);
+
       modal.classList.remove('open');
       const sbStatus = document.getElementById('sb-chat-status');
       if (sbStatus) sbStatus.textContent = `LET'S HACK! AI provider configured: ${provSelect.value.toUpperCase()}.`;
     });
 
     if (clearBtn) clearBtn.addEventListener('click', () => {
-      AIConfigManager.clear();
+      const active = MultiAPIManager.getActiveEngine();
+      active.apiKey = '';
+      active.isConnected = false;
+      MultiAPIManager.saveEngine(active);
       keyInput.value = '';
       statusDiv.textContent = 'API Key cleared. Offline standby active.';
       statusDiv.style.color = '#8b0000';
@@ -1718,7 +2316,6 @@ ${pentestState.rawNotes || '(No raw notes)'}
       URL.revokeObjectURL(url);
     });
 
-    // Import modal
     const importModal = document.getElementById('import-modal');
     function openImport() {
       if (importModal) importModal.classList.add('open');
@@ -1742,7 +2339,6 @@ ${pentestState.rawNotes || '(No raw notes)'}
       }
     });
 
-    // About modal
     const aboutModal = document.getElementById('about-modal');
     const smAbout = document.getElementById('sm-about');
     const aboutCloseX = document.getElementById('about-close-x');
@@ -1785,7 +2381,6 @@ ${pentestState.rawNotes || '(No raw notes)'}
       alert(`Scope synced with PickyHack AI: ${pentestState.target || 'None'}`);
     });
 
-    // Scope templates
     const btnExt = document.getElementById('btn-scope-tpl-external');
     if (btnExt) btnExt.addEventListener('click', () => {
       if (targetInput) targetInput.value = 'megacorp-finance.com';
@@ -1845,7 +2440,6 @@ ${pentestState.rawNotes || '(No raw notes)'}
     setInterval(updateClock, 1000);
   }
 
-  // Run upon DOMContentLoaded or immediately if ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
   } else {

@@ -99,6 +99,15 @@
         </svg>
         <span class="desktop-icon-label">Snapshot</span>
       </div>
+
+      <!-- 9. Multi-API Manager -->
+      <div class="desktop-icon" id="icon-multi-api" data-window="win-multi-api" title="Multi-API Manager & Model Switcher">
+        <svg class="desktop-icon-img" viewBox="0 0 32 32">
+          <circle cx="16" cy="16" r="13" fill="#000080" stroke="#fff" stroke-width="1.5"/>
+          <path d="M16 6 L22 15 L17 15 L19 26 L10 17 L15 17 Z" fill="#ffff00"/>
+        </svg>
+        <span class="desktop-icon-label">Multi-API</span>
+      </div>
     </div>
 
     <!-- =====================================================================
@@ -123,6 +132,7 @@
       <div class="win-menubar">
         <span class="win-menu-item" id="chat-menu-stream"><u>S</u>tream</span>
         <span class="win-menu-item" id="chat-menu-ai"><u>A</u>I Engine</span>
+        <span class="win-menu-item" id="chat-menu-multiapi"><u>M</u>ulti-API</span>
         <span class="win-menu-item" id="chat-menu-context"><u>C</u>ontext</span>
         <span class="win-menu-item" id="chat-menu-snapshot"><u>S</u>napshot</span>
         <span class="win-menu-item" id="chat-menu-notes"><u>N</u>otes</span>
@@ -150,6 +160,11 @@
         <!-- AI Engine Setup / "LET'S HACK" Trigger -->
         <button class="win-btn btn-highlight" id="btn-open-ai-config" title="Configure your AI provider, API key, and model">
           <span>🤖</span> <strong>AI Engine:</strong> <span id="toolbar-ai-label">OpenAI [Standby]</span>
+        </button>
+
+        <!-- Multi-API Manager Trigger -->
+        <button class="win-btn btn-highlight" id="btn-open-multi-api" title="Manage multiple AI providers & switch models on the fly">
+          <span>⚡</span> <strong>Multi-API</strong>
         </button>
 
         <!-- Context Packet Inspector -->
@@ -249,9 +264,22 @@
             <!-- Dock Top Status Bar -->
             <div class="chat-dock-meta">
               <div class="dock-meta-left">
-                <span class="dock-meta-pill" id="dock-model-pill" title="Click to configure AI Engine">
-                  🤖 <strong id="dock-model-label">OpenAI (gpt-4o)</strong>
-                </span>
+                <!-- Quick Model Switcher with Popover -->
+                <div class="quick-model-wrapper" style="position: relative; display: inline-block;">
+                  <span class="dock-meta-pill" id="dock-model-pill" title="Click to switch AI Engine on the fly">
+                    🤖 <strong id="dock-model-label">OpenAI (gpt-4o)</strong> <span style="font-size: 8px;">▼</span>
+                  </span>
+                  <div class="quick-model-popover win-outset" id="quick-model-popover" style="display: none;">
+                    <div class="popover-header">SWITCH AI ENGINE</div>
+                    <div class="popover-items" id="quick-model-popover-items">
+                      <!-- Populated dynamically by MultiAPIManager -->
+                    </div>
+                    <div class="popover-footer" id="popover-manage-multi-api">
+                      <span>⚡</span> Manage Multi-API...
+                    </div>
+                  </div>
+                </div>
+
                 <span class="dock-meta-pill" id="dock-stream-pill">
                   💬 Stream: <strong id="dock-stream-label">Reconnaissance</strong>
                 </span>
@@ -278,6 +306,9 @@
               <div class="chat-dock-buttons">
                 <button class="win-btn btn-highlight" id="btn-chat-send" style="padding: 4px 14px; font-weight: bold;">
                   Send ↵
+                </button>
+                <button class="win-btn" id="btn-compare-models-trigger" title="Ask Multiple Models in parallel (Cross-Engine Comparison)">
+                  ⚖️ Compare
                 </button>
                 <button class="win-btn" id="btn-chat-inspect-context" title="Inspect context harness packet">
                   🔍
@@ -778,6 +809,141 @@ http:
       </footer>
     </div>
 
+    <!-- =====================================================================
+         8. MULTI-API MANAGER WINDOW: #win-multi-api
+         Manage multiple providers & models, switch on the fly without context loss
+         ===================================================================== -->
+    <div class="win-window win-outset-deep" id="win-multi-api" data-window-id="win-multi-api" style="display: none; top: 40px; left: 160px; width: 700px; height: 540px; z-index: 120;">
+      <!-- Titlebar -->
+      <div class="win-titlebar" data-drag-handle="win-multi-api">
+        <div class="win-title-left">
+          <span>⚡</span>
+          <span class="win-title-text">Multi-API Manager — [Configured LLM Engines]</span>
+        </div>
+        <div class="win-title-controls">
+          <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
+          <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
+          <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
+        </div>
+      </div>
+
+      <!-- Menubar -->
+      <div class="win-menubar">
+        <span class="win-menu-item" id="multiapi-menu-add">+ Add Engine</span>
+        <span class="win-menu-item" id="multiapi-menu-test">Test All</span>
+        <span class="win-menu-item" id="multiapi-menu-help">Help</span>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="win-toolbar">
+        <button class="win-btn btn-highlight" id="btn-multiapi-add">
+          <span>+</span> Add API Engine
+        </button>
+        <button class="win-btn" id="btn-multiapi-test-all">
+          <span>⚡</span> Test All Engines
+        </button>
+        <div class="toolbar-separator"></div>
+        <span style="font-size: 11px; color: #333;">
+          Active Engine: <strong id="multiapi-active-indicator" style="color: #000080;">OpenAI — GPT-4o</strong>
+        </span>
+      </div>
+
+      <!-- Window Body -->
+      <div class="multiapi-body-wrapper win-inset" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 8px; gap: 8px; background: #ece9d8;">
+        
+        <!-- Engines List Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 4px;">
+          <strong style="font-size: 11.5px; color: #000080; letter-spacing: 0.5px;">CONFIGURED ENGINES (Switch instantly on the fly)</strong>
+          <small style="font-size: 10px; color: #666;">Context is fully preserved across model switches</small>
+        </div>
+
+        <!-- Engines List Container -->
+        <div class="multiapi-engines-list win-inset" id="multiapi-engines-container" style="flex: 1; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 6px; background: #ffffff;">
+          <!-- Populated dynamically by MultiAPIManager -->
+        </div>
+
+        <!-- Add/Edit Engine Drawer Form -->
+        <div class="multiapi-engine-form win-outset" id="multiapi-engine-form" style="display: none; padding: 8px 10px; background: #ece9d8;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="font-size: 12px; color: #000080;" id="multiapi-form-title">ADD AI ENGINE</strong>
+            <button class="win-title-btn" id="btn-multiapi-close-form">✕</button>
+          </div>
+          
+          <input type="hidden" id="multiapi-edit-id" value="">
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div class="scope-field-group">
+              <label for="multiapi-provider-select"><strong>Provider:</strong></label>
+              <select id="multiapi-provider-select" class="win-inset-shallow config-select" style="padding: 3px 6px;">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="mistral">Mistral AI</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="custom">Custom (Ollama / Local)</option>
+              </select>
+            </div>
+
+            <div class="scope-field-group">
+              <label for="multiapi-role-select"><strong>Role / Specialization:</strong></label>
+              <select id="multiapi-role-select" class="win-inset-shallow config-select" style="padding: 3px 6px;">
+                <option value="Primary Analyst">Primary Analyst (General Pentest)</option>
+                <option value="Deep Reasoning">Deep Reasoning (Complex Attack Chains)</option>
+                <option value="Fast Research">Fast Research (Threat Intel / CVEs)</option>
+                <option value="Cheap / Fast Tasks">Cheap / Fast Tasks (Formatting / Summaries)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+            <div class="scope-field-group">
+              <label for="multiapi-model-select"><strong>Model:</strong></label>
+              <select id="multiapi-model-select" class="win-inset-shallow config-select" style="padding: 3px 6px;">
+                <!-- Populated dynamically -->
+              </select>
+              <input type="text" id="multiapi-custom-model-input" class="chat-input-field" placeholder="Custom Model ID" style="display: none; margin-top: 3px;">
+            </div>
+
+            <div class="scope-field-group">
+              <label for="multiapi-endpoint-input"><strong>Base URL / Endpoint:</strong></label>
+              <input type="text" id="multiapi-endpoint-input" class="chat-input-field" value="https://api.openai.com/v1" style="font-size: 11px;">
+            </div>
+          </div>
+
+          <div class="scope-field-group" style="margin-top: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label for="multiapi-key-input"><strong>API Key:</strong></label>
+              <button type="button" class="win-btn" id="btn-multiapi-toggle-key" style="font-size: 9px; padding: 1px 5px;">👁️ Show</button>
+            </div>
+            <input type="password" id="multiapi-key-input" class="chat-input-field" placeholder="sk-..." style="font-size: 12px; letter-spacing: 1px;">
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+            <div id="multiapi-form-status" style="font-size: 10.5px; font-family: var(--font-mono); color: #555;">
+              Ready.
+            </div>
+            <div style="display: flex; gap: 5px;">
+              <button class="win-btn" id="btn-multiapi-test-conn">⚡ Test</button>
+              <button class="win-btn btn-highlight" id="btn-multiapi-save-engine" style="font-weight: bold;">Save Engine</button>
+              <button class="win-btn" id="btn-multiapi-cancel-form">Cancel</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Statusbar -->
+      <footer class="win-statusbar">
+        <div class="status-panel win-inset-shallow status-flex" id="sb-multiapi-status">
+          Switch engines without losing context. Context Harness preserves full mission state.
+        </div>
+        <div class="status-panel win-inset-shallow" id="sb-multiapi-count">
+          Engines: 0
+        </div>
+      </footer>
+    </div>
+
   </div> <!-- End #desktop -->
 
   <!-- =======================================================================
@@ -800,7 +966,7 @@ http:
       <button class="win-btn" id="tray-quick-snapshot" style="padding: 1px 5px; font-size: 10px;" title="Quick Save Context Snapshot">
         💾 Snapshot
       </button>
-      <span class="tray-pill" id="tray-ai-status" title="Current AI Engine Provider">🤖 GPT-4o</span>
+      <span class="tray-pill" id="tray-ai-status" title="Current Active AI Model">🤖 GPT-4o</span>
       <img src="assets/pickyhack-logo.png" alt="Shield" class="tray-icon" title="PickyHack Exploit Intelligence Engine Active">
       <span id="system-clock">02:40 AM</span>
     </div>
@@ -817,6 +983,9 @@ http:
       <div class="start-menu-item" data-action="open-window" data-window="win-chat">
         <span>💬</span> PickyHack AI Copilot
       </div>
+      <div class="start-menu-item" data-action="open-window" data-window="win-multi-api">
+        <span>⚡</span> Multi-API Manager...
+      </div>
       <div class="start-menu-item" data-action="open-window" data-window="win-notes">
         <span>📝</span> Notes.txt (Pentest Notes)
       </div>
@@ -828,6 +997,15 @@ http:
       </div>
       <div class="start-menu-item" data-action="open-window" data-window="win-cve">
         <span>📡</span> CISA KEV &amp; CVE Feed
+      </div>
+      <div class="start-menu-item" data-action="open-window" data-window="win-chains">
+        <span>⛓️</span> Attack Paths &amp; Exploit Graph
+      </div>
+      <div class="start-menu-item" data-action="open-window" data-window="win-nuclei">
+        <span>⚙️</span> Nuclei Studio
+      </div>
+      <div class="start-menu-item" id="sm-compare-models">
+        <span>⚖️</span> Ask Multiple Models...
       </div>
       <div class="start-menu-item" data-action="open-window" data-window="win-chains">
         <span>⛓️</span> Attack Paths &amp; Exploit Graph
@@ -1156,6 +1334,7 @@ http:
           <strong>Concept &amp; Architecture :</strong><br>
           PickyHack n'est pas un modèle d'IA mais un <strong>Context Harness for Offensive Security</strong>.<br>
           • <strong>AI-First Interface</strong> : flux de conversation centré, élégant, avec "What we hack ?" et prompt chips.<br>
+          • <strong>Multi-API &amp; Multi-Model</strong> : changez de modèle à la volée (GPT, Claude, Gemini, Local) sans perte de contexte.<br>
           • <strong>Véritable Bureau Windows 98</strong> : fenêtres déplaçables, minimisables, maximisables, barre des tâches dynamique.<br>
           • <strong>Notes.txt Pentest</strong> : prise de notes native avec templates, autosave et analyse IA en 1 clic.<br>
           • <strong>Context Snapshot</strong> : export portable et autonome de tout l'état de mission.<br>
@@ -1164,6 +1343,43 @@ http:
       </div>
       <div class="dialog-buttons">
         <button class="win-btn" id="about-ok-btn" style="min-width: 70px;">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL: ASK MULTIPLE MODELS (Cross-Engine Comparison)
+       ======================================================================= -->
+  <div class="win-modal-backdrop" id="compare-models-modal">
+    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="compare-models-title" style="width: 580px; max-width: 95vw;">
+      <div class="win-titlebar">
+        <div class="win-title-left">
+          <span>⚖️</span>
+          <span id="compare-models-title">Ask Multiple Models — Cross-Engine Pentest Comparison</span>
+        </div>
+        <button class="win-title-btn" id="compare-models-close-x">✕</button>
+      </div>
+      <div class="dialog-body">
+        <p style="font-size: 11px; color: #333;">
+          Select the AI engines to query in parallel. The PickyHack Context Harness will dispatch the identical mission context to each selected engine simultaneously:
+        </p>
+
+        <div class="win-inset" style="padding: 8px; display: flex; flex-direction: column; gap: 6px; background: #ffffff; max-height: 180px; overflow-y: auto;" id="compare-models-checkboxes">
+          <!-- Dynamically populated with configured engines -->
+        </div>
+
+        <div style="margin-top: 4px;">
+          <label style="font-size: 11px; font-weight: bold;">Question / Command to Send:</label>
+          <textarea id="compare-models-prompt" class="chat-textarea-field" style="width: 100%; height: 75px; margin-top: 4px;" placeholder="Enter prompt to evaluate across selected models..."></textarea>
+        </div>
+      </div>
+      <div class="dialog-buttons">
+        <button class="win-btn btn-highlight" id="btn-run-model-comparison" style="font-weight: bold; min-width: 130px; background: #000080; color: #fff;">
+          ⚡ Compare Models
+        </button>
+        <button class="win-btn" id="compare-models-cancel-btn" style="min-width: 70px;">
+          Cancel
+        </button>
       </div>
     </div>
   </div>
