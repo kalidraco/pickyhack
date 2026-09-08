@@ -10,9 +10,7 @@ PickyHack is engineered strictly for authorized security research, educational s
 
 ---
 
-## 2-Minute Architecture Guide for Contributors
-
-Before writing code, familiarize yourself with our clean repository separation:
+## Repository Structure
 
 ```text
 pickyhack/
@@ -34,50 +32,113 @@ pickyhack/
 
 ---
 
-## Development Workflow
+## Development Environment & Setup
 
 ### 1. Prerequisites
-- **Node.js** >= 18.0.0
-- **Python** >= 3.10 (for local preview server)
+- **Node.js** >= 18.0.0 (LTS recommended)
+- **Python** >= 3.10 (standard library only, no pip dependencies needed)
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 
-### 2. Setup
+### 2. Local Installation
 ```bash
 # Clone the repository
-git clone https://github.com/pickyhack/pickyhack.git
+git clone https://github.com/kalidraco/pickyhack.git
 cd pickyhack
 
-# Launch local development server
+# Install dependencies
+npm install
+
+# Launch local development server (defaults to http://localhost:8088)
 npm run dev
-# Open http://localhost:8000 in your browser
 ```
 
-### 3. Running Tests
-We enforce zero-dependency automated unit and integration tests:
+### 3. Local Verification Commands
+Before opening any Pull Request, ensure that all automated checks pass locally:
 ```bash
-# Run full test suite
+# 1. Lint & syntax check
+npm run lint
+
+# 2. Complete unit & integration test suites
 npm test
 
-# Run syntax checks
-npm run check
+# 3. Build & bundle verification
+npm run build
+
+# 4. Dependency security audit
+npm run audit
 ```
 
-Every PR must pass `npm test` and `npm run check` with 0 failures before review.
+---
+
+## Branching Model & Development Workflow
+
+The `main` branch is protected. Direct pushes and force pushes to `main` are strictly blocked. All modifications must arrive through Pull Requests:
+
+```text
+feature/* or fix/*
+       ↓
+  Pull Request
+       ↓
+  GitHub Actions CI Gate
+   ├── 1. Dependencies Installation
+   ├── 2. Lint & Code Style Check
+   ├── 3. Syntax Verification (JS + Python)
+   ├── 4. Automated Tests (7 suites)
+   ├── 5. Build Verification
+   └── 6. Dependency Security Audit
+       ↓
+  Security Scanning (CodeQL & Dependency Review)
+       ↓
+  Review & Conversation Resolution
+       ↓
+  Linear Merge (Squash / Rebase)
+       ↓
+      main
+```
+
+### Step-by-Step Contribution Guide
+
+1. **Create a Branch:**
+   Branch off `main` with a descriptive name:
+   ```bash
+   git checkout -b feature/my-new-feature
+   # or
+   git checkout -b fix/issue-description
+   ```
+
+2. **Make Changes:**
+   Keep changes focused, clean, and modular.
+   - Follow existing architecture in `src/`.
+   - Never commit `.env` or sensitive API tokens.
+   - Any new feature should include tests under `tests/unit/` or `tests/integration/`.
+
+3. **Commit Conventions:**
+   We follow standard Conventional Commits:
+   - `feat(...)`: New capability or provider feature
+   - `fix(...)`: Bug fix or edge-case correction
+   - `docs(...)`: Documentation improvements
+   - `test(...)`: Adding or updating test suites
+   - `refactor(...)`: Code refactoring without behavioral change
+   - `security(...)`: Security improvements and sanitization
+
+4. **Verify Locally:**
+   ```bash
+   npm run lint && npm test && npm run build && npm run audit
+   ```
+
+5. **Open a Pull Request:**
+   - Push your branch to GitHub.
+   - Open a PR targeting `main`.
+   - Fill in all sections of `.github/PULL_REQUEST_TEMPLATE.md` (What changed, Why, Testing, Security impact, Breaking changes, Documentation updated).
+
+6. **CI Validation & Review:**
+   - The GitHub Actions CI Gate must pass 100% green.
+   - All review comments and conversations must be resolved before merging.
 
 ---
 
-## Contribution Guidelines
+## Security & Secrets Policy
 
-1. **Keep it Modular**: New pentest tools belong in `src/modules/`, new LLM providers in `src/config/providers-catalog.js`.
-2. **Defend the Context**: Never inject unpruned or unsanitized credentials into Context Snapshots or exports.
-3. **Respect the Windows 98 Aesthetics**: Window controls, pixelated typography, beveled borders, and taskbar integration must remain consistent with the authentic 1998 user experience.
-4. **Write Tests**: Any new module or provider capability must include a corresponding test in `tests/unit/` or `tests/integration/`.
-
----
-
-## Pull Request Process
-
-1. Create a feature branch (`git checkout -b feat/my-awesome-feature`).
-2. Commit your changes with clear, descriptive commit messages (`feat(module): add nuclei output parser`).
-3. Ensure all tests pass (`npm test`).
-4. Push to your branch and open a Pull Request against `main`.
+- **Never commit credentials:** `.env` and sensitive tokens are strictly git-ignored.
+- **Push Protection Active:** GitHub secret scanning push protection is active on this repository. Any commit containing known secret tokens will be rejected at push time.
+- **Vulnerability Reporting:** If you detect a security vulnerability in PickyHack, do not report it in public issues. Refer to [SECURITY.md](SECURITY.md) to open a private GitHub Security Advisory.

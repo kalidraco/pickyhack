@@ -1,3 +1,36 @@
+# ==============================================================================
+# PickyHack — Git Ignore Configuration
+# ==============================================================================
+
+# Environment & Secrets (CRITICAL: Never commit real credentials)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.pfx
+*.p12
+
+# Dependencies & Package Managers
+node_modules/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build, Bundles & Distribution Artifacts
+dist/
+build/
+out/
+coverage/
+.nyc_output/
+
+# Logs & Runtime Diagnostics
+*.log
+logs/
+
 # Operating System Files
 .DS_Store
 .DS_Store?
@@ -6,30 +39,40 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+Desktop.ini
 
-# Node / NPM
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# Environment & Secrets (Never commit secrets!)
-.env
-.env.local
-.env.*.local
-*.pem
-*.key
-*.cert
-
-# Logs & Temporary Files
-*.log
-scratch/
-tmp/
-.cache/
-
-# Local Editor Configurations
+# IDE & Local Editor Configurations
 .vscode/
 .idea/
 *.sublime-project
 *.sublime-workspace
+.project
+.settings/
+*.swp
+*.swo
+*~
+
+# Local Caches & Temporary Files
+scratch/
+tmp/
+temp/
+.cache/
+.tempmediaStorage/
+.system_generated/
+
+# Local AI Models, Weights & Checkpoints
+models/
+*.gguf
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.pth
+
+# Datasets, Dumps & Local Database Files
+data/
+datasets/
+*.sqlite
+*.sqlite3
+*.db
+*.bak

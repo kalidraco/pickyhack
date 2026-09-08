@@ -2,42 +2,48 @@
 
 ## Responsible Disclosure
 
-The PickyHack team takes the security of our stateless AI context harness, offensive security modules, and user data with paramount seriousness. If you discover a vulnerability or security flaw within PickyHack, please notify our team promptly.
+The PickyHack project is dedicated to building a secure, resilient, and privacy-preserving context harness for offensive security engineers and researchers. If you discover a vulnerability or security flaw within PickyHack, we appreciate your help in disclosing it to us responsibly.
 
 ### Reporting a Vulnerability
 
-- **Contact:** Please email your findings directly to `security@pickyhack.local` (or open a private GitHub Security Advisory).
-- **Include:**
-  - Detailed steps to reproduce the vulnerability.
-  - Proof-of-concept (PoC) code or requests.
-  - Affected components (`src/security/`, `src/core/`, etc.).
-  - Potential impact assessment.
-- **Do not:** Disclose the vulnerability publicly until a coordinated fix and release has been issued.
+**Please do not report security vulnerabilities through public GitHub issues.**
 
-We commit to acknowledging your advisory within 48 hours and providing regular updates on remediation progress.
+Instead, please submit reports using GitHub's private reporting channel:
+1. Navigate to the **[Security Advisories](https://github.com/kalidraco/pickyhack/security/advisories/new)** tab of the repository.
+2. Click **Report a vulnerability** to open a confidential advisory draft visible only to repository maintainers.
+
+#### Information to Include
+
+To help us triage and resolve the issue swiftly, please include:
+- A clear description of the vulnerability and its potential impact.
+- Step-by-step instructions to reproduce the issue.
+- Proof-of-concept (PoC) code or requests, if applicable.
+- The specific affected components (e.g., `src/security/`, `src/backend/`, `src/core/`).
+- Any suggested mitigations or patches.
+
+#### Response Commitments & Timelines
+
+- **Initial Acknowledgment:** Within **48 hours** of submission.
+- **Triage & Assessment:** Within **5 business days**, confirming severity and scope.
+- **Fix & Coordinated Release:** We will collaborate with you to validate the fix and coordinate a public advisory date before any disclosure.
 
 ---
 
-## Security Architecture Guarantees
+## Security Architecture & Defenses
 
-### 1. Zero Secret Leakage by Design
-PickyHack integrates a built-in automated secret redaction engine (`src/security/sanitizer.js`). All:
-- Context Snapshots,
-- System Prompt Context Packets,
-- Formal Deliverable exports (Markdown, HTML, PDF),
-- Browser Console Telemetry,
-are scanned for cloud API keys (OpenAI, Anthropic, Google Gemini, OpenRouter), AWS credentials, private keys, and plaintext password fields. Any matching token is automatically replaced with `[REDACTED_SECRET: <TYPE>]` before storage or egress.
+PickyHack incorporates defense-in-depth architectural principles:
 
-### 2. Local Air-Gapped Privacy
-When operating against sensitive internal networks or air-gapped systems:
-- Operators can configure local OpenAI-compatible inference runtimes (e.g. Ollama, LM Studio, vLLM, llama.cpp).
-- PickyHack automatically tags local engines with `[🔒 Network: Local]` and prevents any egress telemetry to cloud endpoints.
+### 1. Automated Secret Redaction (`src/security/sanitizer.js`)
+All telemetry, context snapshot exports, system prompt packets, and deliverable reports automatically pass through regular expression token sanitizers. Known cloud API keys (OpenAI, Anthropic, Gemini, OpenRouter), AWS access credentials, private keys, and plaintext password fields are redacted to `[REDACTED_SECRET: <TYPE>]` prior to persistence or export.
 
-### 3. File Attachment & SSRF Hardening
-- File uploads are strictly validated through `src/security/validator.js`.
-- Disallowed executable extensions (`.exe`, `.sh`, `.bat`, `.py`, etc.) are blocked.
-- Path traversal sequences (`../`, `..\`) and null bytes (`%00`) are neutralized.
-- Cloud metadata IP ranges (`169.254.169.254`, `metadata.google.internal`) are strictly barred from request routing.
+### 2. File Upload & Input Validation (`src/security/validator.js`)
+Incoming context documents, multimodal attachments, and scan outputs (Burp XML, OWASP ZAP JSON) are validated against strict whitelists:
+- Executable scripts and binaries (`.exe`, `.sh`, `.bat`, `.py`, `.elf`) are strictly rejected.
+- Directory traversal sequences (`../`, `..\`) and null bytes (`%00`) are stripped.
+- Cloud metadata IP targets (`169.254.169.254`, `metadata.google.internal`) are barred from SSRF or ingestion channels.
+
+### 3. Air-Gapped & Local Privacy Runtimes
+When connected to local inference servers (e.g. Ollama, LM Studio, vLLM), zero network telemetry leaves your workstation. Local engines are automatically flagged with `[🔒 Network: Local]`.
 
 ---
 

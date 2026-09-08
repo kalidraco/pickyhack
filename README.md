@@ -327,9 +327,14 @@ pickyhack/
 ├── assets/
 │   └── branding/                  # Official user logo and vector assets
 ├── .github/
-│   ├── workflows/ci.yml           # Automated GitHub Actions test workflow
-│   ├── ISSUE_TEMPLATE/            # Bug report & feature request templates
-│   └── PULL_REQUEST_TEMPLATE.md   # Standardized PR review checklist
+│   ├── workflows/
+│   │   ├── ci.yml                 # Hardened multi-stage CI & verification gate
+│   │   ├── codeql.yml             # CodeQL automated security analysis (JS/Python)
+│   │   └── dependency-review.yml  # PR dependency vulnerability review
+│   ├── ISSUE_TEMPLATE/            # Bug report, feature request & security templates
+│   ├── PULL_REQUEST_TEMPLATE.md   # Standardized PR review checklist
+│   ├── CODEOWNERS                 # Repository and security component ownership
+│   └── dependabot.yml             # Automated weekly dependency updates
 ├── index.html                     # Application HTML entrypoint
 ├── server.py                      # Root convenience server launcher
 ├── package.json                   # Project scripts and metadata
@@ -360,10 +365,39 @@ npm run dev
 
 Open your browser and navigate to **`http://localhost:8000`** (or `http://localhost:8088`).
 
-### 3. Syntax Verification
+### 3. Syntax Verification & Quality Checks
 ```bash
-npm run check
+# Run syntax checks, tests, build verification, and dependency audit
+npm run lint
+npm test
+npm run build
+npm run audit
 ```
+
+---
+
+## Development Workflow
+
+The `main` branch of PickyHack is protected. Direct pushes and forced updates are blocked. Every contribution follows a rigorous, verified pull request pipeline:
+
+1. **Create a branch:** Create a dedicated topic branch from `main` (`git checkout -b feature/my-feature` or `git checkout -b fix/issue-num`).
+2. **Make changes:** Keep modifications modular, well-tested, and within the respective `src/` modules.
+3. **Run tests:** Verify locally that all checks pass cleanly (`npm run lint && npm test && npm run build && npm run audit`).
+4. **Open a Pull Request:** Push your branch and open a PR against `main` using our standardized checklist.
+5. **CI runs automatically:** The GitHub Actions CI Gate executes dependency installation, linting, syntax verification across Node and Python, the full 7-suite test matrix, build verification, and dependency security audits.
+6. **Review & Discussion:** Team review and resolution of all discussion threads are required.
+7. **Merge into main:** Changes are merged with a clean linear history into `main`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full developer guidelines.
+
+---
+
+## Security
+
+PickyHack is built for offensive security professionals and operates under strict security hygiene:
+- **Zero Secrets Policy:** Automated token sanitizer blocks credentials and API keys from leaking into context packets or exports.
+- **Push Protection:** Active GitHub secret scanning and push protection prevent accidental commits of keys or credentials.
+- **Vulnerability Reporting:** Never report vulnerabilities in public issues. For responsible disclosure instructions and response timelines, please see [SECURITY.md](SECURITY.md) or file a private [GitHub Security Advisory](https://github.com/kalidraco/pickyhack/security/advisories/new).
 
 ---
 

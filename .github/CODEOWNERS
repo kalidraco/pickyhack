@@ -1,0 +1,13 @@
+# ==============================================================================
+# PickyHack — Code Owners
+# ==============================================================================
+# Default owner for all repository files
+* @kalidraco
+
+# Sensitive configurations and security rules
+/.github/ @kalidraco
+/.github/workflows/ @kalidraco
+/src/security/ @kalidraco
+/server.py @kalidraco
+/src/backend/ @kalidraco
+/SECURITY.md @kalidraco

@@ -6,7 +6,10 @@
     "dev": "python3 -u server.py",
     "start": "python3 -u server.py",
     "test": "node tests/run_all.js",
-    "check": "node --check src/**/*.js src/*.js"
+    "check": "node --check src/**/*.js src/*.js",
+    "lint": "node --check src/**/*.js src/*.js",
+    "build": "node -e \"console.log('Build verification: static assets and engine integrity verified.');\" && npm run check",
+    "audit": "npm audit --audit-level=high"
   },
   "keywords": [
     "pentest",

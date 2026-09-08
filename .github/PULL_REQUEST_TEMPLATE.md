@@ -1,20 +1,29 @@
-## Summary of Changes
+## What changed?
+<!-- Describe the specific technical changes made in this pull request -->
 
-A concise explanation of what this pull request changes and why.
+## Why?
+<!-- Explain the motivation, bug reference, or requirement driving this change -->
 
-## Architectural Category
-- [ ] Universal AI Provider Catalog / Open Models
-- [ ] Stateless Context Engine / Snapshot Management
-- [ ] Offensive Security Module (Attack Graph, Burp/ZAP Bridge, Token Optimizer, Deliverables)
-- [ ] Defensive Sanitizer & Data Leak Prevention
-- [ ] Retro Windows 98 Interface & Window Management
-- [ ] Documentation & Community Governance
+## Testing
+<!-- Provide clear evidence of testing. How was this validated locally? Include command outputs, test suites run, or manual verification steps. -->
+- [ ] Ran automated test suite (`npm test`) — all suites passing
+- [ ] Ran syntax & lint checks (`npm run lint` / `npm run check`)
+- [ ] Verified build integrity (`npm run build`)
+- [ ] Manual verification details:
 
-## Verification Steps
-- [ ] Ran `npm test` and all 6 suites passed cleanly
-- [ ] Ran `npm run check` with 0 syntax errors
-- [ ] Verified secret redaction: no API keys or tokens in tests/logs
-- [ ] Tested responsive behavior and window controls (drag, minimize, resize)
+## Security impact
+<!-- Describe any impact on secrets, authentication, context leakage, or dependencies -->
+- [ ] Zero secrets/API keys added or logged
+- [ ] File uploads and input formats properly validated
+- [ ] Sensitive data masked or redacted
+- [ ] No new untrusted third-party scripts introduced
 
-## Related Issues
-Closes #
+## Breaking changes
+<!-- Does this PR introduce breaking changes to existing APIs, state format, or CLI options? (Yes/No - if yes, describe migration) -->
+- [ ] No breaking changes
+- [ ] Breaking changes (describe below):
+
+## Documentation updated?
+<!-- Have docs/ or README.md been updated to reflect the architectural or functional changes? -->
+- [ ] Yes
+- [ ] Not applicable
