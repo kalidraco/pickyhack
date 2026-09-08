@@ -157,9 +157,9 @@
 
         <div class="toolbar-separator"></div>
 
-        <!-- AI Engine Setup / "LET'S HACK" Trigger -->
-        <button class="win-btn btn-highlight" id="btn-open-ai-config" title="Configure your AI provider, API key, and model">
-          <span>🤖</span> <strong>AI Engine:</strong> <span id="toolbar-ai-label">OpenAI [Standby]</span>
+        <!-- AI Engine Setup / "Let's Hack !" Trigger -->
+        <button class="win-btn btn-highlight" id="btn-open-ai-config" title="Connect your AI engine (Let's Hack !)">
+          <span>🤖</span> <strong>AI Engine:</strong> <span id="toolbar-ai-label">GPT-4o (Standby)</span>
         </button>
 
         <!-- Multi-API Manager Trigger -->
@@ -1029,7 +1029,7 @@ http:
       <div class="start-separator"></div>
 
       <div class="start-menu-item" id="sm-ai-config">
-        <span>🤖</span> Configure AI Engine ("LET'S HACK")...
+        <span>🤖</span> Let's Hack ! (AI Engine)...
       </div>
       <div class="start-menu-item" id="sm-about">
         <span>ℹ️</span> About PickyHack...
@@ -1038,90 +1038,98 @@ http:
   </div>
 
   <!-- =======================================================================
-       MODAL: "LET'S HACK" AI ENGINE ONBOARDING & CONFIGURATION
+       MODAL: "LET'S HACK !" AI ENGINE ONBOARDING
        ======================================================================= -->
   <div class="win-modal-backdrop" id="ai-config-modal">
-    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="ai-config-title" style="width: 530px; max-width: 95vw;">
+    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="ai-config-title" style="width: 490px; max-width: 95vw;">
       <div class="win-titlebar">
         <div class="win-title-left">
           <span>🤖</span>
-          <span id="ai-config-title">PickyHack — Configure your AI engine</span>
+          <span id="ai-config-title">Let's Hack !</span>
         </div>
         <button class="win-title-btn" id="ai-config-close-x">✕</button>
       </div>
-      <div class="dialog-body">
-        <div style="text-align: center; margin-bottom: 6px;">
-          <img src="assets/pickyhack-logo.png" alt="PickyHack" style="width: 42px; height: 42px; image-rendering: pixelated; margin-bottom: 2px;">
-          <h3 style="font-size: 14px; font-weight: bold; letter-spacing: 0.5px; color: #000080;">LET'S HACK — CONTEXT HARNESS</h3>
-          <p style="font-size: 11px; color: #444; margin-top: 2px;">
-            The LLM is provided by you via API. PickyHack acts as the Context Harness: orchestrating pentest scope, threat intelligence &amp; exploit graphs.
+      <div class="dialog-body" style="padding: 14px 16px;">
+        <div style="text-align: center; margin-bottom: 12px;">
+          <img src="assets/pickyhack-logo.png" alt="PickyHack" style="width: 44px; height: 44px; image-rendering: pixelated; margin-bottom: 4px;">
+          <h2 style="font-size: 16px; font-weight: bold; letter-spacing: 0.5px; color: #000080; margin: 0 0 3px 0;">Let's Hack !</h2>
+          <p style="font-size: 11.5px; color: #444; margin: 0;">
+            Connect your AI engine to start.
           </p>
         </div>
 
-        <div class="win-inset" style="padding: 12px; display: flex; flex-direction: column; gap: 9px; background: #ece9d8;">
+        <div class="win-inset" style="padding: 12px; display: flex; flex-direction: column; gap: 10px; background: #ece9d8;">
           
-          <!-- Provider Selection -->
+          <!-- API Key Input Field (Primary) -->
           <div class="config-row">
-            <label for="ai-provider-select" style="font-size: 11.5px; font-weight: bold; display: block; margin-bottom: 2px;">Provider:</label>
-            <select id="ai-provider-select" class="win-inset-shallow config-select" style="width: 100%; padding: 4px 6px; font-size: 12px;">
-              <option value="openai">OpenAI (GPT-4o, o3-mini, o1)</option>
-              <option value="anthropic">Anthropic (Claude 3.7 Sonnet, 3.5 Sonnet)</option>
-              <option value="gemini">Google Gemini (Gemini 2.5 Pro, 2.5 Flash)</option>
-              <option value="mistral">Mistral AI (Mistral Large, Codestral)</option>
-              <option value="openrouter">OpenRouter (Multi-model gateway)</option>
-              <option value="custom">Custom OpenAI-compatible (Ollama, LMStudio, vLLM)</option>
-            </select>
-          </div>
-
-          <!-- Base URL (editable for custom/local endpoints or proxies) -->
-          <div class="config-row" id="config-row-endpoint">
-            <label for="ai-endpoint-input" style="font-size: 11.5px; font-weight: bold; display: block; margin-bottom: 2px;">API Endpoint / Base URL:</label>
-            <input type="text" id="ai-endpoint-input" class="chat-input-field" value="https://api.openai.com/v1" spellcheck="false" autocomplete="off" style="width: 100%; font-size: 11px;">
-          </div>
-
-          <!-- API Key -->
-          <div class="config-row">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-              <label for="ai-key-input" style="font-size: 11.5px; font-weight: bold;">API Key:</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label for="ai-key-input" style="font-size: 11.5px; font-weight: bold; color: #222;">API Key</label>
               <button type="button" class="win-btn" id="btn-toggle-key-visibility" style="font-size: 9.5px; padding: 1px 6px;">👁️ Show</button>
             </div>
-            <input type="password" id="ai-key-input" class="chat-input-field" placeholder="sk-..." spellcheck="false" autocomplete="off" style="width: 100%; font-size: 12px; letter-spacing: 1px;">
-            <span style="font-size: 10px; color: #555; display: block; margin-top: 3px; line-height: 1.3;">
-              🔒 <strong>Security:</strong> Key is stored in your browser local storage only. Never logged, and never included in snapshots or exports.
+            <input type="password" id="ai-key-input" class="chat-input-field" placeholder="sk-..." spellcheck="false" autocomplete="off" style="width: 100%; font-size: 12px; letter-spacing: 0.5px; padding: 6px 8px;">
+            <div id="ai-detected-provider-pill" style="display: none; margin-top: 5px; font-size: 11px; font-weight: bold; color: #000080;">
+              Detected Provider: <span id="detected-provider-name" style="padding: 2px 7px; background: #d0d8ef; border: 1px solid #7f9db9; border-radius: 2px; font-size: 11px;">OpenAI</span>
+            </div>
+          </div>
+
+          <!-- AI Model Selection (Dynamically populated/updated on detection) -->
+          <div class="config-row" id="config-row-model" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label for="ai-model-select" style="font-size: 11.5px; font-weight: bold; color: #222;">AI Model</label>
+              <span id="ai-model-custom-toggle" style="font-size: 10px; text-decoration: underline; cursor: pointer; color: #000080;">Custom Model ID</span>
+            </div>
+            <select id="ai-model-select" class="win-inset-shallow config-select" style="width: 100%; padding: 4px 6px; font-size: 12px;">
+              <!-- Populated dynamically -->
+            </select>
+            <input type="text" id="ai-custom-model-input" class="chat-input-field" placeholder="Custom model ID (e.g. gpt-4o, claude-3-7-sonnet)" style="display: none; width: 100%; margin-top: 4px; font-size: 11px;" spellcheck="false">
+          </div>
+
+          <!-- Advanced / Can't detect toggle -->
+          <div style="margin-top: 2px;">
+            <span id="toggle-advanced-endpoint" style="font-size: 10.5px; color: #000080; text-decoration: underline; cursor: pointer;">
+              Can't detect your provider? / Custom endpoint
             </span>
           </div>
 
-          <!-- Model -->
-          <div class="config-row">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-              <label for="ai-model-select" style="font-size: 11.5px; font-weight: bold;">Model:</label>
-              <span id="ai-model-custom-toggle" style="font-size: 10px; text-decoration: underline; cursor: pointer; color: #000080;">Custom Model</span>
+          <!-- Advanced Settings Drawer (Hidden by default) -->
+          <div id="advanced-endpoint-drawer" class="win-inset-shallow" style="display: none; padding: 9px; background: #f7f5ec; flex-direction: column; gap: 8px;">
+            <div class="config-row">
+              <label for="ai-provider-select" style="font-size: 10.5px; font-weight: bold; display: block; margin-bottom: 2px;">Provider / API Type:</label>
+              <select id="ai-provider-select" class="win-inset-shallow config-select" style="width: 100%; padding: 3px 5px; font-size: 11px;">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="mistral">Mistral AI</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="custom">Custom (Local Ollama / vLLM / LM Studio)</option>
+              </select>
             </div>
-            <select id="ai-model-select" class="win-inset-shallow config-select" style="width: 100%; padding: 4px 6px; font-size: 12px;">
-              <!-- Populated dynamically based on provider -->
-            </select>
-            <input type="text" id="ai-custom-model-input" class="chat-input-field" placeholder="Enter custom model ID (e.g. llama3.3:70b)" style="display: none; width: 100%; margin-top: 4px; font-size: 11px;" spellcheck="false">
+            <div class="config-row">
+              <label for="ai-endpoint-input" style="font-size: 10.5px; font-weight: bold; display: block; margin-bottom: 2px;">Base URL / Endpoint:</label>
+              <input type="text" id="ai-endpoint-input" class="chat-input-field" value="https://api.openai.com/v1" spellcheck="false" style="width: 100%; font-size: 11px; padding: 3px 5px;">
+            </div>
           </div>
 
-          <!-- Status Indicator -->
-          <div id="ai-connection-status" class="win-inset-shallow" style="padding: 5px 8px; font-size: 11px; font-family: var(--font-mono); color: #333; min-height: 24px; display: flex; align-items: center;">
-            Status: Ready to connect.
+          <!-- Connection Status Indicator -->
+          <div id="ai-connection-status" class="win-inset-shallow" style="padding: 6px 8px; font-size: 11px; font-family: var(--font-mono); color: #444; min-height: 24px; display: flex; align-items: center; background: #fff;">
+            Ready to connect. Enter your API key above.
+          </div>
+
+          <div style="font-size: 10px; color: #666; line-height: 1.3;">
+            🔒 Key stored in your browser local storage. Never logged, and never included in snapshots.
           </div>
 
         </div>
 
       </div>
-      <div class="dialog-buttons">
+      <div class="dialog-buttons" style="justify-content: flex-end; gap: 6px; padding: 10px 14px;">
         <button class="win-btn" id="btn-test-ai-conn" style="min-width: 115px;">
-          ⚡ Test Connection
+          Test Connection
         </button>
         <button class="win-btn btn-highlight" id="btn-save-ai-conn" style="min-width: 110px; font-weight: bold; background: #000080; color: #fff;">
-          LET'S HACK ↵
+          Let's Hack !
         </button>
-        <button class="win-btn" id="btn-disconnect-ai" style="min-width: 85px; color: #8b0000;">
-          Clear Key
-        </button>
-        <button class="win-btn" id="ai-config-cancel-btn" style="min-width: 95px;">
+        <button class="win-btn" id="ai-config-cancel-btn" style="min-width: 85px;">
           Offline Mode
         </button>
       </div>

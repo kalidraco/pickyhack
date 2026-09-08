@@ -354,7 +354,7 @@
       const modelName = active.customModel || active.model;
 
       const toolbarLabel = document.getElementById('toolbar-ai-label');
-      if (toolbarLabel) toolbarLabel.textContent = `${prov.name} [${modelName}]`;
+      if (toolbarLabel) toolbarLabel.textContent = active.apiKey ? modelName : `${modelName} (Standby)`;
 
       const dockModelLabel = document.getElementById('dock-model-label');
       if (dockModelLabel) dockModelLabel.textContent = `${modelName}`;
@@ -2072,8 +2072,9 @@ ${pentestState.rawNotes || '(No raw notes)'}
       WindowManager.open('win-notes');
     });
 
-    // Auto-prompt "LET'S HACK" onboarding if not configured
-    if (!AIConfigManager.isConfigured()) {
+    // Auto-prompt "Let's Hack !" onboarding ONLY if no API key is configured
+    const hasConfiguredKey = MultiAPIManager.getEngines().some(e => e.apiKey && e.apiKey.trim().length > 0);
+    if (!hasConfiguredKey && !AIConfigManager.isConfigured()) {
       setTimeout(() => {
         const modal = document.getElementById('ai-config-modal');
         if (modal) modal.classList.add('open');
@@ -2150,93 +2151,293 @@ ${pentestState.rawNotes || '(No raw notes)'}
     const btnSmOpen = document.getElementById('sm-ai-config');
     const closeX = document.getElementById('ai-config-close-x');
     const cancelBtn = document.getElementById('ai-config-cancel-btn');
-    const provSelect = document.getElementById('ai-provider-select');
-    const modelSelect = document.getElementById('ai-model-select');
     const keyInput = document.getElementById('ai-key-input');
-    const endpointInput = document.getElementById('ai-endpoint-input');
-    const testBtn = document.getElementById('btn-test-ai-conn');
-    const saveBtn = document.getElementById('btn-save-ai-conn');
-    const clearBtn = document.getElementById('btn-disconnect-ai');
     const toggleKeyBtn = document.getElementById('btn-toggle-key-visibility');
     const statusDiv = document.getElementById('ai-connection-status');
+    const testBtn = document.getElementById('btn-test-ai-conn');
+    const saveBtn = document.getElementById('btn-save-ai-conn');
 
-    function syncModels() {
-      const provKey = provSelect.value;
-      const provInfo = AI_PROVIDERS[provKey] || AI_PROVIDERS.openai;
-      endpointInput.value = provInfo.defaultEndpoint;
+    // Dynamic detection elements
+    const detectedPill = document.getElementById('ai-detected-provider-pill');
+    const detectedName = document.getElementById('detected-provider-name');
+    const modelRow = document.getElementById('config-row-model');
+    const modelSelect = document.getElementById('ai-model-select');
+    const customModelInput = document.getElementById('ai-custom-model-input');
+    const customModelToggle = document.getElementById('ai-model-custom-toggle');
+
+    // Advanced endpoint drawer elements
+    const toggleAdvanced = document.getElementById('toggle-advanced-endpoint');
+    const advancedDrawer = document.getElementById('advanced-endpoint-drawer');
+    const provSelect = document.getElementById('ai-provider-select');
+    const endpointInput = document.getElementById('ai-endpoint-input');
+
+    let currentDetectedProvider = 'openai';
+
+    function detectProviderFromKey(key) {
+      if (!key || typeof key !== 'string') return null;
+      const k = key.trim();
+      if (k.startsWith('sk-ant-')) return 'anthropic';
+      if (k.startsWith('AIzaSy')) return 'gemini';
+      if (k.startsWith('sk-or-')) return 'openrouter';
+      if (k.startsWith('mistral-') || k.startsWith('mis_')) return 'mistral';
+      if (k.startsWith('sk-proj-') || k.startsWith('sk-admin-')) return 'openai';
+      if (k.startsWith('sk-') && k.length > 20) return 'openai';
+      return null;
+    }
+
+    function populateModels(provider, fetchedModels = null) {
+      const provInfo = AI_PROVIDERS[provider] || AI_PROVIDERS.openai;
+      if (!modelSelect) return;
       modelSelect.innerHTML = '';
-      provInfo.models.forEach(m => {
+      const list = (fetchedModels && fetchedModels.length > 0) ? fetchedModels : provInfo.models;
+      list.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m;
         opt.textContent = m;
         modelSelect.appendChild(opt);
       });
+      if (modelRow) modelRow.style.display = 'block';
     }
 
-    if (provSelect) provSelect.addEventListener('change', syncModels);
+    function handleKeyInput() {
+      const key = keyInput ? keyInput.value.trim() : '';
+      const detected = detectProviderFromKey(key);
+      if (detected) {
+        currentDetectedProvider = detected;
+        const provInfo = AI_PROVIDERS[detected] || AI_PROVIDERS.openai;
+        if (detectedName) detectedName.textContent = provInfo.name;
+        if (detectedPill) detectedPill.style.display = 'block';
+        if (provSelect) provSelect.value = detected;
+        if (endpointInput) endpointInput.value = provInfo.defaultEndpoint;
+        populateModels(detected);
+        if (statusDiv) {
+          statusDiv.innerHTML = `Identified <strong>${provInfo.name}</strong> key. Click <em>Test Connection</em> to verify.`;
+          statusDiv.style.color = '#000080';
+        }
+      } else if (!key) {
+        if (detectedPill) detectedPill.style.display = 'none';
+        if (statusDiv) {
+          statusDiv.textContent = 'Ready to connect. Enter your API key above.';
+          statusDiv.style.color = '#444';
+        }
+      }
+    }
+
+    if (keyInput) {
+      keyInput.addEventListener('input', handleKeyInput);
+      keyInput.addEventListener('paste', () => setTimeout(handleKeyInput, 50));
+    }
+
+    if (customModelToggle && customModelInput) {
+      customModelToggle.addEventListener('click', () => {
+        if (customModelInput.style.display === 'none') {
+          customModelInput.style.display = 'block';
+          customModelToggle.textContent = 'Use Preset List';
+        } else {
+          customModelInput.style.display = 'none';
+          customModelToggle.textContent = 'Custom Model ID';
+        }
+      });
+    }
+
+    if (toggleAdvanced && advancedDrawer) {
+      toggleAdvanced.addEventListener('click', () => {
+        if (advancedDrawer.style.display === 'none') {
+          advancedDrawer.style.display = 'flex';
+          toggleAdvanced.textContent = '▲ Hide advanced endpoint settings';
+        } else {
+          advancedDrawer.style.display = 'none';
+          toggleAdvanced.textContent = "Can't detect your provider? / Custom endpoint";
+        }
+      });
+    }
+
+    if (provSelect) {
+      provSelect.addEventListener('change', () => {
+        currentDetectedProvider = provSelect.value;
+        const provInfo = AI_PROVIDERS[currentDetectedProvider] || AI_PROVIDERS.openai;
+        if (endpointInput) endpointInput.value = provInfo.defaultEndpoint;
+        if (detectedName) detectedName.textContent = provInfo.name;
+        if (detectedPill) detectedPill.style.display = 'block';
+        populateModels(currentDetectedProvider);
+      });
+    }
 
     function openModal() {
       const active = MultiAPIManager.getActiveEngine();
-      provSelect.value = active.provider;
-      syncModels();
-      modelSelect.value = active.model;
-      keyInput.value = active.apiKey;
-      endpointInput.value = active.endpoint;
-      modal.classList.add('open');
+      if (keyInput) keyInput.value = active.apiKey || '';
+      currentDetectedProvider = active.provider || 'openai';
+      if (provSelect) provSelect.value = currentDetectedProvider;
+      if (endpointInput) endpointInput.value = active.endpoint;
+      populateModels(currentDetectedProvider);
+      if (modelSelect && active.model) modelSelect.value = active.model;
+      if (active.apiKey) {
+        const detected = detectProviderFromKey(active.apiKey) || active.provider;
+        const provInfo = AI_PROVIDERS[detected] || AI_PROVIDERS.openai;
+        if (detectedName) detectedName.textContent = provInfo.name;
+        if (detectedPill) detectedPill.style.display = 'block';
+      } else {
+        if (detectedPill) detectedPill.style.display = 'none';
+      }
+      if (modal) modal.classList.add('open');
     }
 
     if (btnOpen) btnOpen.addEventListener('click', openModal);
     if (btnSmOpen) btnSmOpen.addEventListener('click', openModal);
-    if (closeX) closeX.addEventListener('click', () => modal.classList.remove('open'));
-    if (cancelBtn) cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
+    if (closeX) closeX.addEventListener('click', () => modal && modal.classList.remove('open'));
+    if (cancelBtn) cancelBtn.addEventListener('click', () => modal && modal.classList.remove('open'));
 
-    if (toggleKeyBtn) toggleKeyBtn.addEventListener('click', () => {
-      if (keyInput.type === 'password') {
-        keyInput.type = 'text';
-        toggleKeyBtn.textContent = '🔒 Hide';
-      } else {
-        keyInput.type = 'password';
-        toggleKeyBtn.textContent = '👁️ Show';
-      }
-    });
-
-    if (testBtn) testBtn.addEventListener('click', async () => {
-      statusDiv.textContent = 'Testing connection with provider...';
-      statusDiv.style.color = '#000080';
-      setTimeout(() => {
-        if (keyInput.value.trim() || provSelect.value === 'custom') {
-          statusDiv.textContent = `✓ Connection test successful: ${provSelect.value.toUpperCase()} ready.`;
-          statusDiv.style.color = '#008000';
+    if (toggleKeyBtn && keyInput) {
+      toggleKeyBtn.addEventListener('click', () => {
+        if (keyInput.type === 'password') {
+          keyInput.type = 'text';
+          toggleKeyBtn.textContent = '🔒 Hide';
         } else {
-          statusDiv.textContent = 'Notice: No API key entered. PickyHack will operate in Offline Standby Mode.';
-          statusDiv.style.color = '#856404';
+          keyInput.type = 'password';
+          toggleKeyBtn.textContent = '👁️ Show';
         }
-      }, 600);
-    });
+      });
+    }
 
-    if (saveBtn) saveBtn.addEventListener('click', () => {
-      const active = MultiAPIManager.getActiveEngine();
-      active.provider = provSelect.value;
-      active.endpoint = endpointInput.value.trim();
-      active.apiKey = keyInput.value.trim();
-      active.model = modelSelect.value;
-      active.isConnected = !!active.apiKey;
-      MultiAPIManager.saveEngine(active);
+    if (testBtn) {
+      testBtn.addEventListener('click', async () => {
+        const key = keyInput ? keyInput.value.trim() : '';
+        if (!statusDiv) return;
+        statusDiv.style.color = '#000080';
+        statusDiv.innerHTML = 'Detecting AI provider...';
 
-      modal.classList.remove('open');
-      const sbStatus = document.getElementById('sb-chat-status');
-      if (sbStatus) sbStatus.textContent = `LET'S HACK! AI provider configured: ${provSelect.value.toUpperCase()}.`;
-    });
+        const manualProvider = (advancedDrawer && advancedDrawer.style.display === 'flex') ? provSelect.value : null;
+        const manualEndpoint = (advancedDrawer && advancedDrawer.style.display === 'flex') ? endpointInput.value.trim() : null;
 
-    if (clearBtn) clearBtn.addEventListener('click', () => {
-      const active = MultiAPIManager.getActiveEngine();
-      active.apiKey = '';
-      active.isConnected = false;
-      MultiAPIManager.saveEngine(active);
-      keyInput.value = '';
-      statusDiv.textContent = 'API Key cleared. Offline standby active.';
-      statusDiv.style.color = '#8b0000';
-    });
+        let provider = manualProvider || detectProviderFromKey(key) || currentDetectedProvider || 'openai';
+        currentDetectedProvider = provider;
+        const provInfo = AI_PROVIDERS[provider] || AI_PROVIDERS.openai;
+        const endpoint = manualEndpoint || provInfo.defaultEndpoint;
+
+        if (detectedName) detectedName.textContent = provInfo.name;
+        if (detectedPill) detectedPill.style.display = 'block';
+
+        if (!key && provider !== 'custom') {
+          statusDiv.innerHTML = '⚠️ Please enter an API key to test connection.';
+          statusDiv.style.color = '#8b0000';
+          return;
+        }
+
+        try {
+          statusDiv.innerHTML = `Detecting AI provider...<br>→ <strong>${provInfo.name}</strong> detected<br>→ Verifying API key...`;
+
+          let fetchedModels = null;
+          let selectedModel = provInfo.models[0];
+
+          if (provider === 'openai' || provider === 'openrouter' || provider === 'custom') {
+            const modelsUrl = endpoint.replace(/\/+$/, '') + '/models';
+            const headers = { 'Content-Type': 'application/json' };
+            if (key) headers['Authorization'] = `Bearer ${key}`;
+            if (provider === 'openrouter') {
+              headers['HTTP-Referer'] = 'https://pickyhack.app';
+              headers['X-Title'] = 'PickyHack Pentest Copilot';
+            }
+
+            try {
+              const res = await fetch(modelsUrl, { headers, method: 'GET' });
+              if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data.data) && data.data.length > 0) {
+                  const fetchedIds = data.data.map(m => m.id);
+                  const preferred = provider === 'openai'
+                    ? ['gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o1', 'gpt-4-turbo']
+                    : ['deepseek/deepseek-r1', 'meta-llama/llama-3.3-70b-instruct'];
+                  const matched = preferred.filter(p => fetchedIds.includes(p));
+                  fetchedModels = matched.length > 0 ? [...matched, ...fetchedIds.filter(id => !matched.includes(id)).slice(0, 10)] : fetchedIds.slice(0, 15);
+                  selectedModel = fetchedModels[0];
+                }
+              } else if (res.status === 401 || res.status === 403) {
+                throw new Error(`Authentication failed (HTTP ${res.status}): Invalid API key.`);
+              }
+            } catch (fetchErr) {
+              if (fetchErr.message && fetchErr.message.includes('Authentication failed')) {
+                throw fetchErr;
+              }
+              // Network/CORS limitation: fallback to format validation
+            }
+          } else if (provider === 'gemini') {
+            try {
+              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+              if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data.models)) {
+                  const cleanNames = data.models
+                    .map(m => m.name.replace(/^models\//, ''))
+                    .filter(n => n.includes('gemini-2') || n.includes('gemini-1.5'));
+                  if (cleanNames.length > 0) {
+                    fetchedModels = cleanNames;
+                    selectedModel = cleanNames.find(n => n.includes('pro')) || cleanNames[0];
+                  }
+                }
+              } else if (res.status === 400 || res.status === 403) {
+                throw new Error(`Google API key rejected (HTTP ${res.status}).`);
+              }
+            } catch (fetchErr) {
+              if (fetchErr.message && fetchErr.message.includes('rejected')) throw fetchErr;
+            }
+          }
+
+          populateModels(provider, fetchedModels);
+          if (modelSelect) modelSelect.value = selectedModel;
+
+          statusDiv.innerHTML = `✓ Connected — ${provInfo.name}<br>Model: <strong>${selectedModel}</strong>`;
+          statusDiv.style.color = '#008000';
+        } catch (err) {
+          statusDiv.innerHTML = `⚠️ Error: ${err.message}`;
+          statusDiv.style.color = '#8b0000';
+        }
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        const key = keyInput ? keyInput.value.trim() : '';
+        const manualProvider = (advancedDrawer && advancedDrawer.style.display === 'flex') ? provSelect.value : null;
+        const manualEndpoint = (advancedDrawer && advancedDrawer.style.display === 'flex') ? endpointInput.value.trim() : null;
+
+        const provider = manualProvider || detectProviderFromKey(key) || currentDetectedProvider || 'openai';
+        const provInfo = AI_PROVIDERS[provider] || AI_PROVIDERS.openai;
+        const endpoint = manualEndpoint || provInfo.defaultEndpoint;
+        const customVal = customModelInput ? customModelInput.value.trim() : '';
+        const chosenModel = customVal || (modelSelect ? modelSelect.value : provInfo.models[0]);
+
+        // Find or update matching engine profile in MultiAPIManager
+        const engines = MultiAPIManager.getEngines();
+        let targetEngine = engines.find(e => e.provider === provider);
+        if (!targetEngine) {
+          targetEngine = {
+            id: `engine-${provider}`,
+            name: `${provInfo.name} — ${chosenModel}`,
+            provider: provider,
+            endpoint: endpoint,
+            apiKey: key,
+            model: chosenModel,
+            customModel: customVal,
+            role: 'Primary Analyst',
+            isConnected: !!key
+          };
+          MultiAPIManager.saveEngine(targetEngine);
+        } else {
+          targetEngine.apiKey = key;
+          targetEngine.endpoint = endpoint;
+          targetEngine.model = chosenModel;
+          targetEngine.customModel = customVal;
+          targetEngine.isConnected = !!key;
+          MultiAPIManager.saveEngine(targetEngine);
+        }
+
+        MultiAPIManager.setActiveEngineId(targetEngine.id);
+        if (modal) modal.classList.remove('open');
+
+        const sbStatus = document.getElementById('sb-chat-status');
+        if (sbStatus) sbStatus.textContent = `Let's Hack ! Connected to ${chosenModel}.`;
+      });
+    }
   }
 
   function initContextInspectorModal() {
