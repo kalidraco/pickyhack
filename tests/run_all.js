@@ -1,17 +1,35 @@
 #!/usr/bin/env node
 /**
- * PickyHack — Zero-Dependency Automated Test Runner
+ * PickyHack — Comprehensive Automated Test Runner
  * Executes all unit and integration test suites.
  */
 const { execSync } = require('child_process');
 const path = require('path');
 
 const testFiles = [
+  // Canonical Models, Reactive State & Context Harness
+  'tests/unit/models.test.js',
+  'tests/unit/project-state-v2.test.js',
+  'tests/unit/context-engine-v2.test.js',
+  'tests/unit/snapshot-v2.test.js',
+
+  // Tool Runtime, Safety Engine & Task Tree
+  'tests/unit/tool-registry.test.js',
+  'tests/unit/risk-engine.test.js',
+  'tests/unit/task-tree.test.js',
+
+  // Agent Loop & Tools Integration
+  'tests/integration/agent-loop.test.js',
+  'tests/integration/tools.test.js',
+
+  // Core Security & Sanitization
   'tests/unit/sanitizer.test.js',
   'tests/unit/validator.test.js',
   'tests/unit/providers.test.js',
   'tests/unit/context-engine.test.js',
   'tests/unit/response-ux-state.test.js',
+  'tests/unit/onboarding.test.js',
+  'tests/unit/chat-agent-ui.test.js',
   'tests/integration/deliverable.test.js',
   'tests/integration/simulation.test.js'
 ];

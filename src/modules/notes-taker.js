@@ -1,13 +1,14 @@
 /**
- * PickyHack — Native Pentest Note Taker (Notes.txt)
- * Clean blank slate on first open with autosave, title tracking,
- * finding extraction, text export, and Ask PickyHack integration.
+ * PickyHack — Native Pentest Note Taker & Knowledge Scratchpad
+ * Supports structured notes by category (GENERAL, RECON, FINDING, HYPOTHESIS,
+ * TODO, EVIDENCE, COMMAND), links to assets/tasks/findings, and autosaves.
  */
 (function(root) {
   'use strict';
 
   const STORAGE_KEY = 'pickyhack_notes_content';
   const TITLE_KEY = 'pickyhack_notes_title';
+  const STRUCTURED_KEY = 'pickyhack_notes_structured';
 
   const memoryStore = {};
   const safeStorage = {
@@ -31,7 +32,11 @@
     }
   };
 
+  const CATEGORIES = ['GENERAL', 'RECON', 'FINDING', 'HYPOTHESIS', 'TODO', 'EVIDENCE', 'COMMAND'];
+
   const NotesTaker = {
+    CATEGORIES,
+
     init() {
       if (typeof document === 'undefined') return;
 
@@ -98,10 +103,9 @@
               title: firstLine || 'Finding from Notes',
               severity: 'Medium',
               status: 'Discovered',
-              poc: selected
+              description: selected
             });
-            if (typeof alert !== 'undefined') alert('Created new Finding from note content.');
-            if (root.WindowManager) root.WindowManager.open('win-findings');
+            if (typeof alert !== 'undefined') alert(`Finding created: "${firstLine}"`);
           }
         });
       }
@@ -111,12 +115,12 @@
           if (!textarea) return;
           const selected = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim() || textarea.value.trim();
           if (!selected) {
-            if (typeof alert !== 'undefined') alert('Please highlight text or write a note to ask PickyHack.');
+            if (typeof alert !== 'undefined') alert('Select text in Notes first, then Ask PickyHack.');
             return;
           }
-          if (root.ChatUI && typeof root.ChatUI.handleUserSubmit === 'function') {
-            if (root.WindowManager) root.WindowManager.open('win-chat');
-            root.ChatUI.handleUserSubmit(`Analyze this note / observation from my pentest:\n\n${selected}`);
+          if (root.ChatUI) {
+            const prompt = `Based on these pentest notes, what is the best next attack vector or verification step?\n\n"""\n${selected}\n"""`;
+            root.ChatUI.handleUserSubmit(prompt);
           }
         });
       }
@@ -124,81 +128,105 @@
 
     getTextarea() {
       if (typeof document === 'undefined') return null;
-      return document.getElementById('notes-textarea') || document.getElementById('notes-content');
+      return document.getElementById('notes-content-area') || document.getElementById('notepad-textarea');
     },
 
     load() {
-      // Empty on first launch: no hardcoded mock notes
-      return safeStorage.getItem(STORAGE_KEY) || '';
-    },
-
-    loadTitle() {
-      return safeStorage.getItem(TITLE_KEY) || '';
+      const saved = safeStorage.getItem(STORAGE_KEY);
+      return saved !== null ? saved : '';
     },
 
     save(text) {
-      safeStorage.setItem(STORAGE_KEY, text);
-      if (root.ProjectState) {
-        root.ProjectState.update({ notes: text });
-      }
+      safeStorage.setItem(STORAGE_KEY, text || '');
+    },
+
+    loadTitle() {
+      const saved = safeStorage.getItem(TITLE_KEY);
+      return saved !== null ? saved : '';
     },
 
     saveTitle(title) {
-      safeStorage.setItem(TITLE_KEY, title);
+      safeStorage.setItem(TITLE_KEY, title || '');
+    },
+
+    /**
+     * Appends text to the active notes workspace.
+     * @param {string} text - Content to append
+     * @param {string} [category] - Optional category tag (GENERAL, RECON, FINDING, etc.)
+     */
+    appendNote(text, category = 'GENERAL') {
+      if (!text) return;
+      const current = this.load();
+      const timestamp = new Date().toLocaleTimeString();
+      const header = current ? `\n\n--- [${category} • ${timestamp}] ---\n` : `--- [${category} • ${timestamp}] ---\n`;
+      const updated = (current || '') + header + text.trim();
+      this.save(updated);
+
+      const textarea = this.getTextarea();
+      if (textarea) {
+        textarea.value = updated;
+        textarea.scrollTop = textarea.scrollHeight;
+        this.updateStats();
+      }
+
+      // Add to structured notes list
+      this.addStructuredNote({
+        category,
+        content: text.trim(),
+        timestamp: new Date().toISOString()
+      });
+    },
+
+    getStructuredNotes() {
+      try {
+        const raw = safeStorage.getItem(STRUCTURED_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        return [];
+      }
+    },
+
+    addStructuredNote(note) {
+      const list = this.getStructuredNotes();
+      const item = {
+        id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        category: note.category || 'GENERAL',
+        content: note.content || '',
+        target: note.target || null,
+        taskId: note.taskId || null,
+        findingId: note.findingId || null,
+        timestamp: note.timestamp || new Date().toISOString()
+      };
+      list.push(item);
+      safeStorage.setItem(STRUCTURED_KEY, JSON.stringify(list));
+      return item;
     },
 
     updateStats() {
       if (typeof document === 'undefined') return;
       const textarea = this.getTextarea();
-      const statsEl = document.getElementById('sb-note-length');
-      if (textarea && statsEl) {
-        const text = textarea.value;
-        const lines = text ? text.split('\n').length : 0;
-        statsEl.textContent = `${text.length} chars, ${lines} lines`;
-      }
+      const countEl = document.getElementById('note-word-count') || document.getElementById('notepad-wordcount');
+      if (!countEl || !textarea) return;
+
+      const text = textarea.value.trim();
+      const words = text ? text.split(/\s+/).length : 0;
+      const lines = text ? text.split('\n').length : 0;
+      countEl.textContent = `${lines} lines, ${words} words`;
     },
 
     exportFile() {
       if (typeof document === 'undefined') return;
       const textarea = this.getTextarea();
-      const titleInput = document.getElementById('note-title-input');
-      const text = textarea ? textarea.value : '';
-      const title = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : 'PickyHack_Notes';
-      
+      const text = textarea ? textarea.value : this.load();
+      const title = this.loadTitle() || 'pickyhack-notes';
+      const cleanFilename = `${title.toLowerCase().replace(/[^a-z0-9_-]/g, '_')}.txt`;
+
       const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${title.replace(/[^a-zA-Z0-9_\-]/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-    },
-
-    appendNote(snippet) {
-      const textarea = this.getTextarea();
-      const current = textarea ? textarea.value : this.load();
-      const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
-      const prefix = current ? `${current}\n` : '';
-      const updated = `${prefix}[${timestamp}] ${snippet}\n`;
-
-      if (textarea) {
-        textarea.value = updated;
-        this.updateStats();
-      }
-      this.save(updated);
-    },
-
-    setNotes(text) {
-      const textarea = this.getTextarea();
-      if (textarea) textarea.value = text || '';
-      this.save(text || '');
-      this.updateStats();
-    },
-
-    setTitle(title) {
-      const titleInput = document.getElementById('note-title-input');
-      if (titleInput) titleInput.value = title || '';
-      this.saveTitle(title || '');
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = cleanFilename;
+      link.click();
+      URL.revokeObjectURL(link.href);
     }
   };
 

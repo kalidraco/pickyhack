@@ -1,0 +1,699 @@
+/**
+ * PickyHack — Picky98 Retro Theme Skin
+ * Applied when [data-theme="picky98"] is active on <html> or <body>.
+ * Preserves 100% of modern chat navigation, state, and semantics,
+ * but restyles components with nostalgic Windows 98 chrome & bevels.
+ */
+
+[data-theme="picky98"] {
+  --font-sans: "MS Sans Serif", "Tahoma", "Segoe UI", sans-serif;
+  --font-mono: "VT323", "Courier New", Courier, monospace;
+
+  --bg-app: #008080; /* Classic Win98 Teal */
+  --bg-sidebar: #c0c0c0;
+  --bg-workspace: #ffffff;
+  --bg-drawer: #c0c0c0;
+  --bg-card: #ffffff;
+  --bg-card-hover: #ece9d8;
+  --bg-input: #ffffff;
+  --bg-code: #000000;
+  --bg-terminal: #000000;
+
+  --border-subtle: #808080;
+  --border-strong: #000000;
+
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-muted: #555555;
+  --text-inverse: #ffffff;
+
+  --accent-primary: #000080; /* Win98 Active Titlebar Navy */
+  --accent-primary-hover: #1084d0;
+
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-full: 0px;
+}
+
+[data-theme="picky98"] #app-sidebar {
+  border-right: 2px solid #808080;
+  box-shadow: inset -1px 0 #ffffff;
+}
+
+[data-theme="picky98"] .sidebar-header {
+  background: #000080;
+  color: #ffffff;
+  border-bottom: 2px solid #000;
+}
+
+[data-theme="picky98"] .brand-title {
+  color: #ffffff;
+}
+
+[data-theme="picky98"] .brand-version {
+  background: #ffffff;
+  color: #000080;
+  font-family: monospace;
+}
+
+[data-theme="picky98"] .nav-item {
+  border: 1px solid transparent;
+}
+
+[data-theme="picky98"] .nav-item:hover {
+  background: #000080;
+  color: #ffffff;
+}
+
+[data-theme="picky98"] .nav-item.active {
+  background: #000080;
+  color: #ffffff;
+}
+
+[data-theme="picky98"] #chat-header {
+  background: #000080;
+  color: #ffffff;
+  border-bottom: 2px solid #000;
+  backdrop-filter: none;
+}
+
+[data-theme="picky98"] .target-badge,
+[data-theme="picky98"] .engine-selector-pill,
+[data-theme="picky98"] .context-headroom-pill {
+  background: #c0c0c0;
+  color: #000;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #000;
+  border-bottom: 1px solid #000;
+  border-radius: 0;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  font-weight: bold;
+}
+
+[data-theme="picky98"] .chat-bubble-card {
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 1px 1px 0 #000000;
+}
+
+[data-theme="picky98"] .chat-row.user .chat-bubble-card {
+  background: #ffffcc;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+}
+
+[data-theme="picky98"] #chat-composer {
+  background: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 1px 1px 0 #000000;
+}
+
+[data-theme="picky98"] #chat-input {
+  background: #ffffff;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  padding: 4px 6px;
+  color: #000;
+}
+
+[data-theme="picky98"] .btn-send-message {
+  background: #000080;
+  color: #ffffff;
+  min-width: 80px;
+  height: 28px;
+  padding: 0 14px;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  box-shadow: 1px 1px 0 #000000;
+  border-radius: 0;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 11.5px;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+[data-theme="picky98"] .btn-send-message:hover {
+  background: #1084d0;
+  transform: none;
+  box-shadow: 1px 1px 0 #000000;
+}
+
+[data-theme="picky98"] .btn-send-message:active {
+  background: #000080;
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  box-shadow: none;
+  transform: none;
+}
+
+[data-theme="picky98"] .btn-send-message.btn-stop-message {
+  background: #800000;
+  color: #ffffff;
+  min-width: 76px;
+}
+
+[data-theme="picky98"] .btn-send-message.btn-stop-message:hover {
+  background: #a00000;
+}
+
+[data-theme="picky98"] #context-drawer {
+  background: #c0c0c0;
+  border-left: 2px solid #ffffff;
+  box-shadow: inset 1px 0 #808080;
+}
+
+[data-theme="picky98"] .drawer-header {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+  color: #ffffff;
+}
+
+[data-theme="picky98"] .drawer-card {
+  background: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+}
+
+[data-theme="picky98"] .modal-sheet {
+  background: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .modal-header {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+  color: #ffffff;
+}
+
+/* Universal Button Styles for Picky98 */
+[data-theme="picky98"] .btn-primary,
+[data-theme="picky98"] .btn-secondary,
+[data-theme="picky98"] .btn-icon-square,
+[data-theme="picky98"] .btn-modal-close {
+  background: #c0c0c0;
+  color: #000000;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 1px 1px 0 #000000;
+  border-radius: 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+[data-theme="picky98"] .btn-primary {
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  font-weight: bold;
+}
+
+[data-theme="picky98"] .btn-primary:active,
+[data-theme="picky98"] .btn-secondary:active,
+[data-theme="picky98"] .btn-icon-square:active {
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  box-shadow: none;
+}
+
+/* Form Inputs & Selects for Picky98 */
+[data-theme="picky98"] .form-input,
+[data-theme="picky98"] .form-select,
+[data-theme="picky98"] .project-select {
+  background: #ffffff;
+  color: #000000;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  border-radius: 0;
+  font-family: var(--font-sans);
+}
+
+[data-theme="picky98"] .form-input:focus,
+[data-theme="picky98"] .form-select:focus {
+  outline: 1px dotted #000000;
+}
+
+/* Tool execution and terminal cards */
+[data-theme="picky98"] .tool-call-card,
+[data-theme="picky98"] .terminal-card,
+[data-theme="picky98"] .approval-gate-card {
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 1px 1px 0 #000000;
+  background: #ffffff;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .terminal-card {
+  background: #000000;
+  color: #33ff33;
+}
+
+/* Starter Prompts & Empty State */
+[data-theme="picky98"] .empty-state-title {
+  font-family: var(--font-sans);
+  font-weight: bold;
+  color: #000080;
+}
+
+[data-theme="picky98"] .starter-prompt-btn {
+  background: #c0c0c0;
+  color: #000000;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 1px 1px 0 #000000;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .starter-prompt-btn:hover {
+  background: #ece9d8;
+}
+
+/* Picky98 Workstation Strip & Pentest Phase Indicator */
+[data-theme="picky98"] .workstation-strip {
+  background: #c0c0c0;
+  border-top: 1px solid #ffffff;
+  border-bottom: 2px solid #808080;
+  font-family: var(--font-sans);
+}
+
+[data-theme="picky98"] .strip-label {
+  color: #333333;
+}
+
+[data-theme="picky98"] .strip-val {
+  color: #000080;
+}
+
+[data-theme="picky98"] .phase-step.active {
+  background: #000080;
+  color: #ffffff;
+  border: 1px solid #000000;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .compact-starter-chips .starter-chip {
+  background: #c0c0c0;
+  color: #000000;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 1px 1px 0 #000000;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .compact-starter-chips .starter-chip:hover {
+  background: #ece9d8;
+}
+
+[data-theme="picky98"] .agent-status-bar {
+  background: #c0c0c0;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  border-radius: 0;
+  color: #000080;
+  font-weight: bold;
+}
+
+[data-theme="picky98"] .composer-btn,
+[data-theme="picky98"] .composer-tool-chip {
+  background: #c0c0c0;
+  color: #000000;
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .composer-target-badge {
+  background: #c0c0c0;
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+  border-radius: 0;
+  color: #000080;
+}
+
+/* Onboarding Wizard Windows 98 Aesthetics */
+[data-theme="picky98"] .onboarding-backdrop {
+  background: #008080; /* Windows 98 Desktop Teal */
+}
+
+[data-theme="picky98"] .onboarding-window {
+  background: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .onboarding-titlebar {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-weight: bold;
+  font-size: 12px;
+  padding: 3px 6px;
+  border-bottom: 2px solid #000000;
+}
+
+[data-theme="picky98"] .hero-logo-box {
+  background: #000080;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+[data-theme="picky98"] .onboarding-main-title {
+  color: #000000;
+  font-family: var(--font-sans);
+  font-weight: bold;
+}
+
+[data-theme="picky98"] .onboarding-tagline {
+  color: #000080;
+  font-family: monospace;
+  font-weight: bold;
+}
+
+[data-theme="picky98"] .onboarding-divider {
+  border-top: 1px solid #808080;
+  border-bottom: 1px solid #ffffff;
+  background: transparent;
+  height: 2px;
+  width: 100%;
+}
+
+[data-theme="picky98"] .onboarding-security-notice {
+  background: #ffffcc;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  border-radius: 0;
+  color: #000000;
+}
+
+[data-theme="picky98"] .test-summary-card {
+  background: #ffffff;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .onboarding-test-box {
+  background: #ffffff;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .onboarding-success-banner {
+  background: #ffffcc;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  border-radius: 0;
+  color: #008000;
+  font-weight: bold;
+}
+
+[data-theme="picky98"] .btn-lets-hack {
+  background: #000080;
+  color: #ffffff;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+  border-radius: 0;
+  font-weight: bold;
+}
+
+[data-theme="picky98"] .btn-lets-hack:hover {
+  background: #1084d0;
+}
+
+[data-theme="picky98"] .btn-lets-hack:active {
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+}
+
+/* Picky98 In-Chat Tool Execution Cards */
+[data-theme="picky98"] .tool-execution-card {
+  background: #c0c0c0;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+[data-theme="picky98"] .tool-header {
+  background: #000080;
+  color: #ffffff;
+  border-bottom: 2px solid #808080;
+  padding: 4px 8px;
+  font-family: 'Tahoma', sans-serif;
+  font-weight: bold;
+}
+
+[data-theme="picky98"] .tool-name-badge {
+  color: #ffffff;
+}
+
+[data-theme="picky98"] .tool-target-pill {
+  background: #ffffff;
+  color: #000080;
+  border: 1px solid #000000;
+  border-radius: 0;
+  font-weight: bold;
+}
+
+[data-theme="picky98"] .tool-duration {
+  color: #c0c0c0;
+}
+
+[data-theme="picky98"] .tool-status-pill.running {
+  background: #ffff00;
+  color: #000000;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .tool-status-pill.success {
+  background: #008000;
+  color: #ffffff;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .tool-status-pill.failed {
+  background: #800000;
+  color: #ffffff;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .tool-cmd-bar {
+  background: #000000;
+  color: #00ff00;
+  border-bottom: 1px solid #333333;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .terminal-block {
+  background: #000000;
+  color: #ffffff;
+  border: 2px inset #808080;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .tool-actions-bar {
+  background: #c0c0c0;
+  border-top: 1px solid #808080;
+}
+
+[data-theme="picky98"] .btn-tool-action {
+  background: #c0c0c0;
+  color: #000000;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  border-radius: 0;
+  font-family: 'Tahoma', sans-serif;
+  font-weight: normal;
+}
+
+[data-theme="picky98"] .btn-tool-action:hover {
+  background: #d4d0c8;
+}
+
+[data-theme="picky98"] .btn-tool-action:active {
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+}
+
+[data-theme="picky98"] .btn-tool-action.btn-save-evidence {
+  background: #000080;
+  color: #ffffff;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+}
+
+/* Picky98 Evidence Card */
+[data-theme="picky98"] .in-chat-evidence-card {
+  background: #c0c0c0;
+  border-top: 2px solid #808080;
+  border-left: 4px solid #000080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .evidence-content-preview {
+  background: #ffffff;
+  color: #000000;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  border-radius: 0;
+}
+
+/* Picky98 Finding Card */
+[data-theme="picky98"] .in-chat-finding-card {
+  background: #ffffcc;
+  border-top: 2px solid #ffffff;
+  border-left: 4px solid #ff0000;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  border-radius: 0;
+  color: #000000;
+}
+
+[data-theme="picky98"] .btn-finding-validate {
+  background: #000080;
+  color: #ffffff;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .btn-finding-create {
+  background: #008000;
+  color: #ffffff;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .btn-finding-dismiss {
+  background: #c0c0c0;
+  color: #000000;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  border-radius: 0;
+}
+
+/* Picky98 Task Card */
+[data-theme="picky98"] .in-chat-task-card {
+  background: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  border-radius: 0;
+}
+
+[data-theme="picky98"] .task-steps-list {
+  background: #ffffff;
+  color: #000000;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  border-radius: 0;
+}
+
+/* Picky98 Backend Status Dot */
+[data-theme="picky98"] .status-dot {
+  border-radius: 0;
+  width: 9px;
+  height: 9px;
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+}
+[data-theme="picky98"] .status-dot.connected {
+  background: #00aa00;
+  box-shadow: none;
+}
+[data-theme="picky98"] .status-dot.disconnected {
+  background: #cc8800;
+}
+[data-theme="picky98"] .status-dot.error {
+  background: #cc0000;
+}

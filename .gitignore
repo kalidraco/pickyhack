@@ -11,6 +11,7 @@
 *.cert
 *.pfx
 *.p12
+.pickyhack_token
 
 # Dependencies & Package Managers
 node_modules/

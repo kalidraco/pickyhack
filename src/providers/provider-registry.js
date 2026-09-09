@@ -60,7 +60,7 @@
       role: 'Sensitive / Private Pentest',
       capabilities: { contextWindow: 32768, vision: false, tools: true, reasoning: false, streaming: true },
       isLocal: true,
-      isConnected: true
+      isConnected: false
     }
   ];
 
@@ -145,6 +145,206 @@
       const engines = this.getEngines();
       const activeId = this.getActiveEngineId();
       return engines.find(e => e.id === activeId) || engines[0] || defaultEngines[0];
+    },
+
+    /**
+     * Checks whether an AI provider has been successfully configured and verified.
+     * Returns false on first launch or when credentials have not been configured/tested.
+     * Requires hasCompletedAIOnboarding === true AND valid verified credentials.
+     */
+    hasValidConfig() {
+      const onboarded = safeStorage.getItem('hasCompletedAIOnboarding') === 'true' ||
+                        safeStorage.getItem('pickyhack_onboarded') === 'true';
+      if (!onboarded) return false;
+      const active = this.getActiveEngine();
+      if (!active) return false;
+      const isLocal = active.isLocal || active.provider === 'ollama' || active.provider === 'local' ||
+                      (active.endpoint && (active.endpoint.includes('localhost') || active.endpoint.includes('127.0.0.1')));
+      if (isLocal) {
+        return !!(active.endpoint && active.endpoint.trim().length > 0 && active.isConnected);
+      }
+      return !!(active.apiKey && active.apiKey.trim().length > 0 && active.isConnected);
+    },
+
+    /**
+     * Clear onboarding status check: returns true ONLY if onboarding was completed
+     * AND configuration is currently valid and verified.
+     */
+    hasCompletedAIOnboarding() {
+      return this.hasValidConfig();
+    },
+
+    /**
+     * Tests live connection against the specified AI engine configuration.
+     * Verifies provider, API key, endpoint, model, and auth with actionable error details.
+     */
+    async testConnection(engineConfig) {
+      const cfg = engineConfig || this.getActiveEngine();
+      const provider = cfg.provider || 'openai';
+      const apiKey = (cfg.apiKey || '').trim();
+      const endpoint = (cfg.endpoint || 'https://api.openai.com/v1').replace(/\/+$/, '');
+      const model = (cfg.customModel || cfg.model || '').trim();
+      const isLocal = cfg.isLocal || provider === 'ollama' || provider === 'local' ||
+                      endpoint.includes('localhost') || endpoint.includes('127.0.0.1');
+
+      if (!isLocal && !apiKey) {
+        return {
+          success: false,
+          error: 'API key required.'
+        };
+      }
+
+      const startTime = Date.now();
+
+      try {
+        if (provider === 'anthropic') {
+          const testModel = model || 'claude-3-5-sonnet-20241022';
+          const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+              model: testModel,
+              messages: [{ role: 'user', content: 'ping' }],
+              max_tokens: 1
+            })
+          });
+          const latencyMs = Date.now() - startTime;
+          if (res.status === 401) {
+            return { success: false, error: 'Invalid API key: Authentication failed (401 Unauthorized).' };
+          }
+          if (res.status === 404) {
+            return { success: false, error: `Model not found: Model '${testModel}' does not exist or account lacks access.` };
+          }
+          if (res.status === 429) {
+            return { success: false, error: 'Rate limit exceeded: Provider rate limit hit (429).' };
+          }
+          if (!res.ok) {
+            const text = await res.text().catch(() => '');
+            return { success: false, error: `Unauthorized or invalid configuration: HTTP ${res.status} (${text.slice(0, 100)})` };
+          }
+          cfg.isConnected = true;
+          this.saveEngine(cfg);
+          safeStorage.setItem('hasCompletedAIOnboarding', 'true');
+          safeStorage.setItem('pickyhack_onboarded', 'true');
+          return { success: true, message: 'Connection successful', model: testModel, latencyMs };
+
+        } else if (provider === 'gemini') {
+          const testModel = model || 'gemini-2.0-flash';
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${testModel}:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: 'ping' }] }],
+              generationConfig: { maxOutputTokens: 1 }
+            })
+          });
+          const latencyMs = Date.now() - startTime;
+          if (res.status === 400 || res.status === 403) {
+            const errJson = await res.json().catch(() => ({}));
+            const msg = errJson.error ? errJson.error.message : 'Invalid API key';
+            return { success: false, error: `Invalid API key: ${msg}` };
+          }
+          if (res.status === 404) {
+            return { success: false, error: `Model not found: Gemini model '${testModel}' not found.` };
+          }
+          if (res.status === 429) {
+            return { success: false, error: 'Rate limit exceeded: Gemini quota reached (429).' };
+          }
+          if (!res.ok) {
+            return { success: false, error: `Connection failed: HTTP ${res.status}` };
+          }
+          cfg.isConnected = true;
+          this.saveEngine(cfg);
+          safeStorage.setItem('hasCompletedAIOnboarding', 'true');
+          safeStorage.setItem('pickyhack_onboarded', 'true');
+          return { success: true, message: 'Connection successful', model: testModel, latencyMs };
+
+        } else if (isLocal) {
+          let testUrl = `${endpoint}/models`;
+          if (provider === 'ollama') {
+            testUrl = endpoint.includes('/v1') ? endpoint.replace(/\/v1$/, '/api/tags') : `${endpoint}/api/tags`;
+          }
+          try {
+            const res = await fetch(testUrl, { method: 'GET' });
+            const latencyMs = Date.now() - startTime;
+            if (!res.ok && res.status !== 404) {
+              return { success: false, error: `Endpoint error: Server returned HTTP ${res.status}.` };
+            }
+            cfg.isConnected = true;
+            this.saveEngine(cfg);
+            safeStorage.setItem('hasCompletedAIOnboarding', 'true');
+            safeStorage.setItem('pickyhack_onboarded', 'true');
+            return { success: true, message: 'Connection successful', model: model || 'local', latencyMs };
+          } catch (netErr) {
+            return { success: false, error: `Endpoint unreachable: Could not connect to local server at ${endpoint}. Ensure Ollama or local LLM server is running.` };
+          }
+
+        } else {
+          // Standard OpenAI-Compatible endpoints
+          const checkUrl = `${endpoint}/models`;
+          const headers = { 'Content-Type': 'application/json' };
+          if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+          if (provider === 'openrouter') {
+            headers['HTTP-Referer'] = 'https://pickyhack.app';
+            headers['X-Title'] = 'PickyHack Pentest Copilot';
+          }
+
+          const res = await fetch(checkUrl, { method: 'GET', headers });
+          const latencyMs = Date.now() - startTime;
+          if (res.status === 401) {
+            return { success: false, error: 'Invalid API key: Authentication failed (401 Unauthorized).' };
+          }
+          if (res.status === 403) {
+            return { success: false, error: 'Unauthorized: Access forbidden (403 Forbidden).' };
+          }
+          if (res.status === 404) {
+            // Fallback for custom endpoints without /models
+            const testModel = model || 'gpt-4o';
+            const compRes = await fetch(`${endpoint}/chat/completions`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                model: testModel,
+                messages: [{ role: 'user', content: 'ping' }],
+                max_tokens: 1
+              })
+            });
+            if (compRes.status === 401) return { success: false, error: 'Invalid API key: Authentication failed (401 Unauthorized).' };
+            if (compRes.status === 404) return { success: false, error: `Model not found: Model '${testModel}' was not found at ${endpoint}.` };
+            if (compRes.status === 429) return { success: false, error: 'Rate limit exceeded: Provider quota reached (429).' };
+            if (!compRes.ok) return { success: false, error: `Invalid configuration: Endpoint returned HTTP ${compRes.status}.` };
+            cfg.isConnected = true;
+            this.saveEngine(cfg);
+            safeStorage.setItem('hasCompletedAIOnboarding', 'true');
+            safeStorage.setItem('pickyhack_onboarded', 'true');
+            return { success: true, message: 'Connection successful', model: testModel, latencyMs };
+          }
+          if (res.status === 429) {
+            return { success: false, error: 'Rate limit exceeded: Provider quota reached (429).' };
+          }
+          if (!res.ok) {
+            const text = await res.text().catch(() => '');
+            return { success: false, error: `Connection failed: HTTP ${res.status} (${text.slice(0, 100)})` };
+          }
+
+          cfg.isConnected = true;
+          this.saveEngine(cfg);
+          safeStorage.setItem('hasCompletedAIOnboarding', 'true');
+          safeStorage.setItem('pickyhack_onboarded', 'true');
+          return { success: true, message: 'Connection successful', model: model || 'gpt-4o', latencyMs };
+        }
+      } catch (err) {
+        const msg = err.message || '';
+        if (msg.includes('Failed to fetch') || msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND') || msg.includes('fetch failed')) {
+          return { success: false, error: `Endpoint unreachable: Could not establish network connection to ${endpoint}.` };
+        }
+        return { success: false, error: `Connection failed: ${msg}` };
+      }
     },
 
     saveEngine(engineData) {
@@ -316,25 +516,35 @@
 
     /**
      * Dispatches an LLM inference request across any provider.
+     * Supports optional streaming via options.onChunk and cancellation via options.signal.
      */
-    async send(systemPrompt, userPrompt, specificEngine = null, images = []) {
+    async send(systemPrompt, userPrompt, specificEngine = null, images = [], options = {}) {
       const cfg = specificEngine || this.getActiveEngine();
       const model = cfg.customModel || cfg.model;
 
-      // If no API key and not a local server, trigger local offline synthesis
+      // If no API key and not a local server, PickyHack does NOT fake AI responses
       if (!cfg.apiKey && !cfg.isLocal && cfg.provider !== 'custom') {
-        return this.localSynthesisFallback(userPrompt, cfg);
+        return {
+          text: `⚠️ **No AI engine configured.**\n\nPlease connect your AI provider in **Settings** or run the initial setup wizard to start chatting.\n\n*PickyHack operates with real AI models only — stateless by default, context-driven by design.*`,
+          code: null,
+          requiresConfig: true,
+          error: 'NO_AI_ENGINE_CONFIGURED',
+          modelName: model,
+          provider: cfg.provider,
+          engineName: cfg.name,
+          isLocal: cfg.isLocal
+        };
       }
 
       try {
         let result;
         if (cfg.provider === 'anthropic') {
-          result = await this.callAnthropic(cfg, model, systemPrompt, userPrompt, images);
+          result = await this.callAnthropic(cfg, model, systemPrompt, userPrompt, images, options);
         } else if (cfg.provider === 'gemini') {
-          result = await this.callGemini(cfg, model, systemPrompt, userPrompt, images);
+          result = await this.callGemini(cfg, model, systemPrompt, userPrompt, images, options);
         } else {
           // OpenAI, Mistral, Ollama, LM Studio, vLLM, OpenRouter, Custom
-          result = await this.callOpenAICompatible(cfg, model, systemPrompt, userPrompt, images);
+          result = await this.callOpenAICompatible(cfg, model, systemPrompt, userPrompt, images, options);
         }
 
         return {
@@ -345,12 +555,22 @@
           isLocal: cfg.isLocal
         };
       } catch (err) {
+        if (err.name === 'AbortError') {
+          return {
+            text: `⏹️ *Generation halted by operator.*`,
+            code: null,
+            isAborted: true,
+            modelName: model,
+            provider: cfg.provider,
+            engineName: cfg.name,
+            isLocal: cfg.isLocal
+          };
+        }
         console.error(`Inference failed for ${cfg.name}:`, err);
-        const fallback = this.localSynthesisFallback(userPrompt, cfg);
         return {
-          text: `⚠️ **[${cfg.name} API Notice: ${err.message}]**\n\n*PickyHack Context Harness generated fallback synthesis below:*\n\n${fallback.text}`,
-          code: fallback.code,
-          isFallback: true,
+          text: `⚠️ **[${cfg.name} API Error: ${err.message}]**\n\nAI Engine configuration requires attention. Please verify your API key, endpoint, or model in **Settings → Multi-API & Backend**.`,
+          code: null,
+          isError: true,
           modelName: model,
           provider: cfg.provider,
           engineName: cfg.name,
@@ -359,7 +579,7 @@
       }
     },
 
-    async callOpenAICompatible(cfg, model, systemPrompt, userPrompt, images = []) {
+    async callOpenAICompatible(cfg, model, systemPrompt, userPrompt, images = [], options = {}) {
       const endpoint = (cfg.endpoint || 'https://api.openai.com/v1').replace(/\/+$/, '') + '/chat/completions';
       const headers = { 'Content-Type': 'application/json' };
       if (cfg.apiKey) headers['Authorization'] = `Bearer ${cfg.apiKey}`;
@@ -379,22 +599,68 @@
         ];
       }
 
-      const res = await fetch(endpoint, {
+      const shouldStream = typeof options.onChunk === 'function';
+      const bodyPayload = {
+        model: model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMsgContent }
+        ],
+        temperature: 0.3
+      };
+      if (shouldStream) {
+        bodyPayload.stream = true;
+      }
+
+      const fetchOpts = {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          model: model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMsgContent }
-          ],
-          temperature: 0.3
-        })
-      });
+        body: JSON.stringify(bodyPayload)
+      };
+      if (options.signal) {
+        fetchOpts.signal = options.signal;
+      }
+
+      const res = await fetch(endpoint, fetchOpts);
 
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(`HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      }
+
+      // Handle real SSE stream if reader available
+      if (shouldStream && res.body && typeof res.body.getReader === 'function') {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let fullText = '';
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // keep remainder
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(':')) continue;
+            if (trimmed === 'data: [DONE]') break;
+            if (trimmed.startsWith('data: ')) {
+              try {
+                const parsed = JSON.parse(trimmed.slice(6));
+                const delta = parsed.choices && parsed.choices[0] && parsed.choices[0].delta
+                  ? (parsed.choices[0].delta.content || '')
+                  : '';
+                if (delta) {
+                  fullText += delta;
+                  options.onChunk(delta);
+                }
+              } catch (_) {}
+            }
+          }
+        }
+        return { text: fullText, code: null };
       }
 
       const data = await res.json();

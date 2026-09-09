@@ -1,1754 +1,814 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en" data-theme="picky98">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PickyHack — Offensive Security & Pentest Intelligence AI</title>
-  <meta name="description" content="PickyHack is an offensive security, vulnerability research and pentest copilot AI powered by live CISA KEV, CVE correlation, and exploit intelligence.">
+  <title>PickyHack — Autonomous Pentest Agent &amp; Context Harness</title>
+  <meta name="description" content="PickyHack: Stateless by default. Context-driven by design. Production-grade AI pentest agent with dynamic token budgeting, live KEV intelligence, and transparent context replay.">
   <link rel="icon" type="image/png" href="assets/branding/pickyhack-logo.png">
   <link rel="stylesheet" href="src/styles/index.css">
 </head>
 <body>
 
-  <!-- Desktop Environment -->
-  <div id="desktop">
+  <div id="app-layout">
     
-    <!-- Desktop Icons (Left Column) -->
-    <div class="desktop-icons">
-      <!-- 1. PickyHack AI (Primary Copilot) -->
-      <div class="desktop-icon selected" id="icon-chat" data-window="win-chat" title="PickyHack AI Copilot — Main Conversational Pentest AI">
-        <img src="assets/pickyhack-logo.png" alt="PickyHack" class="desktop-icon-img">
-        <span class="desktop-icon-label">PickyHack AI</span>
+    <!-- ====================================================================
+         1. APPLICATION SIDEBAR (Left Navigation)
+         ==================================================================== -->
+    <aside id="app-sidebar">
+      <div class="sidebar-header">
+        <a href="#" class="brand-badge">
+          <img src="assets/branding/pickyhack-logo.png" alt="PickyHack Logo" class="brand-logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><rect width=\'32\' height=\'32\' fill=\'%236366f1\' rx=\'6\'/><text x=\'8\' y=\'22\' fill=\'%23fff\' font-weight=\'bold\' font-family=\'sans-serif\' font-size=\'16\'>P</text></svg>'">
+          <div class="brand-title">
+            PickyHack <span class="brand-version">v2.0</span>
+          </div>
+        </a>
       </div>
 
-      <!-- 2. Notes.txt (Pentest Note Taker) -->
-      <div class="desktop-icon" id="icon-notes" data-window="win-notes" title="Notes.txt — PickyHack Pentest Note Taker & Evidence Log">
-        <svg class="desktop-icon-img" viewBox="0 0 32 32">
-          <rect x="5" y="3" width="22" height="26" fill="#ffffff" stroke="#000" stroke-width="1.5"/>
-          <line x1="8" y1="8" x2="22" y2="8" stroke="#000080" stroke-width="1.5"/>
-          <line x1="8" y1="12" x2="24" y2="12" stroke="#808080" stroke-width="1"/>
-          <line x1="8" y1="16" x2="24" y2="16" stroke="#808080" stroke-width="1"/>
-          <line x1="8" y1="20" x2="20" y2="20" stroke="#808080" stroke-width="1"/>
-          <line x1="8" y1="24" x2="16" y2="24" stroke="#8b0000" stroke-width="1.5"/>
-        </svg>
-        <span class="desktop-icon-label">Notes.txt</span>
-      </div>
-
-      <!-- 3. Targets & Scope -->
-      <div class="desktop-icon" id="icon-scope" data-window="win-scope" title="Targets & Scope Redaction Workspace">
-        <svg class="desktop-icon-img" viewBox="0 0 32 32">
-          <circle cx="16" cy="16" r="12" fill="#fff" stroke="#000" stroke-width="1.5"/>
-          <circle cx="16" cy="16" r="8" fill="none" stroke="#8b0000" stroke-width="1.5"/>
-          <circle cx="16" cy="16" r="4" fill="#8b0000"/>
-          <line x1="16" y1="2" x2="16" y2="6" stroke="#000" stroke-width="1.5"/>
-          <line x1="16" y1="26" x2="16" y2="30" stroke="#000" stroke-width="1.5"/>
-          <line x1="2" y1="16" x2="6" y2="16" stroke="#000" stroke-width="1.5"/>
-          <line x1="26" y1="16" x2="30" y2="16" stroke="#000" stroke-width="1.5"/>
-        </svg>
-        <span class="desktop-icon-label">Targets & Scope</span>
-      </div>
-
-      <!-- 4. Findings & Vulnerabilities -->
-      <div class="desktop-icon" id="icon-findings" data-window="win-findings" title="Findings & Vulnerabilities Registry">
-        <svg class="desktop-icon-img" viewBox="0 0 32 32">
-          <path d="M16 2 L28 8 L28 18 C28 25 16 30 16 30 C16 30 4 25 4 18 L4 8 Z" fill="#ffff88" stroke="#000" stroke-width="1.5"/>
-          <circle cx="16" cy="14" r="4" fill="#b83b26"/>
-          <text x="13" y="24" font-family="'VT323', monospace" font-size="12" font-weight="bold" fill="#000">!</text>
-        </svg>
-        <span class="desktop-icon-label">Findings</span>
-      </div>
-
-      <!-- 5. CISA KEV & Live CVEs -->
-      <div class="desktop-icon" id="icon-cve" data-window="win-cve" title="CISA Known Exploited Vulnerabilities Catalog">
-        <svg class="desktop-icon-img" viewBox="0 0 32 32">
-          <rect x="2" y="6" width="28" height="22" fill="#c0c0c0" stroke="#000" stroke-width="1.5"/>
-          <rect x="4" y="4" width="24" height="4" fill="#8b0000"/>
-          <text x="6" y="21" font-family="'VT323', monospace" font-size="13" font-weight="bold" fill="#8b0000">KEV</text>
-        </svg>
-        <span class="desktop-icon-label">CISA KEV</span>
-      </div>
-
-      <!-- 6. Attack Paths & Exploit Chains -->
-      <div class="desktop-icon" id="icon-chains" data-window="win-chains" title="Exploit Intelligence & Attack Paths">
-        <svg class="desktop-icon-img" viewBox="0 0 32 32">
-          <circle cx="8" cy="8" r="4" fill="#b83b26" stroke="#000"/>
-          <circle cx="24" cy="16" r="4" fill="#d35400" stroke="#000"/>
-          <circle cx="10" cy="24" r="4" fill="#2980b9" stroke="#000"/>
-          <line x1="11" y1="10" x2="21" y2="14" stroke="#000" stroke-width="1.5"/>
-          <line x1="21" y1="18" x2="13" y2="22" stroke="#000" stroke-width="1.5"/>
-        </svg>
-        <span class="desktop-icon-label">Attack Paths</span>
-      </div>
-
-      <!-- 7. Nuclei Studio -->
-      <div class="desktop-icon" id="icon-nuclei" data-window="win-nuclei" title="Nuclei YAML Automation Studio">
-        <svg class="desktop-icon-img" viewBox="0 0 32 32">
-          <rect x="4" y="4" width="24" height="24" fill="#111111" stroke="#c0c0c0" stroke-width="1.5"/>
-          <path d="M9 10 L14 16 L9 22" fill="none" stroke="#ffff00" stroke-width="2"/>
-          <line x1="16" y1="22" x2="23" y2="22" stroke="#00ff00" stroke-width="2"/>
-        </svg>
-        <span class="desktop-icon-label">Nuclei Studio</span>
-      </div>
-
-      <!-- 8. Context Snapshot -->
-      <div class="desktop-icon" id="icon-snapshot" title="Context Snapshot & Portable State">
-        <svg class="desktop-icon-img" viewBox="0 0 32 32">
-          <rect x="4" y="4" width="24" height="24" fill="#ffff88" stroke="#000" stroke-width="1.5"/>
-          <polygon points="12,4 12,14 20,14 20,4" fill="#c0c0c0" stroke="#000" stroke-width="1"/>
-          <text x="7" y="24" font-family="'VT323', monospace" font-size="12" fill="#000080">SNAP</text>
-        </svg>
-        <span class="desktop-icon-label">Snapshot</span>
-      </div>
-
-      <!-- 9. Multi-API Manager -->
-      <div class="desktop-icon" id="icon-multi-api" data-window="win-multi-api" title="Multi-API Manager & Model Switcher">
-        <svg class="desktop-icon-img" viewBox="0 0 32 32">
-          <circle cx="16" cy="16" r="13" fill="#000080" stroke="#fff" stroke-width="1.5"/>
-          <path d="M16 6 L22 15 L17 15 L19 26 L10 17 L15 17 Z" fill="#ffff00"/>
-        </svg>
-        <span class="desktop-icon-label">Multi-API</span>
-      </div>
-
-      <!-- 10. Pentest Deliverable -->
-      <div class="desktop-icon" id="icon-deliverable" data-window="win-report-export" title="Export Formal Pentest Deliverable (PDF / HTML / Markdown)">
-        <svg class="desktop-icon-img" viewBox="0 0 32 32">
-          <rect x="4" y="3" width="24" height="26" fill="#fff" stroke="#000" stroke-width="1.5"/>
-          <rect x="7" y="6" width="18" height="4" fill="#000080"/>
-          <line x1="7" y1="14" x2="25" y2="14" stroke="#808080" stroke-width="1"/>
-          <line x1="7" y1="18" x2="25" y2="18" stroke="#808080" stroke-width="1"/>
-          <line x1="7" y1="22" x2="20" y2="22" stroke="#808080" stroke-width="1"/>
-          <text x="13" y="27" font-family="'VT323', monospace" font-size="10" font-weight="bold" fill="#8b0000">PDF</text>
-        </svg>
-        <span class="desktop-icon-label">Deliverable</span>
-      </div>
-    </div>
-
-    <!-- =====================================================================
-         1. MAIN AI CONVERSATION WINDOW: #win-chat
-         Modern AI-first conversational experience inside Windows 98 chrome
-         ===================================================================== -->
-    <div class="win-window win-outset-deep active" id="win-chat" data-window-id="win-chat">
-      <!-- Titlebar -->
-      <div class="win-titlebar" data-drag-handle="win-chat">
-        <div class="win-title-left">
-          <img src="assets/pickyhack-logo.png" alt="PickyHack Icon" class="win-title-icon">
-          <span class="win-title-text" id="win-chat-title">PickyHack AI Copilot — [Conversational Intelligence]</span>
+      <!-- Project Switcher -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">
+          <span>Active Engagement</span>
         </div>
-        <div class="win-title-controls">
-          <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
-          <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
-          <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
-        </div>
-      </div>
-
-      <!-- Menubar -->
-      <div class="win-menubar">
-        <span class="win-menu-item" id="chat-menu-stream"><u>S</u>tream</span>
-        <span class="win-menu-item" id="chat-menu-ai"><u>A</u>I Engine</span>
-        <span class="win-menu-item" id="chat-menu-multiapi"><u>M</u>ulti-API</span>
-        <span class="win-menu-item" id="chat-menu-context"><u>C</u>ontext</span>
-        <span class="win-menu-item" id="chat-menu-report"><u>D</u>eliverable</span>
-        <span class="win-menu-item" id="chat-menu-burp"><u>B</u>urp/ZAP</span>
-        <span class="win-menu-item" id="chat-menu-snapshot"><u>S</u>napshot</span>
-        <span class="win-menu-item" id="chat-menu-notes"><u>N</u>otes</span>
-        <span class="win-menu-item" id="chat-menu-help"><u>H</u>elp</span>
-      </div>
-
-      <!-- Toolbar -->
-      <div class="win-toolbar">
-        <!-- New Stream -->
-        <button class="win-btn" id="btn-open-new-conv-dialog" title="Create a new independent temporary conversation">
-          <span>+</span> New Stream
-        </button>
-
-        <!-- Stream Switcher Dropdown -->
-        <div class="stream-switcher-wrapper">
-          <span style="font-size: 11px; font-weight: bold; color: #333;">Stream:</span>
-          <select id="conv-selector" class="win-inset-shallow" style="padding: 2px 6px; font-size: 11.5px; font-family: inherit;">
-            <!-- Populated dynamically -->
+        <div class="project-select-row">
+          <select id="sidebar-project-select" class="project-select">
+            <option value="default">Default Engagement</option>
           </select>
-          <button class="win-btn" id="btn-rename-active-conv" style="font-size: 10px; padding: 2px 5px;" title="Rename active stream">✏️</button>
-        </div>
-
-        <div class="toolbar-separator"></div>
-
-        <!-- AI Engine Setup / "LET'S HACK" Trigger -->
-        <button class="win-btn btn-highlight" id="btn-open-ai-config" title="Configure your AI provider, API key, and model">
-          <span>🤖</span> <strong>AI Engine:</strong> <span id="toolbar-ai-label">OpenAI [Standby]</span>
-        </button>
-
-        <!-- Multi-API Manager Trigger -->
-        <button class="win-btn btn-highlight" id="btn-open-multi-api" title="Manage multiple AI providers & switch models on the fly">
-          <span>⚡</span> <strong>Multi-API</strong>
-        </button>
-
-        <!-- Context Packet Inspector -->
-        <button class="win-btn" id="btn-inspect-context" title="Inspect the structured Context Harness payload sent to the LLM">
-          <span>🔍</span> Context Packet
-        </button>
-
-        <div class="toolbar-separator"></div>
-
-        <!-- Deliverable & Burp/ZAP Bridge -->
-        <button class="win-btn btn-highlight" id="btn-open-report-from-chat" title="Export Formal Pentest Deliverable (PDF / Markdown / HTML)">
-          <span>📑</span> <strong>Deliverable</strong>
-        </button>
-        <button class="win-btn" id="btn-open-burp-from-chat" title="Ingest Burp Suite / OWASP ZAP Issues">
-          <span>🔌</span> Burp/ZAP
-        </button>
-
-        <div class="toolbar-separator"></div>
-
-        <!-- Context Snapshot Actions (Persistence System) -->
-        <button class="win-btn btn-highlight" id="btn-save-snapshot" title="Generate portable full context snapshot of current mission state">
-          <span>💾</span> <strong>Save Snapshot</strong>
-        </button>
-        <button class="win-btn" id="btn-copy-full-context-toolbar" title="Directly copy Full Context Snapshot to clipboard">
-          <span>📋</span> Copy Context
-        </button>
-        <button class="win-btn" id="btn-import-snapshot" title="Import previously saved Context Snapshot or markdown file">
-          <span>📥</span> Import Context
-        </button>
-
-        <div class="toolbar-separator"></div>
-
-        <!-- Quick Launch Notes.txt -->
-        <button class="win-btn" id="btn-open-notes-from-chat" title="Open PickyHack Pentest Notes (Notes.txt)">
-          <span>📝</span> <strong>Notes.txt</strong>
-        </button>
-
-        <div class="toolbar-separator"></div>
-
-        <!-- Sample & Reset Controls -->
-        <button class="win-btn" id="btn-load-sample-data" title="Load sample pentest mission data (Megacorp VPN)">
-          <span>📂</span> Sample Data
-        </button>
-        <button class="win-btn" id="btn-clear-all-data" title="Reset all mission data to clean initial state">
-          <span>🗑️</span> Reset
-        </button>
-
-        <div class="toolbar-separator"></div>
-        <span class="badge-kev" title="Active catalog entries tracking in-the-wild exploits">CISA KEV: 1,642</span>
-        <span class="badge-logless" id="toolbar-logless-badge" title="Full Logless: Chat is ephemeral in memory, project state is local">LOGLESS</span>
-      </div>
-
-      <!-- Main Chat Body: Centered Modern AI Column -->
-      <div class="win-chat-body" style="position: relative;">
-        <!-- Drag & Drop Overlay -->
-        <div id="chat-drop-overlay" class="chat-drop-overlay" style="display: none;">
-          <div class="drop-overlay-box win-outset">
-            <div style="font-size: 36px; margin-bottom: 6px;">📂</div>
-            <strong style="font-size: 13px; color: #000080;">DROP SECURITY FILES FOR CONTEXT HARNESS</strong>
-            <p style="font-size: 11px; margin-top: 4px; color: #444;">Nmap XML/JSON, Burp/ZAP, Logs, Code, Configs, Screenshots (Max 15MB)</p>
-          </div>
-        </div>
-
-        <div class="chat-center-column">
-
-          <!-- 1. EMPTY STATE (What we hack ? & Starter Chips) -->
-          <div class="chat-empty-state" id="chat-empty-state">
-            <div class="empty-state-hero">
-              <img src="assets/pickyhack-logo.png" alt="PickyHack Logo" class="empty-state-logo">
-              <h1 class="empty-state-brand">PickyHack</h1>
-              <h2 class="empty-state-title">What we hack ?</h2>
-              <p class="empty-state-subtitle">Define your target, objective or question.</p>
-            </div>
-
-            <!-- Starter Prompt Chips -->
-            <div class="starter-chips-container">
-              <button class="starter-chip" data-prompt="Define authorized pentest scope for target.example.com and propose initial non-destructive perimeter reconnaissance.">
-                <span class="chip-icon">🎯</span>
-                <div class="chip-text">
-                  <strong>Define Target & Scope</strong>
-                  <span>Authorize scope and initiate perimeter reconnaissance</span>
-                </div>
-              </button>
-
-              <button class="starter-chip" data-prompt="Analyze an authenticated web API with OAuth2 tokens, GraphQL endpoints, and JSON parameters for injection and broken object-level authorization (BOLA).">
-                <span class="chip-icon">⚡</span>
-                <div class="chip-text">
-                  <strong>Web Pentest & Auth Audit</strong>
-                  <span>Audit OAuth2, GraphQL, and BOLA vulnerability vectors</span>
-                </div>
-              </button>
-
-              <button class="starter-chip" data-prompt="Synthesize a realistic attack path from pre-auth remote code execution to local privilege escalation and credential access on Linux enterprise servers.">
-                <span class="chip-icon">⛓️</span>
-                <div class="chip-text">
-                  <strong>Attack Path & Exploit Chain</strong>
-                  <span>Chain initial access to root privilege escalation</span>
-                </div>
-              </button>
-
-              <button class="starter-chip" data-prompt="Give me the latest CISA KEV updates, actively exploited zero-days, and weaponized PoCs from the last 24h/7d.">
-                <span class="chip-icon">📡</span>
-                <div class="chip-text">
-                  <strong>Quoi de neuf ? (Threat Intel)</strong>
-                  <span>Live KEV briefing, weaponized exploits & zero-days</span>
-                </div>
-              </button>
-
-              <button class="starter-chip" id="chip-open-notes" data-action="open-notes">
-                <span class="chip-icon">📝</span>
-                <div class="chip-text">
-                  <strong>Open Pentest Notes (Notes.txt)</strong>
-                  <span>Log commands, hypotheses, evidence & findings</span>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          <!-- 2. MESSAGES FEED (Scrollable, centered) -->
-          <div class="chat-messages-container win-inset" id="chat-messages-feed" style="display: none;">
-            <!-- Populated dynamically by JavaScript -->
-          </div>
-
-          <!-- 3. CHAT INPUT DOCK (Bottom dock) -->
-          <div class="chat-dock-container win-inset-shallow">
-            <!-- Dock Top Status Bar -->
-            <div class="chat-dock-meta">
-              <div class="dock-meta-left">
-                <!-- Quick Model Switcher with Popover -->
-                <div class="quick-model-wrapper" style="position: relative; display: inline-block;">
-                  <span class="dock-meta-pill" id="dock-model-pill" title="Click to switch AI Engine on the fly">
-                    🤖 <strong id="dock-model-label">OpenAI (gpt-4o)</strong> <span style="font-size: 8px;">▼</span>
-                  </span>
-                  <div class="quick-model-popover win-outset" id="quick-model-popover" style="display: none;">
-                    <div class="popover-header">SWITCH AI ENGINE</div>
-                    <div class="popover-items" id="quick-model-popover-items">
-                      <!-- Populated dynamically by MultiAPIManager -->
-                    </div>
-                    <div class="popover-footer" id="popover-manage-multi-api">
-                      <span>⚡</span> Manage Multi-API...
-                    </div>
-                  </div>
-                </div>
-
-                <span class="dock-meta-pill" id="dock-stream-pill">
-                  💬 Stream: <strong id="dock-stream-label">Reconnaissance</strong>
-                </span>
-                <span class="dock-meta-pill" id="dock-target-pill" title="Click to edit Target Scope">
-                  🎯 Scope: <strong id="dock-scope-label">No Target Defined</strong>
-                </span>
-                <span class="dock-meta-pill" id="token-optimizer-pill" title="In-Memory Context Window Optimizer & Token Pruning">
-                  🧠 Tokens: <strong id="token-budget-label">1,240 tok (~1%)</strong>
-                </span>
-              </div>
-              <div class="dock-meta-right">
-                <span style="font-size: 10px; color: #555;">Shift+Enter for newline</span>
-              </div>
-            </div>
-
-            <!-- Multimodal File Attachment Shelf (Staging before send) -->
-            <div id="chat-attachment-shelf" class="chat-attachment-shelf" style="display: none;"></div>
-
-            <!-- Input Bar -->
-            <div class="chat-dock-input-row">
-              <button class="win-btn" id="btn-attach-trigger" type="button" title="Attach security file, log or screenshot (Nmap, Burp, logs, images)">
-                <span>📎</span> +
-              </button>
-              <input type="file" id="chat-file-input" multiple style="display: none;" accept="image/*,.xml,.json,.txt,.log,.nmap,.gnmap,.py,.js,.sh,.yaml,.yml,.csv">
-              <span class="chat-prompt-indicator">&gt;</span>
-              <textarea 
-                id="chat-input" 
-                class="chat-textarea-field" 
-                placeholder="Ask PickyHack, analyze target, drop scan logs, or test command..." 
-                rows="1"
-                spellcheck="false"
-                autocomplete="off"
-              ></textarea>
-              <div class="chat-dock-buttons">
-                <button class="win-btn btn-highlight" id="btn-chat-send" style="padding: 4px 14px; font-weight: bold;">
-                  Send ↵
-                </button>
-                <button class="win-btn" id="btn-compare-models-trigger" title="Ask Multiple Models in parallel (Cross-Engine Comparison)">
-                  ⚖️ Compare
-                </button>
-                <button class="win-btn" id="btn-chat-inspect-context" title="Inspect context harness packet">
-                  🔍
-                </button>
-                <button class="win-btn" id="btn-clear-current-chat" title="Clear current conversation messages">
-                  🗑️
-                </button>
-              </div>
-            </div>
-          </div>
-
+          <button id="btn-new-project" class="btn-icon-square" title="Create New Project">+</button>
         </div>
       </div>
 
-      <!-- Statusbar -->
-      <footer class="win-statusbar">
-        <div class="status-panel win-inset-shallow status-flex" id="sb-chat-status">
-          Ready. Ask PickyHack anything or select a prompt chip.
+      <!-- Conversations Section: RECENT -->
+      <div class="sidebar-section" style="padding-bottom: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="sidebar-section-title" style="margin: 0;">RECENT</div>
+          <button id="btn-new-chat" class="btn-primary btn-new-chat" style="font-size: 11px; padding: 3px 8px;" title="New Chat Session">+ New Chat</button>
         </div>
-        <div class="status-panel win-inset-shallow" id="sb-chat-tokens">
-          0 chars
-        </div>
-        <div class="status-panel win-inset-shallow" id="sb-ai-engine" title="Click to configure AI Engine" style="cursor: pointer;">
-          AI: OpenAI (gpt-4o)
-        </div>
-        <div class="status-panel win-inset-shallow" id="sb-logless" title="Full Logless: Chat is ephemeral in memory">
-          LOGLESS: ACTIVE
-        </div>
-        <div class="status-panel win-inset-shallow" id="sb-chat-stream">
-          Stream: Reconnaissance
-        </div>
-      </footer>
-    </div>
+      </div>
+      <div id="sidebar-conversations-list" class="conversations-container">
+        <!-- Injected dynamically by SidebarUI -->
+      </div>
 
-    <!-- =====================================================================
-         2. PICKYHACK NOTES WINDOW: #win-notes
-         Notepad/WordPad 98 pentest note taker with category pills & AI hooks
-         ===================================================================== -->
-    <div class="win-window win-outset-deep" id="win-notes" data-window-id="win-notes" style="display: none;">
-      <!-- Titlebar -->
-      <div class="win-titlebar" data-drag-handle="win-notes">
-        <div class="win-title-left">
-          <span>📝</span>
-          <span class="win-title-text" id="win-notes-title">Notes.txt — PickyHack Pentest Note Taker</span>
+      <!-- Scrollable Navigation Categories -->
+      <div class="sidebar-scrollable" style="flex: 1; overflow-y: auto;">
+        <!-- SECTION: PROJECT -->
+        <div class="sidebar-section" style="border-top: 1px solid var(--border-subtle); margin-top: 8px; padding-top: 8px;">
+          <div class="sidebar-section-title">PROJECT</div>
+          <ul class="sidebar-nav">
+            <li id="nav-scope" class="nav-item">
+              <span class="nav-item-icon">🎯</span>
+              <span>Targets &amp; Scope</span>
+            </li>
+            <li id="nav-findings" class="nav-item">
+              <span class="nav-item-icon">🛡️</span>
+              <span>Findings</span>
+              <span id="counter-findings" class="nav-counter">0</span>
+            </li>
+            <li id="nav-tasks" class="nav-item">
+              <span class="nav-item-icon">⚡</span>
+              <span>Task Tree</span>
+              <span id="counter-tasks" class="nav-counter">0</span>
+            </li>
+            <li id="nav-notes" class="nav-item">
+              <span class="nav-item-icon">📄</span>
+              <span>Evidence &amp; Notes</span>
+              <span id="counter-evidence" class="nav-counter">0</span>
+            </li>
+            <li id="nav-attack-graph" class="nav-item">
+              <span class="nav-item-icon">🕸️</span>
+              <span>Attack Paths</span>
+            </li>
+          </ul>
         </div>
-        <div class="win-title-controls">
-          <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
-          <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
-          <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
+
+        <!-- SECTION: INTELLIGENCE -->
+        <div class="sidebar-section" style="border-top: 1px solid var(--border-subtle); margin-top: 8px; padding-top: 8px;">
+          <div class="sidebar-section-title">INTELLIGENCE</div>
+          <ul class="sidebar-nav">
+            <li id="nav-intel" class="nav-item">
+              <span class="nav-item-icon">📡</span>
+              <span>CVE / KEV Intel</span>
+            </li>
+            <li id="nav-deliverables" class="nav-item">
+              <span class="nav-item-icon">📑</span>
+              <span>Deliverables</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- SECTION: SYSTEM -->
+        <div class="sidebar-section" style="border-top: 1px solid var(--border-subtle); margin-top: 8px; padding-top: 8px;">
+          <div class="sidebar-section-title">SYSTEM</div>
+          <ul class="sidebar-nav">
+            <li id="nav-ai-engine" class="nav-item">
+              <span class="nav-item-icon">🧠</span>
+              <span>AI Engine</span>
+            </li>
+            <li id="nav-context-debugger" class="nav-item">
+              <span class="nav-item-icon">🔬</span>
+              <span>Context Debugger</span>
+            </li>
+            <li id="nav-snapshots" class="nav-item">
+              <span class="nav-item-icon">💾</span>
+              <span>Snapshots</span>
+            </li>
+            <li id="nav-settings" class="nav-item">
+              <span class="nav-item-icon">⚙️</span>
+              <span>Settings</span>
+            </li>
+          </ul>
         </div>
       </div>
 
-      <!-- Menubar -->
-      <div class="win-menubar">
-        <span class="win-menu-item" id="notes-menu-file"><u>F</u>ile</span>
-        <span class="win-menu-item" id="notes-menu-edit"><u>E</u>dit</span>
-        <span class="win-menu-item" id="notes-menu-insert"><u>I</u>nsert</span>
-        <span class="win-menu-item" id="notes-menu-actions"><u>A</u>ctions</span>
-        <span class="win-menu-item" id="notes-menu-help"><u>H</u>elp</span>
-      </div>
-
-      <!-- Toolbar -->
-      <div class="win-toolbar" style="flex-wrap: wrap; gap: 4px;">
-        <!-- Category Filter Pills -->
-        <div class="notes-category-pills">
-          <span style="font-size: 11px; font-weight: bold; margin-right: 2px;">Filter:</span>
-          <button class="note-pill active" data-cat="all">All</button>
-          <button class="note-pill" data-cat="general">General</button>
-          <button class="note-pill" data-cat="recon">Recon</button>
-          <button class="note-pill" data-cat="finding">Finding</button>
-          <button class="note-pill" data-cat="hypothesis">Hypothesis</button>
-          <button class="note-pill" data-cat="todo">TODO</button>
-          <button class="note-pill" data-cat="evidence">Evidence</button>
-          <button class="note-pill" data-cat="command">Command</button>
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="backend-indicator" title="Execution Backend Health Status">
+          <span id="backend-status-dot" class="status-dot disconnected"></span>
+          <span id="backend-status-label">Local Backend (Checking...)</span>
         </div>
-
-        <div class="toolbar-separator"></div>
-
-        <!-- Quick Pentest Buttons -->
-        <button class="win-btn" id="btn-note-add-finding" title="Insert structured security finding template">
-          <span>[+]</span> Finding
-        </button>
-        <button class="win-btn" id="btn-note-add-todo" title="Insert action item checklist item">
-          <span>[+]</span> TODO
-        </button>
-        <button class="win-btn" id="btn-note-add-evidence" title="Insert terminal command and output evidence block">
-          <span>[+]</span> Evidence
-        </button>
-        <button class="win-btn" id="btn-note-add-scope" title="Insert target scope note">
-          <span>[+]</span> Scope
-        </button>
-
-        <div class="toolbar-separator"></div>
-
-        <!-- AI Integration Hooks -->
-        <button class="win-btn btn-highlight" id="btn-note-ask-ai" title="Send selected text (or note) directly to PickyHack AI Copilot">
-          <span>⚡</span> <strong>Ask PickyHack</strong>
-        </button>
-        <button class="win-btn" id="btn-note-to-finding" title="Parse current note block and add to Findings Registry">
-          <span>🛡️</span> Convert to Finding
-        </button>
-
-        <div class="toolbar-separator"></div>
-
-        <button class="win-btn" id="btn-note-save" title="Save notes to local persistence">
-          <span>💾</span> Save
-        </button>
-        <button class="win-btn" id="btn-note-export" title="Export notes as a text file">
-          <span>📥</span> Export .txt
-        </button>
-        <button class="win-btn" id="btn-note-clear" title="Clear notes">
-          <span>🗑️</span> Clear
+        <button id="theme-toggle-btn" class="btn-secondary" style="padding: 3px 8px; font-size: 11px;" title="Toggle UI Theme">
+          <span id="theme-toggle-label">Picky98 (Default)</span>
         </button>
       </div>
+    </aside>
 
-      <!-- Note Title Bar -->
-      <div class="notes-title-bar win-inset-shallow" style="display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: var(--win-gray); border-bottom: 1px solid var(--win-gray-dark);">
-        <label for="note-title-input" style="font-size: 11px; font-weight: bold; color: #000;">Title:</label>
-        <input type="text" id="note-title-input" class="win-input" placeholder="Untitled Note..." style="flex: 1; padding: 2px 6px; font-size: 11px; font-family: var(--font-sys); background: #fff;">
-      </div>
-
-      <!-- Editor Area -->
-      <div class="notes-editor-wrapper win-inset">
-        <textarea 
-          id="notes-textarea" 
-          class="notes-editor" 
-          placeholder="Start writing..."
-          spellcheck="false"
-        ></textarea>
-      </div>
-
-      <!-- Statusbar -->
-      <footer class="win-statusbar">
-        <div class="status-panel win-inset-shallow status-flex" id="sb-note-status">
-          Notes.txt — Saved
-        </div>
-        <div class="status-panel win-inset-shallow" id="sb-note-length">
-          0 chars, 0 lines
-        </div>
-        <div class="status-panel win-inset-shallow" id="sb-note-cat">
-          Category: All
-        </div>
-      </footer>
-    </div>
-
-    <!-- =====================================================================
-         3. TARGETS & SCOPE WINDOW: #win-scope
-         Target definition, redaction and perimeter scope editor
-         ===================================================================== -->
-    <div class="win-window win-outset-deep" id="win-scope" data-window-id="win-scope" style="display: none;">
-      <!-- Titlebar -->
-      <div class="win-titlebar" data-drag-handle="win-scope">
-        <div class="win-title-left">
-          <span>🎯</span>
-          <span class="win-title-text">Targets & Scope — [Target Redaction & Perimeter Scope]</span>
-        </div>
-        <div class="win-title-controls">
-          <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
-          <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
-          <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
-        </div>
-      </div>
-
-      <!-- Toolbar -->
-      <div class="win-toolbar">
-        <button class="win-btn" id="btn-scope-tpl-external">External Recon</button>
-        <button class="win-btn" id="btn-scope-tpl-webapp">Web / API Pentest</button>
-        <button class="win-btn" id="btn-scope-tpl-ad">Active Directory</button>
-        <button class="win-btn" id="btn-scope-tpl-cloud">Cloud & Container</button>
-        <div class="toolbar-separator"></div>
-        <button class="win-btn btn-highlight" id="btn-scope-sync-ai" title="Sync target details with PickyHack AI Context">
-          <span>⚡</span> Sync with AI
-        </button>
-        <div class="toolbar-separator"></div>
-        <button class="win-btn" id="btn-scope-load-sample" title="Load Megacorp VPN sample scoping data">
-          <span>📂</span> Load Sample
-        </button>
-        <button class="win-btn" id="btn-scope-reset" title="Reset scoping data to clean state">
-          <span>🗑️</span> Reset
-        </button>
-        <button class="win-btn" id="btn-clear-notes" style="margin-left: auto;">Clear Scope</button>
-      </div>
-
-      <!-- Form Body -->
-      <div class="scope-body-wrapper win-inset" style="padding: 12px; overflow-y: auto;">
-        <div class="scope-form-grid">
-          <div class="scope-field-group">
-            <label for="scope-target-input"><strong>Primary Target (Host, Domain or CIDR):</strong></label>
-            <input type="text" id="scope-target-input" class="chat-input-field" placeholder="e.g. target.example.com, 10.0.0.0/24" spellcheck="false">
-          </div>
-
-          <div class="scope-field-group">
-            <label for="scope-objectives-input"><strong>Engagement Objectives:</strong></label>
-            <input type="text" id="scope-objectives-input" class="chat-input-field" placeholder="e.g. Perimeter vulnerability assessment, OAuth security audit" spellcheck="false">
-          </div>
-
-          <div class="scope-field-group">
-            <label for="scope-inscope-input"><strong>In-Scope Boundaries (Comma-separated):</strong></label>
-            <input type="text" id="scope-inscope-input" class="chat-input-field" placeholder="e.g. *.example.com, api.example.com, 10.0.4.0/24" spellcheck="false">
-          </div>
-
-          <div class="scope-field-group">
-            <label for="scope-outscope-input"><strong>Out-of-Scope / Exclusions:</strong></label>
-            <input type="text" id="scope-outscope-input" class="chat-input-field" placeholder="e.g. production-db.example.com, 10.0.1.5 (payment gateway)" spellcheck="false">
-          </div>
-        </div>
-
-        <div style="margin-top: 10px;">
-          <label for="pentest-notes"><strong>Raw Scope Notes & Findings (Synced to Project Context):</strong></label>
-          <textarea id="pentest-notes" class="pentest-textarea" style="height: 180px; width: 100%; margin-top: 4px;" placeholder="Paste raw nmap, subdomains, endpoints, or mandate notes here..."></textarea>
-        </div>
-      </div>
-
-      <!-- Statusbar -->
-      <footer class="win-statusbar">
-        <div class="status-panel win-inset-shallow status-flex" id="sb-scope-status">
-          Target Scope: Standby
-        </div>
-        <div class="status-panel win-inset-shallow">
-          Autosaved in Local Storage
-        </div>
-      </footer>
-    </div>
-
-    <!-- =====================================================================
-         4. FINDINGS & VULNERABILITIES WINDOW: #win-findings
-         Security registry of verified findings with severity and CVSS
-         ===================================================================== -->
-    <div class="win-window win-outset-deep" id="win-findings" data-window-id="win-findings" style="display: none;">
-      <!-- Titlebar -->
-      <div class="win-titlebar" data-drag-handle="win-findings">
-        <div class="win-title-left">
-          <span>🛡️</span>
-          <span class="win-title-text">Findings & Vulnerabilities — [Security Registry]</span>
-        </div>
-        <div class="win-title-controls">
-          <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
-          <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
-          <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
-        </div>
-      </div>
-
-      <!-- Toolbar -->
-      <div class="win-toolbar">
-        <button class="win-btn btn-highlight" id="btn-add-finding-inline">
-          <span>+</span> Add Finding
-        </button>
-        <button class="win-btn btn-highlight" id="btn-open-burp-zap-import" title="Automated Burp Suite & OWASP ZAP Ingestion Bridge">
-          <span>🔌</span> Ingest Burp/ZAP
-        </button>
-        <button class="win-btn btn-highlight" id="btn-findings-export-report" title="Export Formal Pentest Deliverable (PDF / HTML / Markdown)">
-          <span>📑</span> Export Deliverable (PDF)
-        </button>
-        <button class="win-btn" id="btn-export-findings-md">
-          <span>📋</span> Copy Markdown
-        </button>
-        <button class="win-btn" id="btn-findings-calc-eps">
-          <span>📊</span> Recalc EPS
-        </button>
-        <button class="win-btn" id="btn-findings-to-snapshot">
-          <span>💾</span> Add to Snapshot
-        </button>
-        <div class="toolbar-separator"></div>
-        <button class="win-btn" id="btn-findings-load-sample" title="Load sample verified findings">
-          <span>📂</span> Load Sample
-        </button>
-        <button class="win-btn" id="btn-findings-clear" title="Clear all findings">
-          <span>🗑️</span> Clear All
-        </button>
-      </div>
-
-      <!-- Findings Table Body -->
-      <div class="findings-body-wrapper win-inset" style="padding: 6px; overflow-y: auto;">
-        <table class="cve-table" id="findings-table">
-          <thead>
-            <tr>
-              <th style="width: 80px;">Severity</th>
-              <th>Vulnerability Title / CVE</th>
-              <th>Target / Asset</th>
-              <th style="width: 80px;">CVSS</th>
-              <th style="width: 90px;">Status</th>
-              <th style="width: 110px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="findings-table-body">
-            <!-- Dynamically populated from pentestState.findings -->
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Statusbar -->
-      <footer class="win-statusbar">
-        <div class="status-panel win-inset-shallow status-flex" id="sb-findings-count">
-          Total Findings: 0 (0 Critical, 0 High)
-        </div>
-        <div class="status-panel win-inset-shallow">
-          Registry: Active
-        </div>
-      </footer>
-    </div>
-
-    <!-- =====================================================================
-         5. CISA KEV & CVE INTEL WINDOW: #win-cve
-         Live curated intelligence feed, KEV correlation and search
-         ===================================================================== -->
-    <div class="win-window win-outset-deep" id="win-cve" data-window-id="win-cve" style="display: none;">
-      <!-- Titlebar -->
-      <div class="win-titlebar" data-drag-handle="win-cve">
-        <div class="win-title-left">
-          <span>📡</span>
-          <span class="win-title-text">CISA Known Exploited Vulnerabilities (KEV) Catalog & Threat Feed</span>
-        </div>
-        <div class="win-title-controls">
-          <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
-          <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
-          <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
-        </div>
-      </div>
-
-      <!-- Toolbar with Search & Filter -->
-      <div class="win-toolbar">
-        <span style="font-size: 11px; font-weight: bold;">Search:</span>
-        <input type="text" id="cve-search-input" class="chat-input-field" placeholder="Search CVE, vendor, product, RCE..." style="width: 220px; font-size: 11px;">
-        
-        <div class="toolbar-separator"></div>
-
-        <button class="win-btn" id="btn-filter-cve-all">All</button>
-        <button class="win-btn" id="btn-filter-cve-kev">KEV Only</button>
-        <button class="win-btn" id="btn-filter-cve-poc">PoC Available</button>
-        <button class="win-btn" id="btn-filter-cve-msf">Metasploit</button>
-
-        <div class="toolbar-separator"></div>
-
-        <button class="win-btn btn-highlight" id="btn-cve-briefing" title="Generate Threat Briefing for active CVEs">
-          <span>⚡</span> Quoi de neuf ?
-        </button>
-      </div>
-
-      <!-- Table Body -->
-      <div class="cve-body-wrapper win-inset" style="padding: 4px; overflow-y: auto;">
-        <table class="cve-table" id="cve-table">
-          <thead>
-            <tr>
-              <th>CVE / Product</th>
-              <th style="width: 60px;">CVSS</th>
-              <th style="width: 65px;">EPS</th>
-              <th style="width: 120px;">Threat Status</th>
-              <th style="width: 110px;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="cve-table-body">
-            <!-- Populated by JavaScript from INTEL_DB -->
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Statusbar -->
-      <footer class="win-statusbar">
-        <div class="status-panel win-inset-shallow status-flex">
-          Tracking 1,642 KEV entries & active in-the-wild exploit campaigns
-        </div>
-        <div class="status-panel win-inset-shallow">
-          NVD & CISA Sync: LIVE
-        </div>
-      </footer>
-    </div>
-
-    <!-- =====================================================================
-         6. ATTACK PATHS & EXPLOIT GRAPH WINDOW: #win-chains
-         Multi-stage attack path visualizer and EPS breakdown
-         ===================================================================== -->
-    <div class="win-window win-outset-deep" id="win-chains" data-window-id="win-chains" style="display: none;">
-      <!-- Titlebar -->
-      <div class="win-titlebar" data-drag-handle="win-chains">
-        <div class="win-title-left">
-          <span>⛓️</span>
-          <span class="win-title-text">Exploit Intelligence & Attack Path Graph</span>
-        </div>
-        <div class="win-title-controls">
-          <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
-          <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
-          <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
-        </div>
-      </div>
-
-      <!-- Toolbar -->
-      <div class="win-toolbar" style="flex-wrap: wrap; gap: 4px;">
-        <button class="win-btn btn-highlight" id="btn-graph-simulate" title="Simulate breach path from Edge Access to Crown Jewels">
-          <span>▶</span> <strong>Run Simulation</strong>
-        </button>
-        <button class="win-btn" id="btn-graph-reset" title="Reset node state and simulated infection paths">
-          <span>↺</span> Reset
-        </button>
-        <button class="win-btn" id="btn-graph-add-node" title="Add custom target or asset node to graph">
-          <span>+</span> Add Node
-        </button>
-        <button class="win-btn" id="btn-graph-bottlenecks" title="Identify choke points and critical defense bottlenecks">
-          <span>🛡️</span> Bottleneck Analysis
-        </button>
-        <div class="toolbar-separator"></div>
-        <button class="win-btn" id="btn-synth-chain" title="Synthesize Attack Chains with AI">
-          <span>⚡</span> AI Synthesis
-        </button>
-        <button class="win-btn" id="btn-calc-eps" title="Recalculate EPS Score">
-          <span>📊</span> Calc EPS
-        </button>
-        <div class="toolbar-separator"></div>
-        <span class="badge-eps" id="graph-eps-indicator">EPS: 96 / 100</span>
-      </div>
-
-      <!-- Chain Graph Body -->
-      <div class="chains-body-wrapper win-inset" style="padding: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-        
-        <!-- Interactive Graph Viewport -->
-        <div class="attack-graph-wrapper win-inset" id="attack-graph-container" style="height: 280px; position: relative; background: #14141e; overflow: hidden; border: 1px solid #000;">
-          <svg id="attack-graph-svg" class="attack-graph-svg" width="100%" height="100%"></svg>
-          
-          <div id="attack-graph-legend" class="attack-graph-legend win-outset-shallow" style="position: absolute; bottom: 6px; left: 6px; background: rgba(236,233,216,0.92); padding: 3px 8px; font-size: 10px; display: flex; gap: 8px; z-index: 10;">
-            <span><span style="display:inline-block; width:8px; height:8px; background:#b83b26; border-radius:50%; margin-right:3px;"></span>Edge Asset</span>
-            <span><span style="display:inline-block; width:8px; height:8px; background:#d35400; border-radius:50%; margin-right:3px;"></span>DMZ Pivot</span>
-            <span><span style="display:inline-block; width:8px; height:8px; background:#f39c12; border-radius:50%; margin-right:3px;"></span>PrivEsc / Creds</span>
-            <span><span style="display:inline-block; width:8px; height:8px; background:#8b0000; border-radius:50%; margin-right:3px;"></span>Crown Jewels</span>
-          </div>
-          
-          <div id="graph-node-tooltip" class="graph-tooltip win-outset" style="display: none; position: absolute; z-index: 20; padding: 6px; max-width: 240px; font-size: 11px; background: #ffffd0;"></div>
-        </div>
-
-        <!-- Simulation Telemetry & Choke Points -->
-        <div class="intel-card win-inset" id="graph-simulation-metrics">
-          <div class="intel-card-title">
-            <span>ATTACK PATH SIMULATION &amp; CHOKE POINT TELEMETRY</span>
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; font-size: 11px; padding: 4px 0;">
-            <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
-              <span style="color:#666;">Breach Probability:</span><br>
-              <strong id="metric-breach-prob" style="color:#b83b26; font-size: 13px;">0.0%</strong>
-            </div>
-            <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
-              <span style="color:#666;">Optimal Attack Path:</span><br>
-              <strong id="metric-fastest-path" style="color:#000080; font-size: 11px;">None</strong>
-            </div>
-            <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
-              <span style="color:#666;">Primary Bottleneck:</span><br>
-              <strong id="metric-bottleneck" style="color:#8b0000; font-size: 11px;">None</strong>
-            </div>
-            <div class="metric-box win-inset-shallow" style="padding: 4px 8px; background: #fff;">
-              <span style="color:#666;">Chained EPS:</span><br>
-              <strong id="metric-combined-eps" style="color:#b83b26; font-size: 13px;">0 / 100</strong>
-            </div>
-          </div>
-        </div>
-        <div class="intel-card win-inset">
-          <div class="intel-card-title">
-            <span>EXPLOIT INTELLIGENCE CHAIN (INITIAL ACCESS → ENTERPRISE TAKEOVER)</span>
-          </div>
-          <div class="attack-chain-container" id="attack-chain-steps">
-            <!-- Dynamically populated from ProjectState.attackChains -->
-          </div>
-        </div>
-
-        <div class="intel-card win-inset" style="margin-top: 8px;">
-          <div class="intel-card-title">
-            <span>EPS EXPLOITABILITY SCORING BREAKDOWN</span>
-          </div>
-          <div style="font-family: var(--font-mono); font-size: 11px; line-height: 1.5; color: #222;" id="eps-breakdown-text">
-            No active findings analyzed. Load sample data or add vulnerabilities to calculate chained EPS.
-          </div>
-        </div>
-      </div>
-
-      <!-- Statusbar -->
-      <footer class="win-statusbar">
-        <div class="status-panel win-inset-shallow status-flex">
-          Attack Chain Synthesis: Validated Against Curated Threat Intel
-        </div>
-        <div class="status-panel win-inset-shallow">
-          EPS: 96/100
-        </div>
-      </footer>
-    </div>
-
-    <!-- =====================================================================
-         7. NUCLEI STUDIO WINDOW: #win-nuclei
-         Nuclei YAML automation template editor and generator
-         ===================================================================== -->
-    <div class="win-window win-outset-deep" id="win-nuclei" data-window-id="win-nuclei" style="display: none;">
-      <!-- Titlebar -->
-      <div class="win-titlebar" data-drag-handle="win-nuclei">
-        <div class="win-title-left">
-          <span>⚙️</span>
-          <span class="win-title-text">Nuclei Studio — [YAML Automation Template]</span>
-        </div>
-        <div class="win-title-controls">
-          <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
-          <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
-          <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
-        </div>
-      </div>
-
-      <!-- Toolbar -->
-      <div class="win-toolbar">
-        <button class="win-btn" id="btn-copy-nuclei">
-          <span>📋</span> Copy YAML
-        </button>
-        <button class="win-btn" id="btn-run-nuclei-sim">
-          <span>▶️</span> Simulate Run
-        </button>
-        <button class="win-btn btn-highlight" id="btn-export-nuclei" title="Regenerate template from current project scope">
-          <span>⚡</span> Generate from Scope
-        </button>
-      </div>
-
-      <!-- Nuclei Code View -->
-      <div class="nuclei-body-wrapper win-inset" style="padding: 6px; overflow-y: auto; background: #000;">
-        <pre class="dos-console" id="nuclei-yaml-view" style="color: #ffff88; margin: 0; font-size: 11px;">
-id: pickyhack-perimeter-detect
-
-info:
-  name: PickyHack Dynamic Perimeter Vulnerability Detection
-  author: PickyHack AI Copilot
-  severity: critical
-  tags: cve,kev,rce,preauth
-
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/api/v1/health"
-      - "{{BaseURL}}/auth/login"
-      - "{{BaseURL}}/.env"
-      - "{{BaseURL}}/ssl-vpn/hipreport.esp"
-    matchers-condition: or
-    matchers:
-      - type: status
-        status:
-          - 200
-</pre>
-      </div>
-
-      <!-- Statusbar -->
-      <footer class="win-statusbar">
-        <div class="status-panel win-inset-shallow status-flex">
-          Rule: pickyhack-perimeter-detect.yaml
-        </div>
-        <div class="status-panel win-inset-shallow">
-          Format: Nuclei v3
-        </div>
-      </footer>
-    </div>
-
-    <!-- =====================================================================
-         8. MULTI-API MANAGER WINDOW: #win-multi-api
-         Manage multiple providers & models, switch on the fly without context loss
-         ===================================================================== -->
-    <div class="win-window win-outset-deep" id="win-multi-api" data-window-id="win-multi-api" style="display: none; top: 40px; left: 160px; width: 700px; height: 540px; z-index: 120;">
-      <!-- Titlebar -->
-      <div class="win-titlebar" data-drag-handle="win-multi-api">
-        <div class="win-title-left">
-          <span>⚡</span>
-          <span class="win-title-text">Multi-API Manager — [Configured LLM Engines]</span>
-        </div>
-        <div class="win-title-controls">
-          <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
-          <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
-          <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
-        </div>
-      </div>
-
-      <!-- Menubar -->
-      <div class="win-menubar">
-        <span class="win-menu-item" id="multiapi-menu-add">+ Add Engine</span>
-        <span class="win-menu-item" id="multiapi-menu-test">Test All</span>
-        <span class="win-menu-item" id="multiapi-menu-help">Help</span>
-      </div>
-
-      <!-- Toolbar -->
-      <div class="win-toolbar">
-        <button class="win-btn btn-highlight" id="btn-multiapi-add">
-          <span>+</span> Add API Engine
-        </button>
-        <button class="win-btn" id="btn-multiapi-test-all">
-          <span>⚡</span> Test All Engines
-        </button>
-        <div class="toolbar-separator"></div>
-        <span style="font-size: 11px; color: #333;">
-          Active Engine: <strong id="multiapi-active-indicator" style="color: #000080;">OpenAI — GPT-4o</strong>
-        </span>
-      </div>
-
-      <!-- Window Body -->
-      <div class="multiapi-body-wrapper win-inset" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 8px; gap: 8px; background: #ece9d8;">
-        
-        <!-- Engines List Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 4px;">
-          <strong style="font-size: 11.5px; color: #000080; letter-spacing: 0.5px;">CONFIGURED ENGINES (Switch instantly on the fly)</strong>
-          <small style="font-size: 10px; color: #666;">Context is fully preserved across model switches</small>
-        </div>
-
-        <!-- Engines List Container -->
-        <div class="multiapi-engines-list win-inset" id="multiapi-engines-container" style="flex: 1; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 6px; background: #ffffff;">
-          <!-- Populated dynamically by MultiAPIManager -->
-        </div>
-
-        <!-- Add/Edit Engine Drawer Form -->
-        <div class="multiapi-engine-form win-outset" id="multiapi-engine-form" style="display: none; padding: 8px 10px; background: #ece9d8;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <strong style="font-size: 12px; color: #000080;" id="multiapi-form-title">ADD AI ENGINE</strong>
-            <button class="win-title-btn" id="btn-multiapi-close-form">✕</button>
-          </div>
-          
-          <input type="hidden" id="multiapi-edit-id" value="">
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div class="scope-field-group">
-              <label for="multiapi-provider-select"><strong>Provider:</strong></label>
-              <select id="multiapi-provider-select" class="win-inset-shallow config-select" style="padding: 3px 6px;">
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="gemini">Google</option>
-                <option value="mistral">Mistral AI</option>
-                <option value="openrouter">OpenRouter</option>
-                <option value="custom">Custom / OpenAI-compatible</option>
-              </select>
-            </div>
-
-            <div class="scope-field-group">
-              <label for="multiapi-role-select"><strong>Role / Specialization:</strong></label>
-              <select id="multiapi-role-select" class="win-inset-shallow config-select" style="padding: 3px 6px;">
-                <option value="Primary Analyst">Primary Analyst (General Pentest)</option>
-                <option value="Deep Reasoning">Deep Reasoning (Complex Attack Chains)</option>
-                <option value="Fast Research">Fast Research (Threat Intel / CVEs)</option>
-                <option value="Cheap / Fast Tasks">Cheap / Fast Tasks (Formatting / Summaries)</option>
-              </select>
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
-            <div class="scope-field-group">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <label for="multiapi-model-select"><strong>Model:</strong></label>
-                <div style="display: flex; gap: 6px; align-items: center;">
-                  <span id="btn-multiapi-fetch-models" style="font-size: 9px; text-decoration: underline; cursor: pointer; color: #000080;" title="Fetch live models">🔄 Fetch</span>
-                  <span id="multiapi-model-custom-toggle" style="font-size: 9px; text-decoration: underline; cursor: pointer; color: #000080;">✏️ Custom</span>
-                </div>
-              </div>
-              <select id="multiapi-model-select" class="win-inset-shallow config-select" style="padding: 3px 6px;">
-                <!-- Populated dynamically based on Provider -->
-              </select>
-              <input type="text" id="multiapi-custom-model-input" class="chat-input-field" placeholder="Custom Model ID (e.g. gpt-5.6)" style="display: none; margin-top: 3px;">
-            </div>
-
-            <div class="scope-field-group">
-              <label for="multiapi-endpoint-input"><strong>Base URL / Endpoint:</strong></label>
-              <input type="text" id="multiapi-endpoint-input" class="chat-input-field" value="https://api.openai.com/v1" style="font-size: 11px;">
-            </div>
-          </div>
-
-          <div class="scope-field-group" style="margin-top: 6px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <label for="multiapi-key-input"><strong>API Key:</strong></label>
-              <button type="button" class="win-btn" id="btn-multiapi-toggle-key" style="font-size: 9px; padding: 1px 5px;">👁️ Show</button>
-            </div>
-            <input type="password" id="multiapi-key-input" class="chat-input-field" placeholder="sk-..." style="font-size: 12px; letter-spacing: 1px;">
-          </div>
-
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-            <div id="multiapi-form-status" style="font-size: 10.5px; font-family: var(--font-mono); color: #555;">
-              Ready.
-            </div>
-            <div style="display: flex; gap: 5px;">
-              <button class="win-btn" id="btn-multiapi-test-conn">⚡ Test</button>
-              <button class="win-btn btn-highlight" id="btn-multiapi-save-engine" style="font-weight: bold;">Save Engine</button>
-              <button class="win-btn" id="btn-multiapi-cancel-form">Cancel</button>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-      <!-- Statusbar -->
-      <footer class="win-statusbar">
-        <div class="status-panel win-inset-shallow status-flex" id="sb-multiapi-status">
-          Switch engines without losing context. Context Harness preserves full mission state.
-        </div>
-        <div class="status-panel win-inset-shallow" id="sb-multiapi-count">
-          Engines: 0
-        </div>
-      </footer>
-    </div>
-
-  </div> <!-- End #desktop -->
-
-  <!-- =======================================================================
-       TASKBAR (Bottom of screen)
-       ======================================================================= -->
-  <footer id="taskbar">
-    <!-- Start Button -->
-    <button class="win-btn start-btn" id="start-button">
-      <img src="assets/pickyhack-logo.png" alt="PickyHack Logo" class="start-flag">
-      <span>Start</span>
-    </button>
-    
-    <!-- Dynamic Taskbar Items Container -->
-    <div class="task-items" id="taskbar-items">
-      <!-- Windows Manager dynamically creates buttons here -->
-    </div>
-
-    <!-- System Tray -->
-    <div class="system-tray win-inset-shallow">
-      <button class="win-btn" id="tray-quick-snapshot" style="padding: 1px 5px; font-size: 10px;" title="Quick Save Context Snapshot">
-        💾 Snapshot
-      </button>
-      <span class="tray-pill" id="tray-ai-status" title="Current Active AI Model">🤖 GPT-4o</span>
-      <img src="assets/pickyhack-logo.png" alt="Shield" class="tray-icon" title="PickyHack Exploit Intelligence Engine Active">
-      <span id="system-clock">02:40 AM</span>
-    </div>
-  </footer>
-
-  <!-- =======================================================================
-       START MENU (Windows 98 Dropdown)
-       ======================================================================= -->
-  <div id="start-menu" class="win-outset-deep">
-    <div class="start-sidebar">
-      <div class="start-sidebar-text">PICKYHACK 98</div>
-    </div>
-    <div class="start-menu-items">
-      <div class="start-menu-item" data-action="open-window" data-window="win-chat">
-        <span>💬</span> PickyHack AI Copilot
-      </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-multi-api">
-        <span>⚡</span> Multi-API Manager...
-      </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-notes">
-        <span>📝</span> Notes.txt (Pentest Notes)
-      </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-scope">
-        <span>🎯</span> Targets &amp; Scope
-      </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-findings">
-        <span>🛡️</span> Findings &amp; Vulnerabilities
-      </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-cve">
-        <span>📡</span> CISA KEV &amp; CVE Feed
-      </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-chains">
-        <span>⛓️</span> Attack Paths &amp; Exploit Graph
-      </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-nuclei">
-        <span>⚙️</span> Nuclei Studio
-      </div>
-      <div class="start-menu-item" id="sm-compare-models">
-        <span>⚖️</span> Ask Multiple Models...
-      </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-burp-zap-import" id="sm-burp-zap">
-        <span>🔌</span> Ingest Burp / ZAP Scans...
-      </div>
-      <div class="start-menu-item" data-action="open-window" data-window="win-report-export" id="sm-deliverable">
-        <span>📑</span> Formal Pentest Deliverable (PDF)...
-      </div>
+    <!-- ====================================================================
+         2. MAIN CHAT WORKSPACE (Center Canvas)
+         ==================================================================== -->
+    <main id="chat-workspace">
       
-      <div class="start-separator"></div>
+      <!-- Top Navigation Header -->
+      <header id="chat-header">
+        <div class="header-left">
+          <div class="brand-title-badge">
+            <span style="font-size: 14px;">⚡</span>
+            <span style="font-weight: 700; letter-spacing: 0.5px;">PICKYHACK</span>
+          </div>
+          <div id="header-target-badge" class="target-badge" onclick="if (root.SidebarUI) root.SidebarUI.openModal('modal-scope');" title="Click to view/edit Target Scope">
+            <span class="target-dot"></span>
+            <span id="header-target-label">Target: Not set</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <!-- AI Engine: Clicking opens the AI Engine & API Key popup modal -->
+          <div id="dock-model-pill" class="engine-selector-pill" onclick="if (root.SidebarUI) root.SidebarUI.openModal('onboarding-overlay'); else if (root.OnboardingUI) root.OnboardingUI.show();" title="Configure AI Engine &amp; API Key">
+            <span id="header-engine-label">⚡ AI Engine: OpenAI</span>
+          </div>
+          <div id="header-context-pill" class="context-headroom-pill" onclick="if (root.ContextDebuggerModal) root.ContextDebuggerModal.open();" title="Inspect Context Knapsack &amp; Scoring">
+            🧠 <span id="header-context-label">Context: 0 tk</span>
+          </div>
+          <button id="btn-toggle-context-drawer" class="btn-icon-square" title="Toggle Project Context Inspector">
+            <span>◨</span>
+          </button>
+        </div>
+      </header>
 
-      <div class="start-menu-item" id="sm-save-snapshot">
-        <span>💾</span> Save Context Snapshot...
-      </div>
-      <div class="start-menu-item" id="sm-copy-context">
-        <span>📋</span> Copy Full Context
-      </div>
-      <div class="start-menu-item" id="sm-import-snapshot">
-        <span>📥</span> Import Context Snapshot...
+      <!-- Compact Situational Awareness & Pentest Phase Strip -->
+      <div id="workstation-context-strip" class="workstation-strip" onclick="if (root.ContextDrawerUI) root.ContextDrawerUI.toggle();" title="Click to expand/collapse Project Context Panel">
+        <div class="strip-section target-summary">
+          <span class="strip-label">TARGET</span>
+          <span id="strip-target-val" class="strip-val">Not set</span>
+          <span class="strip-divider">|</span>
+          <span class="strip-label">SCOPE</span>
+          <span id="strip-scope-val" class="strip-val">Unrestricted</span>
+        </div>
+
+        <!-- Pentest Phase Progress Bar -->
+        <div class="strip-section pentest-phases">
+          <span class="phase-step active" data-phase="RECON">RECON</span>
+          <span class="phase-arrow">→</span>
+          <span class="phase-step" data-phase="ENUMERATION">ENUMERATION</span>
+          <span class="phase-arrow">→</span>
+          <span class="phase-step" data-phase="ANALYSIS">ANALYSIS</span>
+          <span class="phase-arrow">→</span>
+          <span class="phase-step" data-phase="VALIDATION">VALIDATION</span>
+          <span class="phase-arrow">→</span>
+          <span class="phase-step" data-phase="EXPLOITATION">EXPLOITATION</span>
+          <span class="phase-arrow">→</span>
+          <span class="phase-step" data-phase="REPORT">REPORT</span>
+        </div>
+
+        <!-- Live Engagement Telemetry Counters -->
+        <div class="strip-section engagement-metrics">
+          <span class="metric-item" title="Active Tasks">⚡ <strong id="strip-tasks-count">0</strong> Tasks</span>
+          <span class="metric-item" title="Validated Findings">🛡️ <strong id="strip-findings-count">0</strong> Findings</span>
+          <span class="metric-item" title="Logged Evidence">📄 <strong id="strip-evidence-count">0</strong> Evidence</span>
+          <span class="metric-item" title="Context Headroom">🧠 <strong id="strip-context-tokens">0</strong> tk</span>
+        </div>
       </div>
 
-      <div class="start-separator"></div>
+      <!-- Chat Feed Container -->
+      <div id="chat-stream-container">
+        
+        <!-- Minimalist Empty State (Replaces giant dashboard cards) -->
+        <div id="chat-empty-state">
+          <div class="empty-state-badge">⚡ PickyHack</div>
+          <h1 class="empty-state-title">What we hack ?</h1>
+          <p class="empty-state-subtitle">
+            Autonomous offensive security copilot with transparent context budgeting.
+          </p>
 
-      <div class="start-menu-item" id="sm-ai-config">
-        <span>🤖</span> Configure AI Engine ("LET'S HACK")...
+          <div class="compact-starter-chips">
+            <button type="button" class="starter-chip" data-prompt="Define target 198.51.100.10 within scope 198.51.100.0/24 and formulate reconnaissance strategy.">
+              🎯 Start reconnaissance
+            </button>
+            <button type="button" class="starter-chip" data-prompt="Execute service discovery and port scan on target surface.">
+              🔍 Analyze a target
+            </button>
+            <button type="button" class="starter-chip" data-prompt="Inspect HTTP response headers and cookies for security misconfigurations.">
+              🌐 Inspect HTTP request
+            </button>
+            <button type="button" class="starter-chip" data-prompt="Resume pentest session: evaluate active findings and lateral attack paths.">
+              🔄 Resume pentest
+            </button>
+            <button type="button" class="starter-chip" data-prompt="Correlate detected services against CISA KEV catalog for exploitable CVEs.">
+              📡 Analyze a CVE
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Message Stream -->
+        <div id="chat-stream">
+          <!-- Injected dynamically by ChatAgentUI -->
+        </div>
+
       </div>
-      <div class="start-menu-item" id="sm-about">
-        <span>ℹ️</span> About PickyHack...
+
+      <!-- Floating Composer -->
+      <div id="chat-composer-container">
+        <!-- Live Agent Operational Status Banner -->
+        <div id="agent-status-bar" class="agent-status-bar" style="display: none;">
+          <span class="status-dot-pulse">●</span>
+          <span id="agent-status-text">Executing tool...</span>
+        </div>
+
+        <div id="chat-composer">
+          <!-- Attachment Shelf -->
+          <div id="composer-attachment-shelf" style="display: none;"></div>
+          <input type="file" id="composer-file-input" multiple style="display: none;">
+
+          <form id="chat-input-form" class="composer-input-row">
+            <textarea id="chat-input" rows="2" placeholder="What we hack?"></textarea>
+          </form>
+
+          <div class="composer-actions-row">
+            <div class="composer-tools-left">
+              <button type="button" id="btn-attach-file" class="composer-btn" title="Attach Files, Scans, Logs">
+                📎 Attach
+              </button>
+              <div class="composer-quick-tools">
+                <button type="button" class="composer-tool-chip" data-cmd="/scan">/scan</button>
+                <button type="button" class="composer-tool-chip" data-cmd="/recon">/recon</button>
+                <button type="button" class="composer-tool-chip" data-cmd="/exploit">/exploit</button>
+                <button type="button" class="composer-tool-chip" data-cmd="/analyze">/analyze</button>
+              </div>
+              <div id="agent-mode-toggle" class="agent-mode-toggle" title="Toggle between single-turn copilot and multi-step autonomous loop">
+                <span>🔄</span>
+                <span class="mode-label">Interactive Copilot</span>
+              </div>
+            </div>
+            <div class="composer-tools-right">
+              <div id="composer-target-pill" class="composer-target-badge" onclick="if (root.SidebarUI) root.SidebarUI.openModal('modal-scope');" title="Active Target Scope">
+                <span class="target-dot-mini"></span>
+                <span id="composer-target-label">Target: Not set</span>
+              </div>
+              <button type="submit" id="btn-chat-send" class="btn-send-message" title="Send (Enter)">
+                <span>Send</span>
+                <span class="send-arrow">↑</span>
+              </button>
+              <button type="button" id="btn-chat-stop" class="btn-send-message btn-stop-message" style="display: none;" title="Stop Execution">
+                <span>■ Stop</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+
+    </main>
+
+    <!-- ====================================================================
+         3. CONTEXT DRAWER (Right Inspector)
+         ==================================================================== -->
+    <aside id="context-drawer">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span>🧠 Context Inspector</span>
+        </div>
+        <button id="btn-close-context-drawer" class="btn-icon-square" style="width: 24px; height: 24px;">×</button>
+      </div>
+
+      <div class="drawer-content">
+        <!-- Card 1: Token Headroom -->
+        <div class="drawer-card">
+          <div class="drawer-card-title">
+            <span>Token Budget Headroom</span>
+          </div>
+          <div class="token-meter-container">
+            <div class="token-progress-track">
+              <div id="drawer-token-progress-fill" class="token-progress-fill"></div>
+            </div>
+            <div class="token-labels">
+              <span id="drawer-token-used-label">0 tokens</span>
+              <span id="drawer-token-limit-label">8,192 max</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Target & Scope -->
+        <div class="drawer-card">
+          <div class="drawer-card-title">
+            <span>Target &amp; Scope</span>
+            <button class="btn-secondary" style="padding: 2px 6px; font-size: 10.5px;" onclick="if (root.SidebarUI) root.SidebarUI.openModal('modal-scope');">Edit</button>
+          </div>
+          <div style="font-size: 12px;"><strong>Target:</strong> <span id="drawer-target-summary" style="font-family: var(--font-mono); color: var(--accent-cyan);">None</span></div>
+          <div style="font-size: 12px;"><strong>Scope:</strong> <span id="drawer-scope-summary" style="color: var(--text-secondary);">Unrestricted</span></div>
+        </div>
+
+        <!-- Card 3: Task & Next Recommended Action -->
+        <div class="drawer-card">
+          <div class="drawer-card-title">
+            <span>Active Task &amp; NRA</span>
+          </div>
+          <div style="font-size: 12px; margin-bottom: 4px;"><strong>Active:</strong> <span id="drawer-active-task" style="color: var(--text-primary);">Idle</span></div>
+          <div style="font-size: 11.5px; color: var(--text-muted);">
+            <strong>Next Action:</strong> <span id="drawer-nra-summary" style="color: var(--accent-primary);">Formulate recon strategy</span>
+          </div>
+        </div>
+
+        <!-- Card 4: Knapsack Allocation Summary -->
+        <div class="drawer-card">
+          <div class="drawer-card-title">
+            <span>Knapsack Allocation</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span>Selected Items:</span>
+            <strong id="drawer-selected-items-count" style="color: var(--accent-emerald);">0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span>Pruned / Rejected:</span>
+            <strong id="drawer-rejected-items-count" style="color: var(--sev-critical);">0</strong>
+          </div>
+        </div>
+
+        <!-- Card 5: Actions -->
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto;">
+          <button id="btn-launch-context-debugger" class="btn-drawer-action primary">
+            <span>🔬 Launch Context Debugger</span>
+          </button>
+          <button id="btn-drawer-export-snapshot" class="btn-drawer-action">
+            <span>💾 Export .pickycontext.json</span>
+          </button>
+          <button id="btn-drawer-import-snapshot" class="btn-drawer-action">
+            <span>📂 Import Snapshot</span>
+          </button>
+          <input type="file" id="drawer-snapshot-file-input" accept=".json,.pickycontext.json" style="display: none;">
+        </div>
+      </div>
+    </aside>
+
   </div>
 
-  <!-- =======================================================================
-       MODAL: "LET'S HACK !" AI ENGINE ONBOARDING & CONFIGURATION
-       ======================================================================= -->
-  <div class="win-modal-backdrop" id="ai-config-modal">
-    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="ai-config-title" style="width: 500px; max-width: 95vw;">
-      <div class="win-titlebar">
-        <div class="win-title-left">
-          <span>🤖</span>
-          <span id="ai-config-title">Let's Hack !</span>
+  <!-- ====================================================================
+       4. MODAL DIALOGS CONTAINER
+       ==================================================================== -->
+  <div id="modal-container">
+    
+    <!-- Modal: Context Debugger -->
+    <div id="modal-context-debugger" class="modal-backdrop">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <div class="modal-title">
+            <span>🔬 PickyHack Context Debugger</span>
+            <span class="severity-pill sev-low" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-primary);">Stateless Replay</span>
+          </div>
+          <button id="btn-close-context-debugger" class="btn-modal-close btn-icon-square">×</button>
         </div>
-        <button class="win-title-btn" id="ai-config-close-x">✕</button>
+        <div class="modal-body">
+          <div style="display: flex; gap: 12px; margin-bottom: 14px; font-size: 12px;">
+            <div>Budget: <strong id="ctx-debug-budget">8,192 tk</strong></div>
+            <div>Used: <strong id="ctx-debug-used">0 tk</strong></div>
+            <div>Selected Items: <strong id="ctx-debug-selected-count" style="color: var(--accent-emerald);">0</strong></div>
+            <div>Pruned Items: <strong id="ctx-debug-rejected-count" style="color: var(--sev-critical);">0</strong></div>
+          </div>
+          <div class="tabs-header">
+            <button class="tab-btn ctx-debug-tab active" data-tab="scoring">Candidate Utility Scoring</button>
+            <button class="tab-btn ctx-debug-tab" data-tab="packet">Assembled Packet</button>
+            <button class="tab-btn ctx-debug-tab" data-tab="diff">Cross-Model Context Parity</button>
+          </div>
+          <div id="ctx-debug-content-area">
+            <!-- Rendered by ContextDebuggerModal -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-modal-close">Close</button>
+        </div>
       </div>
-      <div class="dialog-body">
-        <div style="text-align: center; margin-bottom: 8px;">
-          <img src="assets/pickyhack-logo.png" alt="PickyHack" style="width: 40px; height: 40px; image-rendering: pixelated; margin-bottom: 2px;">
-          <h3 style="font-size: 15px; font-weight: bold; letter-spacing: 0.5px; color: #000080; margin: 0 0 4px 0;">Let's Hack !</h3>
-          <p style="font-size: 11.5px; color: #444; margin: 0;">
-            Connect your AI engine to start hacking.
-          </p>
+    </div>
+
+    <!-- Modal: Scope & Target -->
+    <div id="modal-scope" class="modal-backdrop">
+      <div class="modal-sheet" style="max-width: 600px;">
+        <div class="modal-header">
+          <div class="modal-title">🎯 Target &amp; Scope Configuration</div>
+          <button class="btn-modal-close btn-icon-square">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Primary Target (Domain or IP)</label>
+            <input type="text" id="scope-target-input" class="form-input" placeholder="e.g. 198.51.100.10 or staging.internal.corp">
+          </div>
+          <div class="form-group">
+            <label class="form-label">In-Scope CIDRs / Subnets</label>
+            <textarea id="scope-cidrs-input" class="form-textarea" rows="3" placeholder="198.51.100.0/24&#10;10.0.0.0/16"></textarea>
+            <span class="form-hint">One CIDR per line. All out-of-scope commands are strictly blocked by the Risk Engine.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Out-of-Scope Exclusions (Strict Deny)</label>
+            <textarea id="scope-exclusions-input" class="form-textarea" rows="2" placeholder="198.51.100.1 (Gateway)&#10;*.prod.acme.corp"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-modal-close">Cancel</button>
+          <button id="btn-save-scope" class="btn-primary">Save Scope Boundaries</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Findings Registry -->
+    <div id="modal-findings" class="modal-backdrop">
+      <div class="modal-sheet" style="max-width: 880px;">
+        <div class="modal-header">
+          <div class="modal-title">🛡️ Findings &amp; Vulnerability Registry</div>
+          <button class="btn-modal-close btn-icon-square">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Vulnerability Title</th>
+                  <th>Severity</th>
+                  <th>Target</th>
+                  <th>CVSS / EPS</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="findings-table-body">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-modal-close">Close</button>
+          <button class="btn-primary" onclick="if (root.SidebarUI) { root.SidebarUI.closeModal('modal-findings'); root.SidebarUI.openModal('modal-deliverables'); }">Generate Deliverable Report →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Task Tree -->
+    <div id="modal-tasks" class="modal-backdrop">
+      <div class="modal-sheet" style="max-width: 780px;">
+        <div class="modal-header">
+          <div class="modal-title">⚡ Autonomous Task Tree</div>
+          <button class="btn-modal-close btn-icon-square">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Task Title</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Tool</th>
+                </tr>
+              </thead>
+              <tbody id="tasks-table-body">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-modal-close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Notes & Evidence -->
+    <div id="modal-notes" class="modal-backdrop">
+      <div class="modal-sheet" style="max-width: 740px;">
+        <div class="modal-header">
+          <div class="modal-title">📝 Pentest Notes &amp; Scratchpad</div>
+          <button class="btn-modal-close btn-icon-square">×</button>
+        </div>
+        <div class="modal-body">
+          <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <input type="text" id="note-title-input" class="form-input" style="flex: 1;" placeholder="Engagement Title / Objective">
+            <span id="note-word-count" style="font-size: 11px; color: var(--text-muted); align-self: center;">0 words</span>
+          </div>
+          <textarea id="notes-content-area" class="form-textarea" rows="14" style="font-family: var(--font-mono); font-size: 12px;" placeholder="Document notes, commands, hypotheses, and observations here..."></textarea>
+          <div style="display: flex; gap: 8px; margin-top: 10px;">
+            <button id="btn-note-save" class="btn-primary">Save Notes</button>
+            <button id="btn-note-export" class="btn-secondary">Export .txt</button>
+            <button id="btn-note-to-finding" class="btn-secondary">Convert to Finding</button>
+            <button id="btn-note-clear" class="btn-secondary" style="margin-left: auto;">Clear</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-modal-close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Attack Paths -->
+    <div id="modal-attack-graph" class="modal-backdrop">
+      <div class="modal-sheet" style="max-width: 820px;">
+        <div class="modal-header">
+          <div class="modal-title">🕸️ Attack Graph &amp; Exploit Chains</div>
+          <button class="btn-modal-close btn-icon-square">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="attack-graph-canvas" style="background: var(--bg-terminal); border-radius: var(--radius-md); min-height: 280px; border: 1px solid var(--border-subtle);">
+            <!-- Rendered by AttackGraphCompiler -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-modal-close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: CISA KEV Intelligence -->
+    <div id="modal-intel" class="modal-backdrop">
+      <div class="modal-sheet" style="max-width: 800px;">
+        <div class="modal-header">
+          <div class="modal-title">📡 CISA Known Exploited Vulnerabilities (KEV)</div>
+          <button class="btn-modal-close btn-icon-square">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="intel-results-list" style="display: flex; flex-direction: column; gap: 4px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-modal-close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Client Deliverables -->
+    <div id="modal-deliverables" class="modal-backdrop">
+      <div class="modal-sheet" style="max-width: 860px;">
+        <div class="modal-header">
+          <div class="modal-title">📑 Client Deliverable &amp; Report Generator</div>
+          <button class="btn-modal-close btn-icon-square">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="report-preview-sheet" style="background: var(--bg-card); border-radius: var(--radius-md); padding: 16px; border: 1px solid var(--border-subtle); max-height: 480px; overflow-y: auto;">
+            <!-- Preview sheet rendered by DeliverableGenerator -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-modal-close">Close</button>
+          <button id="btn-download-deliverable-md" class="btn-secondary">Download Markdown</button>
+          <button id="btn-download-deliverable-html" class="btn-secondary">Download HTML</button>
+          <button id="btn-print-deliverable-pdf" class="btn-primary">Print / Save as PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Settings & Multi-API -->
+    <div id="modal-settings" class="modal-backdrop">
+      <div class="modal-sheet" style="max-width: 680px;">
+        <div class="modal-header">
+          <div class="modal-title">⚙️ Multi-API &amp; Backend Settings</div>
+          <button class="btn-modal-close btn-icon-square">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Active AI Provider</label>
+            <select id="settings-provider-select" class="form-select">
+              <option value="openai">OpenAI (gpt-4o, o3-mini)</option>
+              <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
+              <option value="gemini">Google Gemini (Gemini 2.0 Flash)</option>
+              <option value="mistral">Mistral AI (Mistral Large, Codestral)</option>
+              <option value="openrouter">OpenRouter (Multi-Provider Gateway)</option>
+              <option value="xai">xAI Grok (Grok-2)</option>
+              <option value="deepseek">DeepSeek (DeepSeek-V3, R1)</option>
+              <option value="cohere">Cohere (Command R+)</option>
+              <option value="together">Together AI (Open Weights Hub)</option>
+              <option value="groq">Groq (Llama-3.3-70B)</option>
+              <option value="fireworks">Fireworks AI</option>
+              <option value="alibaba">Alibaba Cloud (Qwen 2.5)</option>
+              <option value="ollama">Local / Self-hosted (Ollama, LM Studio, vLLM)</option>
+              <option value="custom">Custom / OpenAI-Compatible Endpoint</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label class="form-label">API Key</label>
+              <button type="button" id="btn-settings-toggle-key" class="btn-secondary" style="font-size: 11px; padding: 2px 6px;">[Show]</button>
+            </div>
+            <input type="password" id="settings-api-key-input" class="form-input" placeholder="sk-...">
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+              🔒 Stored locally in your browser/workstation. Never included in Project State, Snapshots, logs or exported files.
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Endpoint URL</label>
+            <input type="text" id="settings-endpoint-input" class="form-input" placeholder="https://api.openai.com/v1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Model Name / Custom Model ID</label>
+            <input type="text" id="settings-model-input" class="form-input" placeholder="e.g. gpt-4o or claude-3-5-sonnet-20241022">
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 14px;">
+            <button type="button" id="btn-settings-test-connection" class="btn-secondary" style="font-size: 12px; padding: 5px 12px;">Test Connection</button>
+            <div id="settings-test-result" style="font-size: 12px; font-weight: 500;"></div>
+          </div>
+
+          <!-- Appearance: Interface Theme System -->
+          <div class="form-group" style="margin-top: 14px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+            <label class="form-label" style="font-weight: 600;">Appearance → Interface</label>
+            <div style="display: flex; gap: 20px; margin-top: 6px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="interface-theme" id="theme-radio-picky98" value="picky98" checked>
+                <span>Picky98 (Default)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="interface-theme" id="theme-radio-pickytahoe" value="tahoe-dark">
+                <span>PickyTahoe</span>
+              </label>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+              The theme is strictly a UI visual layer. Switching themes never affects Project State, Findings, Evidence, or Conversations.
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 14px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+            <label class="form-label">Execution Backend</label>
+            <select id="settings-backend-select" class="form-select">
+              <option value="local">Local Backend (HTTP localhost:8088)</option>
+              <option value="ssh">Remote Kali Linux via SSH</option>
+              <option value="docker">Docker Container (pickyhack-kali)</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-modal-close">Cancel</button>
+          <button id="btn-save-settings" class="btn-primary">Save Configuration</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL: AI ENGINE & API KEY CONFIGURATION (POPUP)
+         ==================================================================== -->
+    <div id="onboarding-overlay" class="modal-backdrop onboarding-backdrop">
+      <div class="modal-sheet onboarding-sheet" style="max-width: 520px; width: 92%; max-height: 92vh; overflow-y: auto;">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 14px;">⚡</span>
+            <div class="modal-title">Let's Hack ! — AI Engine &amp; API Key</div>
+          </div>
+          <button type="button" id="btn-onboarding-close" class="btn-icon-square btn-modal-close" title="Close">×</button>
         </div>
 
-        <div class="win-inset" style="padding: 12px; display: flex; flex-direction: column; gap: 9px; background: #ece9d8;">
-          
-          <!-- 1. Provider (Entreprise uniquement) -->
-          <div class="config-row">
-            <label for="ai-provider-select" style="font-size: 11.5px; font-weight: bold; display: block; margin-bottom: 2px;">Provider:</label>
-            <select id="ai-provider-select" class="win-inset-shallow config-select" style="width: 100%; padding: 4px 6px; font-size: 12px;">
+        <div class="modal-body" style="padding: 16px 20px;">
+          <p class="onboarding-subtitle" style="margin: 0 0 16px 0; font-size: 13px; font-weight: 500; color: var(--text-secondary);">
+            Connect your AI engine to start hacking.
+          </p>
+
+          <!-- Provider Select -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="onboarding-provider-select">Provider</label>
+            <select id="onboarding-provider-select" class="form-select">
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
               <option value="gemini">Google</option>
               <option value="mistral">Mistral AI</option>
               <option value="openrouter">OpenRouter</option>
+              <option value="xai">xAI</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="cohere">Cohere</option>
+              <option value="together">Together AI</option>
+              <option value="groq">Groq</option>
+              <option value="fireworks">Fireworks AI</option>
+              <option value="alibaba">Alibaba Cloud</option>
               <option value="custom">Custom / OpenAI-compatible</option>
+              <option value="ollama">Local / Self-hosted</option>
             </select>
           </div>
 
-          <!-- 2. API Key -->
-          <div class="config-row">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-              <label for="ai-key-input" style="font-size: 11.5px; font-weight: bold;">API Key:</label>
-              <button type="button" class="win-btn" id="btn-toggle-key-visibility" style="font-size: 9.5px; padding: 1px 6px;">👁️ Show</button>
+          <!-- API Key with Show / Hide toggle -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label id="onboarding-key-label" class="form-label" for="onboarding-key-input">API Key *</label>
+              <button type="button" id="btn-toggle-key-visibility" class="btn-secondary" style="font-size: 11px; padding: 2px 8px;">Show / Hide</button>
             </div>
-            <input type="password" id="ai-key-input" class="chat-input-field" placeholder="sk-*************************************" spellcheck="false" autocomplete="off" style="width: 100%; font-size: 12px; letter-spacing: 1px;">
-            <span style="font-size: 10px; color: #555; display: block; margin-top: 3px; line-height: 1.3;">
-              🔒 <strong>Security:</strong> Key is stored in your browser local storage only. Never logged or included in snapshots.
-            </span>
+            <input type="password" id="onboarding-key-input" class="form-input" placeholder="" autocomplete="off">
+            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 3px;">
+              🔒 Credentials are kept on this machine and never exposed to external telemetry.
+            </div>
           </div>
 
-          <!-- 3. Model (Populated dynamically based on Provider) -->
-          <div class="config-row">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-              <label for="ai-model-select" style="font-size: 11.5px; font-weight: bold;">Model:</label>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <span id="btn-fetch-models" style="font-size: 10px; text-decoration: underline; cursor: pointer; color: #000080;" title="Fetch available models from provider API">🔄 Fetch Models</span>
-                <span id="ai-model-custom-toggle" style="font-size: 10px; text-decoration: underline; cursor: pointer; color: #000080;">✏️ Custom Model</span>
-              </div>
+          <!-- Endpoint URL -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="onboarding-endpoint-input">API Endpoint</label>
+            <input type="text" id="onboarding-endpoint-input" class="form-input" value="https://api.openai.com/v1">
+          </div>
+
+          <!-- Model Selection & Discovery -->
+          <div class="form-group" style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label class="form-label" for="onboarding-model-select">Model</label>
+              <button type="button" id="btn-onboarding-discover" class="btn-secondary" style="font-size: 11px; padding: 2px 8px;">🔄 Discover Models</button>
             </div>
-            <select id="ai-model-select" class="win-inset-shallow config-select" style="width: 100%; padding: 4px 6px; font-size: 12px;">
-              <!-- Populated dynamically based on provider -->
+            <select id="onboarding-model-select" class="form-select">
+              <option value="gpt-4o">gpt-4o</option>
+              <option value="gpt-4o-mini">gpt-4o-mini</option>
+              <option value="o3-mini">o3-mini</option>
+              <option value="custom">Custom Model ID...</option>
             </select>
-            <input type="text" id="ai-custom-model-input" class="chat-input-field" placeholder="Enter custom model ID (e.g. gpt-5.6, llama3.3:70b)" style="display: none; width: 100%; margin-top: 4px; font-size: 11px;" spellcheck="false">
+            <div id="onboarding-discovery-status" style="font-size: 11px; color: var(--text-muted); margin-top: 3px;"></div>
           </div>
 
-          <!-- Base URL / Endpoint (Optional / Advanced) -->
-          <div class="config-row" id="config-row-endpoint">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-              <label for="ai-endpoint-input" style="font-size: 10.5px; color: #555;">Base URL / Endpoint:</label>
-              <span id="btn-reset-endpoint" style="font-size: 9.5px; text-decoration: underline; cursor: pointer; color: #000080;">Default</span>
-            </div>
-            <input type="text" id="ai-endpoint-input" class="chat-input-field" value="https://api.openai.com/v1" spellcheck="false" autocomplete="off" style="width: 100%; font-size: 11px; padding: 3px 5px;">
+          <!-- Custom Model ID -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="onboarding-custom-model-input">Custom Model ID</label>
+            <input type="text" id="onboarding-custom-model-input" class="form-input" placeholder="e.g. gpt-4o, claude-3-5-sonnet, llama3.3:70b">
           </div>
 
-          <!-- Status Indicator -->
-          <div id="ai-connection-status" class="win-inset-shallow" style="padding: 5px 8px; font-size: 11px; font-family: var(--font-mono); color: #333; min-height: 24px; display: flex; align-items: center;">
-            Status: Ready to connect.
-          </div>
-
-        </div>
-
-      </div>
-      <div class="dialog-buttons" style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; gap: 6px;">
-          <button class="win-btn" id="btn-test-ai-conn" style="min-width: 115px;">
-            ⚡ Test Connection
-          </button>
-          <button class="win-btn" id="btn-disconnect-ai" style="min-width: 80px; color: #8b0000;">
-            Clear Key
-          </button>
-        </div>
-        <div style="display: flex; gap: 6px;">
-          <button class="win-btn" id="ai-config-cancel-btn" style="min-width: 90px;">
-            Offline Mode
-          </button>
-          <button class="win-btn btn-highlight" id="btn-save-ai-conn" style="min-width: 115px; font-weight: bold; background: #000080; color: #fff;">
-            Let's Hack ! ↵
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- =======================================================================
-       MODAL: CONTEXT SNAPSHOT EXPORT
-       ======================================================================= -->
-  <div class="win-modal-backdrop" id="snapshot-modal">
-    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="snapshot-title">
-      <div class="win-titlebar">
-        <div class="win-title-left">
-          <span>💾</span>
-          <span id="snapshot-title">Context Snapshot — Portable Pentest State</span>
-        </div>
-        <button class="win-title-btn" id="snapshot-close-x">✕</button>
-      </div>
-      <div class="dialog-body">
-        <div style="font-size: 12px; font-weight: bold; color: #000080;">
-          Snapshot generated successfully.
-        </div>
-        
-        <!-- Metrics Stats Pillbox -->
-        <div class="snapshot-metrics-bar win-inset" id="snapshot-metrics-summary">
-          <span class="metric-tag"><strong id="stat-assets">0</strong> assets</span>
-          <span class="metric-tag"><strong id="stat-services">0</strong> services</span>
-          <span class="metric-tag"><strong id="stat-vulns">0</strong> vulnerabilities</span>
-          <span class="metric-tag"><strong id="stat-chains">0</strong> attack paths</span>
-          <span class="metric-tag"><strong id="stat-obs">0</strong> observations</span>
-        </div>
-
-        <p style="font-size: 11px; color: #444;">
-          This self-contained prompt can be copied and fed to <em>any</em> LLM session to instantly resume the pentest with full continuity:
-        </p>
-
-        <!-- Preview Textarea -->
-        <div class="win-inset" style="height: 210px; overflow: hidden; position: relative;">
-          <textarea id="snapshot-preview-textarea" class="snapshot-preview-field" readonly spellcheck="false"></textarea>
-        </div>
-      </div>
-      <div class="dialog-buttons">
-        <button class="win-btn" id="btn-copy-context" style="min-width: 110px; font-weight: bold;">
-          📋 Copy Context
-        </button>
-        <button class="win-btn" id="btn-download-snapshot" style="min-width: 110px;">
-          💾 Download .md
-        </button>
-        <button class="win-btn" id="snapshot-ok-btn" style="min-width: 70px;">
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =======================================================================
-       MODAL: CONTEXT SNAPSHOT IMPORT
-       ======================================================================= -->
-  <div class="win-modal-backdrop" id="import-modal">
-    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="import-title">
-      <div class="win-titlebar">
-        <div class="win-title-left">
-          <span>📥</span>
-          <span id="import-title">Import Context — Restore Mission State</span>
-        </div>
-        <button class="win-title-btn" id="import-close-x">✕</button>
-      </div>
-      <div class="dialog-body">
-        <p style="font-size: 11px; color: #333;">
-          Paste a <strong>PickyHack Context Snapshot</strong> below or upload a <code>.md</code> file to restore target state, discovered assets, vulnerabilities, and attack paths.
-        </p>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <label style="font-size: 11px; font-weight: bold;">Snapshot Content:</label>
-          <input type="file" id="file-import-input" accept=".md,.txt" style="display: none;">
-          <button class="win-btn" id="btn-trigger-file-import" style="font-size: 10px; padding: 2px 6px;">
-            📁 Load from .md file
-          </button>
-        </div>
-
-        <div class="win-inset" style="height: 190px; overflow: hidden;">
-          <textarea 
-            id="import-textarea" 
-            class="snapshot-preview-field" 
-            placeholder="Paste === PICKYHACK CONTEXT SNAPSHOT === here..." 
-            spellcheck="false"
-          ></textarea>
-        </div>
-      </div>
-      <div class="dialog-buttons">
-        <button class="win-btn" id="btn-run-import" style="min-width: 120px; font-weight: bold;">
-          ⚡ Restore Context
-        </button>
-        <button class="win-btn" id="import-cancel-btn" style="min-width: 70px;">
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =======================================================================
-       MODAL: NEW TEMPORARY CONVERSATION DIALOG
-       ======================================================================= -->
-  <div class="win-modal-backdrop" id="new-conv-modal">
-    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="new-conv-title">
-      <div class="win-titlebar">
-        <div class="win-title-left">
-          <span>💬</span>
-          <span id="new-conv-title">New Temporary Conversation Stream</span>
-        </div>
-        <button class="win-title-btn" id="new-conv-close-x">✕</button>
-      </div>
-      <div class="dialog-body">
-        <p style="font-size: 11px; color: #333;">
-          Create an independent conversation stream for this session (e.g. <em>Web Pentest</em>, <em>Active Directory</em>, <em>CVE Research</em>).
-        </p>
-        
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label style="font-size: 11px; font-weight: bold;">Stream Title:</label>
-          <input type="text" id="new-conv-title-input" class="chat-input-field" value="Web Pentest" style="font-size: 12px;">
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
-          <label style="font-size: 11px; font-weight: bold;">Context Initialization:</label>
-          <label style="font-size: 11px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-            <input type="radio" name="conv-init-type" value="project" checked>
-            <strong>From Project Context</strong> (injects target, assets &amp; findings)
-          </label>
-          <label style="font-size: 11px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-            <input type="radio" name="conv-init-type" value="empty">
-            <strong>Blank Stream</strong> (completely clean dialogue)
-          </label>
-        </div>
-      </div>
-      <div class="dialog-buttons">
-        <button class="win-btn" id="btn-create-conv-confirm" style="min-width: 100px; font-weight: bold;">
-          Create
-        </button>
-        <button class="win-btn" id="new-conv-cancel-btn" style="min-width: 70px;">
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =======================================================================
-       MODAL: CONTEXT HARNESS PACKET INSPECTOR
-       ======================================================================= -->
-  <div class="win-modal-backdrop" id="context-inspector-modal">
-    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="context-inspector-title" style="width: 760px; max-width: 95vw;">
-      <div class="win-titlebar">
-        <div class="win-title-left">
-          <span>🔍</span>
-          <span id="context-inspector-title">PickyHack Context Harness — Assembled LLM Packet</span>
-        </div>
-        <button class="win-title-btn" id="context-inspector-close-x">✕</button>
-      </div>
-      <div class="dialog-body">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-          <p style="font-size: 11px; color: #333;">
-            Structured payload assembled by the <strong>Context Engine</strong> for the current request. Data sources are strictly delineated:
-          </p>
-          <div class="inspector-badge-group" style="display: flex; gap: 4px;">
-            <span class="badge-tag" style="background:#e8f4fd; color:#004085; border:1px solid #b8daff;">USER DATA</span>
-            <span class="badge-tag" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba;">WEB DATA</span>
-            <span class="badge-tag" style="background:#d4edda; color:#155724; border:1px solid #c3e6cb;">PROJECT DATA</span>
-            <span class="badge-tag" style="background:#e2e3e5; color:#383d41; border:1px solid #d6d8db;">MODEL REASONING</span>
-          </div>
-        </div>
-
-        <div class="win-inset" style="height: 320px; overflow: hidden; position: relative;">
-          <textarea id="context-inspector-textarea" class="snapshot-preview-field" readonly spellcheck="false"></textarea>
-        </div>
-      </div>
-      <div class="dialog-buttons">
-        <button class="win-btn" id="btn-copy-context-packet" style="min-width: 140px; font-weight: bold;">
-          📋 Copy Context Packet
-        </button>
-        <button class="win-btn" id="context-inspector-close-btn" style="min-width: 70px;">
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =======================================================================
-       MODAL: ABOUT PICKYHACK DIALOG
-       ======================================================================= -->
-  <div class="win-modal-backdrop" id="about-modal">
-    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="about-title">
-      <div class="win-titlebar">
-        <div class="win-title-left">
-          <img src="assets/pickyhack-logo.png" alt="" class="win-title-icon">
-          <span id="about-title">About PickyHack Pentest Intelligence</span>
-        </div>
-        <button class="win-title-btn" id="about-close-x">✕</button>
-      </div>
-      <div class="dialog-body">
-        <div style="display: flex; gap: 16px; align-items: center;">
-          <div style="width: 84px; height: 84px; flex-shrink: 0;">
-            <img src="assets/pickyhack-logo.png" alt="PickyHack Emblem" style="width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated;">
-          </div>
-          <div>
-            <h2 style="font-size: 15px; margin-bottom: 4px;">PickyHack v1.0</h2>
-            <p style="font-size: 11px; color: #444;">Offensive Security &amp; Pentest Intelligence AI Copilot</p>
-            <p style="font-size: 11px; color: #666; margin-top: 4px;">Windows 98 Multi-Window Workstation • AI Context Harness</p>
-          </div>
-        </div>
-        <div class="win-inset" style="padding: 8px; font-size: 11px; line-height: 1.5; max-height: 160px; overflow-y: auto; background: #fff; margin-top: 10px;">
-          <strong>Concept &amp; Architecture :</strong><br>
-          PickyHack n'est pas un modèle d'IA mais un <strong>Context Harness for Offensive Security</strong>.<br>
-          • <strong>AI-First Interface</strong> : flux de conversation centré, élégant, avec "What we hack ?" et prompt chips.<br>
-          • <strong>Multi-API &amp; Multi-Model</strong> : changez de modèle à la volée (GPT, Claude, Gemini, Local) sans perte de contexte.<br>
-          • <strong>Véritable Bureau Windows 98</strong> : fenêtres déplaçables, minimisables, maximisables, barre des tâches dynamique.<br>
-          • <strong>Notes.txt Pentest</strong> : prise de notes native avec templates, autosave et analyse IA en 1 clic.<br>
-          • <strong>Context Snapshot</strong> : export portable et autonome de tout l'état de mission.<br>
-          • <strong>Threat &amp; Exploit Intelligence</strong> : CISA KEV, NVD CVEs, PoCs et scoring EPS.
-        </div>
-      </div>
-      <div class="dialog-buttons">
-        <button class="win-btn" id="about-ok-btn" style="min-width: 70px;">OK</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =======================================================================
-       MODAL: ASK MULTIPLE MODELS (Cross-Engine Comparison)
-       ======================================================================= -->
-  <div class="win-modal-backdrop" id="compare-models-modal">
-    <div class="win-dialog win-outset-deep" role="dialog" aria-labelledby="compare-models-title" style="width: 580px; max-width: 95vw;">
-      <div class="win-titlebar">
-        <div class="win-title-left">
-          <span>⚖️</span>
-          <span id="compare-models-title">Ask Multiple Models — Cross-Engine Pentest Comparison</span>
-        </div>
-        <button class="win-title-btn" id="compare-models-close-x">✕</button>
-      </div>
-      <div class="dialog-body">
-        <p style="font-size: 11px; color: #333;">
-          Select the AI engines to query in parallel. The PickyHack Context Harness will dispatch the identical mission context to each selected engine simultaneously:
-        </p>
-
-        <div class="win-inset" style="padding: 8px; display: flex; flex-direction: column; gap: 6px; background: #ffffff; max-height: 180px; overflow-y: auto;" id="compare-models-checkboxes">
-          <!-- Dynamically populated with configured engines -->
-        </div>
-
-        <div style="margin-top: 4px;">
-          <label style="font-size: 11px; font-weight: bold;">Question / Command to Send:</label>
-          <textarea id="compare-models-prompt" class="chat-textarea-field" style="width: 100%; height: 75px; margin-top: 4px;" placeholder="Enter prompt to evaluate across selected models..."></textarea>
-        </div>
-      </div>
-      <div class="dialog-buttons">
-        <button class="win-btn btn-highlight" id="btn-run-model-comparison" style="font-weight: bold; min-width: 130px; background: #000080; color: #fff;">
-          ⚡ Compare Models
-        </button>
-        <button class="win-btn" id="compare-models-cancel-btn" style="min-width: 70px;">
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =======================================================================
-       WINDOW: BURP SUITE & OWASP ZAP INGESTION BRIDGE (#win-burp-zap-import)
-       ======================================================================= -->
-  <div class="win-window win-outset-deep" id="win-burp-zap-import" data-window-id="win-burp-zap-import" style="display: none; top: 50px; left: 180px; width: 720px; height: 520px; z-index: 125;">
-    <div class="win-titlebar" data-drag-handle="win-burp-zap-import">
-      <div class="win-title-left">
-        <span>🔌</span>
-        <span class="win-title-text">Burp Suite &amp; OWASP ZAP Ingestion Bridge — [Vulnerability Ingest]</span>
-      </div>
-      <div class="win-title-controls">
-        <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
-        <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
-        <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
-      </div>
-    </div>
-    <div class="win-toolbar">
-      <label class="win-btn" style="cursor: pointer;">
-        <span>📂</span> Load Scan File...
-        <input type="file" id="burp-zap-file-input" accept=".xml,.json,.txt" style="display: none;">
-      </label>
-      <button class="win-btn" id="btn-load-sample-burp"><span>🧪</span> Load Sample Burp Scan</button>
-      <button class="win-btn" id="btn-load-sample-zap"><span>🧪</span> Load Sample ZAP Scan</button>
-      <div class="toolbar-separator"></div>
-      <button class="win-btn btn-highlight" id="btn-commit-burp-zap" style="font-weight: bold;">
-        <span>📥</span> Ingest All to Findings (<span id="burp-zap-count-badge">0</span>)
-      </button>
-    </div>
-    <div class="multiapi-body-wrapper win-inset" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 8px; gap: 8px; background: #ece9d8;">
-      <!-- Drag & drop zone -->
-      <div id="burp-zap-dropzone" class="win-inset-shallow" style="border: 2px dashed #808080; background: #fff; padding: 14px; text-align: center; cursor: pointer;">
-        <div style="font-size: 24px; margin-bottom: 4px;">📥</div>
-        <strong style="font-size: 12px; color: #000080;">Drop Burp Suite (.xml / .json) or OWASP ZAP (.json / .xml) Export Here</strong>
-        <p style="font-size: 10.5px; color: #555; margin-top: 2px;">Automatically parses vulnerability names, affected paths/hosts, severity ratings, and calculates EPS scores.</p>
-      </div>
-
-      <!-- Raw text fallback -->
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <span style="font-size: 11px; font-weight: bold;">Format:</span>
-        <select id="burp-zap-format-select" class="win-inset-shallow" style="padding: 2px 6px; font-size: 11px;">
-          <option value="auto">Auto-Detect Format</option>
-          <option value="burp-xml">Burp Suite XML (base64/plain)</option>
-          <option value="burp-json">Burp Suite JSON</option>
-          <option value="zap-json">OWASP ZAP JSON</option>
-          <option value="zap-xml">OWASP ZAP XML</option>
-        </select>
-        <span style="font-size: 10.5px; color: #666; margin-left: auto;">Or paste XML/JSON in Notes/Chat directly.</span>
-      </div>
-
-      <!-- Staged Parsed Issues Table -->
-      <div class="win-inset" style="flex: 1; overflow-y: auto; background: #fff;">
-        <table class="cve-table burp-zap-table" id="burp-zap-preview-table">
-          <thead>
-            <tr>
-              <th style="width: 75px;">Severity</th>
-              <th>Vulnerability Title</th>
-              <th>Host / Endpoint</th>
-              <th style="width: 65px;">CVSS/EPS</th>
-              <th style="width: 70px;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="burp-zap-table-body">
-            <tr>
-              <td colspan="5" style="text-align: center; color: #777; padding: 20px;">
-                No scan data loaded yet. Drop a Burp or ZAP export above or click a sample button.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <footer class="win-statusbar">
-      <div class="status-panel win-inset-shallow status-flex" id="sb-burp-zap-status">
-        Ready. Supports Burp Suite Pro/Community XML &amp; OWASP ZAP XML/JSON reports.
-      </div>
-      <div class="status-panel win-inset-shallow" id="sb-burp-zap-count">
-        Detected: 0
-      </div>
-    </footer>
-  </div>
-
-  <!-- =======================================================================
-       WINDOW: FORMAL PENTEST DELIVERABLE GENERATOR (#win-report-export)
-       ======================================================================= -->
-  <div class="win-window win-outset-deep" id="win-report-export" data-window-id="win-report-export" style="display: none; top: 30px; left: 120px; width: 860px; height: 620px; z-index: 130;">
-    <div class="win-titlebar" data-drag-handle="win-report-export">
-      <div class="win-title-left">
-        <img src="assets/pickyhack-logo.png" alt="" class="win-title-icon">
-        <span class="win-title-text">Formal Pentest Deliverable Generator — [Executive &amp; Technical Report]</span>
-      </div>
-      <div class="win-title-controls">
-        <button class="win-title-btn btn-win-min" data-action="min" title="Minimize">_</button>
-        <button class="win-title-btn btn-win-max" data-action="max" title="Maximize">□</button>
-        <button class="win-title-btn btn-win-close" data-action="close" title="Close">✕</button>
-      </div>
-    </div>
-    <div class="win-toolbar" style="flex-wrap: wrap; gap: 6px;">
-      <button class="win-btn btn-highlight" id="btn-report-print-pdf" title="Open print dialog configured for multi-page executive PDF">
-        <span>🖨️</span> <strong>Print / Save as PDF</strong>
-      </button>
-      <button class="win-btn" id="btn-report-download-md" title="Download report as standard Markdown deliverable">
-        <span>💾</span> Download Markdown (.md)
-      </button>
-      <button class="win-btn" id="btn-report-download-html" title="Download standalone HTML report">
-        <span>🌐</span> Download HTML
-      </button>
-      <button class="win-btn" id="btn-report-copy-all" title="Copy report text to clipboard">
-        <span>📋</span> Copy Report
-      </button>
-      <div class="toolbar-separator"></div>
-      <button class="win-btn" id="btn-report-refresh" title="Regenerate deliverable with latest findings &amp; notes">
-        <span>🔄</span> Refresh Report
-      </button>
-    </div>
-    
-    <div class="multiapi-body-wrapper win-inset" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 8px; gap: 6px; background: #ece9d8;">
-      <!-- Report Controls Bar -->
-      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 11px;">
-        <label><strong>Target Client / Org:</strong> <input type="text" id="report-client-name" class="chat-input-field" value="Acme Cyber Corp" style="font-size: 11px; width: 140px; padding: 2px 4px;"></label>
-        <label><strong>Lead Assessor:</strong> <input type="text" id="report-assessor-name" class="chat-input-field" value="PickyHack Offensive Team" style="font-size: 11px; width: 160px; padding: 2px 4px;"></label>
-        <label><strong>Assessment Type:</strong> 
-          <select id="report-assessment-type" class="win-inset-shallow" style="padding: 2px 4px; font-size: 11px;">
-            <option>External Network &amp; Web Application Pentest</option>
-            <option>Internal Active Directory &amp; Infrastructure Pentest</option>
-            <option>Cloud Infrastructure &amp; API Security Review</option>
-            <option>Red Team Adversary Simulation</option>
-          </select>
-        </label>
-      </div>
-
-      <!-- Report Live Printable Document Viewport -->
-      <div class="win-inset report-page-preview-wrapper" style="flex: 1; overflow-y: auto; background: #555; padding: 14px;">
-        <div id="pentest-deliverable-doc" class="report-deliverable-sheet win-outset" style="background: #fff; max-width: 800px; margin: 0 auto; padding: 36px 44px; color: #1a1a1a; font-family: 'Segoe UI', Arial, sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.35);">
-          <!-- Dynamically populated by DeliverableGenerator -->
-        </div>
-      </div>
-    </div>
-
-    <footer class="win-statusbar">
-      <div class="status-panel win-inset-shallow status-flex" id="sb-report-status">
-        Ready. Generates standardized Executive Summary, CVSS/EPS Risk Matrix, Findings with PoC &amp; Remediation.
-      </div>
-      <div class="status-panel win-inset-shallow" id="sb-report-findings-count">
-        Findings Included: 0
-      </div>
-    </footer>
-  </div>
-
-  <!-- =======================================================================
-       MODAL: SCREENSHOT & EVIDENCE LIGHTBOX (#image-lightbox-modal)
-       ======================================================================= -->
-  <div class="win-modal-backdrop" id="image-lightbox-modal" style="z-index: 9999;">
-    <div class="win-dialog win-outset-deep" style="max-width: 92vw; max-height: 92vh; padding: 6px; display: flex; flex-direction: column;">
-      <div class="win-titlebar">
-        <div class="win-title-left">
-          <span>🖼️</span>
-          <span id="image-lightbox-title">Pentest Evidence Viewer</span>
-        </div>
-        <button class="win-title-btn" id="image-lightbox-close">✕</button>
-      </div>
-      <div style="flex: 1; overflow: auto; text-align: center; padding: 10px; background: #111;">
-        <img id="image-lightbox-img" src="" alt="Screenshot" style="max-width: 100%; max-height: 75vh; object-fit: contain;">
-      </div>
-      <div class="dialog-buttons" style="margin-top: 6px; justify-content: space-between;">
-        <span id="image-lightbox-meta" style="font-size: 11px; color: #444; align-self: center;">Evidence preview</span>
-        <button class="win-btn" id="image-lightbox-close-btn" style="min-width: 70px;">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =======================================================================
-       MODAL: IN-MEMORY CONTEXT WINDOW OPTIMIZER & TOKEN PRUNER (#token-optimizer-modal)
-       ======================================================================= -->
-  <div class="win-modal-backdrop" id="token-optimizer-modal">
-    <div class="win-dialog win-outset-deep" style="width: 580px; max-width: 95vw;">
-      <div class="win-titlebar">
-        <div class="win-title-left">
-          <span>🧠</span>
-          <span>In-Memory Context Window Optimizer &amp; Token Pruning</span>
-        </div>
-        <button class="win-title-btn" id="token-optimizer-close-x">✕</button>
-      </div>
-      <div class="dialog-body">
-        <p style="font-size: 11px; color: #333; margin-bottom: 6px;">
-          PickyHack continuously optimizes token usage so requests never hit context window limits or dilute LLM reasoning:
-        </p>
-
-        <!-- Token Allocation Bars -->
-        <div class="win-inset" style="padding: 10px; background: #fff; display: flex; flex-direction: column; gap: 8px;">
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 2px;">
-              <span>Total Context Consumption:</span>
-              <span id="token-total-ratio">1,450 / 128,000 tokens (1.1%)</span>
-            </div>
-            <div style="background: #e0e0e0; height: 14px; border: 1px solid #777; position: relative;">
-              <div id="token-progress-bar" style="background: linear-gradient(90deg, #27ae60, #2980b9); height: 100%; width: 2%;"></div>
+          <!-- Test Connection Action & Feedback -->
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; padding: 12px; background: rgba(0, 0, 0, 0.04); border: 1px dashed var(--border-subtle);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <button type="button" id="btn-onboarding-test" class="btn-secondary" style="padding: 6px 16px; font-weight: 600; font-size: 12px;">
+                Test Connection
+              </button>
+              <div id="onboarding-test-status" class="onboarding-test-box" style="display: none; flex: 1;"></div>
             </div>
           </div>
+        </div>
 
-          <div style="font-family: var(--font-mono); font-size: 11px; line-height: 1.5; color: #333;" id="token-breakdown-details">
-            • System &amp; Persona Instructions: ~350 tokens<br>
-            • Scope &amp; Target Context: ~220 tokens<br>
-            • Verified Findings (prioritized): ~380 tokens<br>
-            • Ephemeral Conversation Stream: ~400 tokens<br>
-            • Attached Security Artifacts: ~100 tokens<br>
-            <strong style="color: #000080;">=&gt; Available Headroom: ~126,550 tokens</strong>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-top: 1px solid var(--border-subtle);">
+          <button type="button" class="btn-secondary btn-modal-close" id="btn-onboarding-cancel">Cancel</button>
+          <div id="onboarding-connection-badge" style="display: none; font-weight: bold; color: #16a34a; font-size: 12.5px;">
+            ✓ Connected
           </div>
+          <button type="button" id="btn-onboarding-lets-hack" class="btn-primary" disabled style="padding: 7px 22px; font-size: 13px; font-weight: bold;">
+            Let's Hack !
+          </button>
         </div>
-
-        <div style="margin-top: 8px; font-size: 11px; color: #444;">
-          <strong>Automatic Optimizations Active:</strong><br>
-          ✓ <em>Banner Pruning:</em> Strips repetitive Nmap, Burp, and curl ASCII banners.<br>
-          ✓ <em>Turn Compression:</em> Truncates older tool outputs while preserving findings.<br>
-          ✓ <em>Context Harness Deduplication:</em> Prevents duplicated asset entries across turns.
-        </div>
-      </div>
-      <div class="dialog-buttons">
-        <button class="win-btn btn-highlight" id="btn-run-token-prune" style="font-weight: bold;">
-          ⚡ Prune Inactive Turns Now
-        </button>
-        <button class="win-btn" id="token-optimizer-close-btn" style="min-width: 70px;">
-          Close
-        </button>
       </div>
     </div>
+
   </div>
 
-  <!-- PickyHack Modular Architecture (src/) -->
-  <script src="src/config/app-config.js"></script>
+  <!-- ====================================================================
+       5. CORE & MODULAR APPLICATION SCRIPTS
+       ==================================================================== -->
+  <!-- Config & Security -->
   <script src="src/config/providers-catalog.js"></script>
   <script src="src/security/sanitizer.js"></script>
   <script src="src/security/validator.js"></script>
+  <script src="src/security/risk-engine.js"></script>
+
+  <!-- Canonical Models, Reactive State & Context Harness -->
+  <script src="src/core/models.js"></script>
   <script src="src/core/project-state.js"></script>
   <script src="src/core/context-engine.js"></script>
   <script src="src/core/snapshot-manager.js"></script>
-  <script src="src/providers/provider-registry.js"></script>
+
+  <!-- Execution Backends & Tool Runtime -->
+  <script src="src/runtime/execution-backend.js"></script>
+  <script src="src/runtime/tool-registry.js"></script>
+  <script src="src/runtime/browser-runtime.js"></script>
+
+  <!-- Task Tree & Autonomous Loop -->
+  <script src="src/agent/task-tree.js"></script>
+  <script src="src/agent/agent-loop.js"></script>
+
+  <!-- Intelligence & Feature Modules -->
   <script src="src/modules/attachment-manager.js"></script>
-  <script src="src/modules/attack-graph.js"></script>
-  <script src="src/modules/token-optimizer.js"></script>
-  <script src="src/modules/burp-zap-bridge.js"></script>
-  <script src="src/modules/deliverable-generator.js"></script>
-  <script src="src/modules/intelligence.js"></script>
   <script src="src/modules/notes-taker.js"></script>
-  <script src="src/ui/window-manager.js"></script>
-  <script src="src/ui/desktop-ui.js"></script>
-  <script src="src/ui/popovers.js"></script>
-  <script src="src/ui/chat-ui.js"></script>
+  <script src="src/modules/intelligence.js"></script>
+  <script src="src/modules/validation-engine.js"></script>
+  <script src="src/modules/attack-graph.js"></script>
+  <script src="src/modules/deliverable-generator.js"></script>
+
+  <!-- AI Providers Registry -->
+  <script src="src/providers/provider-registry.js"></script>
+
+  <!-- Modern UI Controllers -->
+  <script src="src/ui/chat-agent-ui.js"></script>
+  <script src="src/ui/sidebar-ui.js"></script>
+  <script src="src/ui/context-drawer-ui.js"></script>
+  <script src="src/ui/context-debugger-modal.js"></script>
+  <script src="src/ui/onboarding-ui.js"></script>
+
+  <!-- App Bootstrap -->
   <script src="src/app.js"></script>
 </body>
 </html>

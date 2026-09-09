@@ -10,21 +10,33 @@
   const DeliverableGenerator = {
     init() {
       if (typeof document === 'undefined') return;
-      const btnOpen = document.getElementById('btn-open-deliverable-export');
+      const btnOpen = document.getElementById('btn-open-deliverable-export') || document.getElementById('nav-deliverables');
       const btnFromFindings = document.getElementById('btn-open-report-from-findings');
       const btnPrint = document.getElementById('btn-print-deliverable-pdf');
       const btnMd = document.getElementById('btn-download-deliverable-md');
       const btnHtml = document.getElementById('btn-download-deliverable-html');
+      const btnCloseModal = document.getElementById('btn-close-deliverables-modal');
 
       if (btnOpen) btnOpen.addEventListener('click', () => this.openReportWindow());
       if (btnFromFindings) btnFromFindings.addEventListener('click', () => this.openReportWindow());
       if (btnPrint) btnPrint.addEventListener('click', () => window.print());
       if (btnMd) btnMd.addEventListener('click', () => this.downloadMarkdown());
       if (btnHtml) btnHtml.addEventListener('click', () => this.downloadHTML());
+      if (btnCloseModal) {
+        btnCloseModal.addEventListener('click', () => {
+          const m = document.getElementById('modal-deliverables');
+          if (m) m.classList.remove('open');
+        });
+      }
     },
 
     openReportWindow() {
       this.renderReportPreview();
+      const modal = document.getElementById('modal-deliverables');
+      if (modal) {
+        modal.classList.add('open');
+        return;
+      }
       if (root.WindowManager) root.WindowManager.open('win-report-export');
     },
 
@@ -91,9 +103,9 @@
         preview.innerHTML = `
           <div class="report-page-preview" style="text-align: center; padding: 48px 16px;">
             <div style="font-size: 32px; margin-bottom: 8px;">📑</div>
-            <h3 style="color: #000080; margin-bottom: 6px;">No deliverable content yet.</h3>
-            <p style="font-size: 11.5px; color: #666; max-width: 420px; margin: 0 auto; line-height: 1.5;">
-              No verified findings have been recorded. Ingest scanner XML/JSON reports via the Burp/ZAP Bridge, or convert notes into findings to generate executive deliverables.
+            <h3 style="color: var(--accent, #000080); margin-bottom: 6px;">No deliverable content yet.</h3>
+            <p style="font-size: 11.5px; color: var(--text-muted, #666); max-width: 420px; margin: 0 auto; line-height: 1.5;">
+              No verified findings have been recorded. Define scope, execute scans, or run the autonomous agent loop to generate executive deliverables.
             </p>
           </div>
         `;
@@ -107,20 +119,20 @@
 
       let html = `
         <div class="report-page-preview">
-          <div class="report-header-banner">
+          <div class="report-header-banner" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
             <div>
-              <h2 style="font-size: 18px; color: #000080; margin-bottom: 4px;">PickyHack — Formal Security Deliverable</h2>
-              <div style="font-size: 11px; color: #666;">Stateless by default. Context-driven by design.</div>
+              <h2 style="font-size: 18px; color: var(--accent, #000080); margin-bottom: 4px;">PickyHack — Formal Security Deliverable</h2>
+              <div style="font-size: 11px; color: var(--text-muted, #666);">Stateless by default. Context-driven by design.</div>
             </div>
             <div style="text-align: right; font-size: 11px; font-family: monospace;">
               <div>Date: ${new Date().toISOString().split('T')[0]}</div>
-              <div style="color: #8b0000; font-weight: bold;">CONFIDENTIAL REPORT</div>
+              <div style="color: #ef4444; font-weight: bold;">CONFIDENTIAL REPORT</div>
             </div>
           </div>
 
-          <hr style="border: 0; border-top: 1px solid #c0c0c0; margin: 12px 0;">
+          <hr style="border: 0; border-top: 1px solid var(--border-color, #c0c0c0); margin: 12px 0;">
 
-          <h3 style="font-size: 13px; color: #000080; margin-bottom: 6px;">1. Executive Summary &amp; Posture Assessment</h3>
+          <h3 style="font-size: 13px; color: var(--accent, #000080); margin-bottom: 6px;">1. Executive Summary &amp; Posture Assessment</h3>
           <p style="font-size: 11.5px; line-height: 1.5; margin-bottom: 10px;">
             During this engagement, PickyHack evaluated the security posture of <strong>${s.target || 'Target Scope'}</strong>.
             A total of <strong>${findings.length}</strong> findings were validated across the attack surface.
@@ -128,38 +140,39 @@
 
           <table class="risk-matrix-table" style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 14px;">
             <thead>
-              <tr style="background: #ece9d8; text-align: left;">
-                <th style="padding: 4px 6px; border: 1px solid #999;">Critical</th>
-                <th style="padding: 4px 6px; border: 1px solid #999;">High</th>
-                <th style="padding: 4px 6px; border: 1px solid #999;">Medium</th>
-                <th style="padding: 4px 6px; border: 1px solid #999;">Low</th>
-                <th style="padding: 4px 6px; border: 1px solid #999;">Total Findings</th>
+              <tr style="background: var(--surface-secondary, #ece9d8); text-align: left;">
+                <th style="padding: 6px; border: 1px solid var(--border-color, #999);">Critical</th>
+                <th style="padding: 6px; border: 1px solid var(--border-color, #999);">High</th>
+                <th style="padding: 6px; border: 1px solid var(--border-color, #999);">Medium</th>
+                <th style="padding: 6px; border: 1px solid var(--border-color, #999);">Low</th>
+                <th style="padding: 6px; border: 1px solid var(--border-color, #999);">Total Findings</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td style="padding: 6px; border: 1px solid #ccc; color: #8b0000; font-weight: bold;">${criticals}</td>
-                <td style="padding: 6px; border: 1px solid #ccc; color: #d9534f; font-weight: bold;">${highs}</td>
-                <td style="padding: 6px; border: 1px solid #ccc; color: #f0ad4e; font-weight: bold;">${mediums}</td>
-                <td style="padding: 6px; border: 1px solid #ccc; color: #5bc0de;">${lows}</td>
-                <td style="padding: 6px; border: 1px solid #ccc; font-weight: bold;">${findings.length}</td>
+                <td style="padding: 6px; border: 1px solid var(--border-color, #ccc); color: #ef4444; font-weight: bold;">${criticals}</td>
+                <td style="padding: 6px; border: 1px solid var(--border-color, #ccc); color: #f97316; font-weight: bold;">${highs}</td>
+                <td style="padding: 6px; border: 1px solid var(--border-color, #ccc); color: #eab308; font-weight: bold;">${mediums}</td>
+                <td style="padding: 6px; border: 1px solid var(--border-color, #ccc); color: #06b6d4;">${lows}</td>
+                <td style="padding: 6px; border: 1px solid var(--border-color, #ccc); font-weight: bold;">${findings.length}</td>
               </tr>
             </tbody>
           </table>
 
-          <h3 style="font-size: 13px; color: #000080; margin-bottom: 6px;">2. Detailed Technical Findings</h3>
+          <h3 style="font-size: 13px; color: var(--accent, #000080); margin-bottom: 6px;">2. Detailed Technical Findings</h3>
       `;
 
       findings.forEach((f, idx) => {
-        const sevClass = `sev-${(f.severity || 'medium').toLowerCase()}`;
+        const sev = (f.severity || 'medium').toLowerCase();
         html += `
-          <div style="border: 1px solid #d0d0d0; padding: 8px; margin-bottom: 8px; background: #fafafa;">
+          <div style="border: 1px solid var(--border-color, #d0d0d0); padding: 10px; margin-bottom: 8px; border-radius: 6px; background: var(--surface-primary, #fafafa);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
               <strong style="font-size: 12px;">${idx + 1}. ${f.title}</strong>
-              <span class="severity-pill ${sevClass}">${f.severity} (EPS: ${f.eps || 'N/A'}/100)</span>
+              <span class="severity-pill sev-${sev}">${f.severity} (EPS: ${f.eps || 'N/A'}/100)</span>
             </div>
-            <div style="font-size: 10.5px; font-family: monospace; color: #555; margin-bottom: 4px;">Target: ${f.target}</div>
-            ${f.poc ? `<pre style="background: #ffffff; border: 1px solid #ccc; padding: 4px; font-size: 10px; overflow-x: auto; margin-top: 4px;"><code>${f.poc}</code></pre>` : ''}
+            <div style="font-size: 10.5px; font-family: monospace; color: var(--text-muted, #555); margin-bottom: 4px;">Target: ${f.target}</div>
+            <div style="font-size: 11px; margin-bottom: 6px;">${f.description || ''}</div>
+            ${f.poc ? `<pre style="background: var(--code-bg, #ffffff); border: 1px solid var(--border-color, #ccc); border-radius: 4px; padding: 6px; font-size: 10.5px; overflow-x: auto; margin-top: 4px;"><code>${f.poc}</code></pre>` : ''}
           </div>
         `;
       });

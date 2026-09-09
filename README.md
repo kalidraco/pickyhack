@@ -1,418 +1,199 @@
 <p align="center">
-  <img src="assets/branding/pickyhack-logo.png" alt="PickyHack Logo" width="220" />
+  <img src="assets/branding/pickyhack-logo.png" alt="PickyHack Logo" width="180" />
 </p>
 
-# PickyHack — Stateless AI Context Harness for Pentesting
+# PickyHack — Autonomous Pentest Agent & Context Harness
 
-> **Stateless by default. Context-driven by design.**  
-> *Your model. Your provider. Your context.*
+> **"Stateless by default. Context-driven by design."**  
+> *Production-grade offensive security copilot with transparent context budgeting, autonomous execution backends, and zero vendor lock-in.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests: Passing](https://img.shields.io/badge/Tests-7%2F7%20Passing-brightgreen.svg)](tests/)
-[![Architecture: Stateless](https://img.shields.io/badge/Architecture-Stateless%20Context%20Harness-blueviolet.svg)](docs/architecture.md)
-[![UI: Windows 98](https://img.shields.io/badge/UI-Windows%2098%20Desktop-008080.svg)](#user-interface--retro-experience)
-[![Model-Agnostic: BYOM](https://img.shields.io/badge/Models-Model--Agnostic%20%E2%80%A2%20BYOM-orange.svg)](docs/providers.md)
+[![Tests: 16/16 Passing](https://img.shields.io/badge/Tests-16%2F16%20Passing-brightgreen.svg)](tests/)
+[![Context Reduction: -53%](https://img.shields.io/badge/Context%20Reduction--53%25%20Tokens-blueviolet.svg)](benchmarks/context-engine/RESULTS.md)
+[![Recall: 100%](https://img.shields.io/badge/Critical%20Recall-100%25-success.svg)](benchmarks/context-engine/RESULTS.md)
+[![UI: Chat--First Tahoe](https://img.shields.io/badge/UI-Chat--First%20%E2%80%A2%20Tahoe%20%26%20Picky98-indigo.svg)](#modern-chat-first-user-experience)
 
-**PickyHack** is a pentest-focused **AI Context Harness** that orchestrates LLMs, project intelligence, web research, and structured security context into a unified offensive-security workspace.
+---
+
+## What is PickyHack?
+
+**PickyHack** is an autonomous offensive security agent and proprietary **Context Harness**. 
+
+Instead of treating the AI as an unmanaged conversational chatbot where scanner outputs fill the context window with repetitive noise, PickyHack decouples reasoning from state:
+- **Canonical Truth in `ProjectState`:** Assets, open ports, vulnerabilities, evidence logs, tasks, and notes are tracked deterministically in a structured schema.
+- **Stateless Model Invocations:** Every prompt is assembled on-the-fly into a mathematically optimized, budget-constrained context packet.
+- **Model-Agnostic Replay:** Switch seamlessly between OpenAI (`gpt-4o`), Anthropic (`claude-3-5-sonnet`), Google Gemini (`gemini-2.0-flash`), or local models (`ollama/deepseek-r1`) without losing a single finding or repeating recon.
 
 ```text
-Any Model / Provider (Cloud APIs • Local Runtimes • Custom Endpoints)
-                               │
-                               ▼
-            ┌─────────────────────────────────────┐
-            │              PICKYHACK              │
-            │                                     │
-            │       Stateless Context Harness     │
-            │  ─────────────────────────────────  │
-            │   Project State    Context Engine   │
-            │   Security Intel   Web Research     │
-            │   Attack Graph     Burp/ZAP Bridge  │
-            │   Token Optimizer  Deliverable PDF  │
-            │   Pentest Notes    Context Snapshot │
-            └─────────────────────────────────────┘
-                               │
-                               ▼
-                           PENTESTER
+Any Model Provider (Cloud APIs • Local Air-Gapped Runtimes • Custom Endpoints)
+                                │
+                                ▼
+            ┌─────────────────────────────────────────┐
+            │                PICKYHACK                │
+            │                                         │
+            │        Proprietary Context Harness      │
+            │  ─────────────────────────────────────  │
+            │   Reactive ProjectState   ContextEngine │
+            │   Autonomous AgentLoop    RiskEngine    │
+            │   Tool Registry (Nmap)    Attack Graph  │
+            │   Remote Kali via SSH     CISA KEV      │
+            │   Portable Snapshot       Client Report │
+            └─────────────────────────────────────────┘
+                                │
+                                ▼
+                         SECURITY OPERATOR
 ```
 
 ---
 
-## Website: Coming Soon
+## Modern Chat-First User Experience
 
-The official web portal and documentation showcase for **PickyHack** is currently under development. Stay tuned for live interactive demos, community modules, and enterprise orchestration guides at **[https://pickyhack.io](https://pickyhack.io)**.
-
----
-
-## What is an AI Context Harness?
-
-**PickyHack is not an LLM.**  
-PickyHack is the orchestration layer situated between the penetration tester and the AI model.
-
-A traditional conversational LLM interaction functions as a direct, unmanaged loop:
+PickyHack provides a modern, distraction-free conversational canvas:
 
 ```text
-User ─────────► LLM ─────────► Response
+PickyHack Application Shell
+│
+├── Sidebar
+│   ├── Active Engagement & Project Switcher
+│   ├── Chat Sessions & Multi-Turn Threads
+│   ├── Targets & Scope Modal
+│   ├── Findings & Vulnerabilities Registry
+│   ├── Autonomous Task Tree
+│   ├── Notes & Evidence Scratchpad
+│   ├── Attack Graph & Exploit Chains
+│   ├── CISA KEV Live Threat Intelligence
+│   ├── Formal Client Deliverables
+│   └── Backend Indicator & Dual-Theme Switcher
+│
+├── Main Chat Canvas
+│   ├── Scope & Active Target Indicator
+│   ├── Message Stream (User, AI, Streaming Reasoning)
+│   ├── In-Line Tool Execution Cards (Status, Command, Duration)
+│   ├── Collapsible Syntax-Highlighted Terminal Output
+│   ├── Safety Approval Gates (Operator Consent for elevated risks)
+│   ├── Discovered Finding Prompts
+│   └── Floating Composer (Attachment Shelf, Compare, Autonomous Mode Toggle)
+│
+└── Context Drawer (Collapsible Inspector)
+    ├── Live Token Budget Headroom Meter (e.g. 4,210 / 8,192 tokens)
+    ├── Target & Scope Summary
+    ├── Active Task & Next Recommended Action (NRA)
+    ├── Selected vs Pruned Context Breakdown
+    ├── Launch Context Debugger (Visual Utility Scoring & Replay)
+    └── Export / Import Portable Snapshots (.pickycontext.json)
 ```
 
-In this traditional model, the LLM is expected to remember previous conversation turns, filter signal from noise, retain critical ports and flags, and remain consistent across hundreds of messages. In real-world security engagements, this rapidly breaks down.
-
-PickyHack inserts a dedicated **Context Harness** into the loop:
-
-```text
-                       PickyHack Context Harness
-                                   │
-      ┌────────────────┬───────────┼───────────┬────────────────┐
-      │                │           │           │                │
-      ▼                ▼           ▼           ▼                ▼
-Project State    Attack Graph  Burp/ZAP   Security Intel   Web Research
-(Scope/Targets/  (Chains &     (Ingested  (CISA KEV /      (Live Exploits
-Findings/Notes)   Bottlenecks)  Traffic)   NVD / EPS)       & PoCs)
-      │                │           │           │                │
-      └────────────────┴───────────┼───────────┴────────────────┘
-                                   ▼
-                             Context Engine
-                        (Token Pruned & Enriched)
-                                   ▼
-                                LLM API
-                                   ▼
-                                Response
-```
-
-The **Context Harness** determines *what precise context* must be assembled and delivered to the model so that it answers the current offensive task with high fidelity, zero hallucination, and deep situational awareness.
+### Visual Themes
+- **PickyTahoe (Default):** Sleek, modern macOS Tahoe-inspired design with glassmorphism, refined typography (`Inter` / system-ui), card depth, and dark mode.
+- **Picky98 (Optional Retro Skin):** Classic Windows 98 teal `#008080`, navy titlebars, and 3D bevels applied over the exact same modern chat layout without modifying functionality.
 
 ---
 
-## Core Architecture: Model-Agnostic, Provider-Agnostic, Context-Centric
+## The Context Engine: Measurable Advantage
 
-PickyHack is engineered around three foundational architectural principles:
+PickyHack features an empirically benchmarked **Context Engine V2** that solves context window bloat:
 
-- **MODEL-AGNOSTIC**: PickyHack does not depend on a closed list of models. Any model exposed through a supported API interface can be used.
-- **PROVIDER-AGNOSTIC**: PickyHack connects to any inference service—cloud platforms, local runtimes, or custom proxies.
-- **CONTEXT-CENTRIC**: The technical context (scope, boundaries, verified findings, attack chains, credentials, notes) belongs to the mission project, completely decoupled from the model.
+### 1. Multi-Factor Utility Scoring
+Every state item $i$ is scored for query $q$ and active task $s$:
 
-### Execution Flow
+$$U(i, q, s) = 0.45 \cdot R(i, q) + 0.35 \cdot C(i) + 0.15 \cdot F(i) - 0.20 \cdot P(i, s)$$
 
-```text
-User
- ↓
-PickyHack
- ↓
-Context Engine
- ↓
-Provider API
- ↓
-Selected Model
-```
+- **$R(i, q)$ (Relevance):** Keyword and entity matching (CVEs, IPs, ports, tool names).
+- **$C(i)$ (Criticality):** Vulnerability severity, verified PoCs, and confirmed findings.
+- **$F(i)$ (Freshness):** Temporal decay of observation recency.
+- **$P(i, s)$ (Penalty):** Deduplication penalty for redundant host services.
 
-The model can be replaced or hot-swapped at any time without modifying the core of PickyHack.
+### 2. Token Knapsack Allocation
+The engine strictly packs candidates into the chosen budget ($1\text{k} - 32\text{k}$ tokens), prioritizing high-utility findings while pruning raw log bloat.
 
----
+### 3. Empirical Benchmark Results
+Evaluated across four real-world security scenarios (Perimeter RCE, API Gateway Exposure, AD Kerberoasting, CI/CD Exploitation):
 
-## Provider vs. Model Separation
+| Metric | Traditional Chat Dump | PickyHack Context Engine | Benefit |
+| :--- | :--- | :--- | :--- |
+| **Average Token Count** | 3,699 tokens | 1,739 tokens | **-53% Token Reduction** |
+| **Critical Finding Recall** | 100% | 100% | **Zero Information Loss** |
+| **Harness Latency** | N/A | < 1 ms | **Real-Time Execution** |
+| **Cost / 1k Queries** | $9.25 | $4.35 | **-53% API Cost Savings** |
 
-In PickyHack, **Provider** and **Model** are cleanly separated:
-
-- **Provider**: The API service or local runtime exposing the inference interface.
-- **Model**: The exact identifier of the model requested from that API.
-
-### Configuration Example
-
-```text
-Provider: Custom / OpenAI-compatible
-Base URL: https://api.your-endpoint.internal/v1
-Model ID: your-model-id
-```
-
-The **Model ID** is freely configurable. PickyHack never imposes a whitelist or locks operators into pre-defined model IDs.
+*Reproduce benchmarks anytime via `node benchmarks/context-engine/runner.js`.*
 
 ---
 
-## Model Discovery vs. Manual Specification
+## Autonomous Tool Runtime & Safety
 
-PickyHack supports both dynamic discovery and manual specification:
+### Pluggable Execution Backends
+- **Local Backend:** Executes directly on the host or local Python daemon (`src/backend/server.py`).
+- **Remote SSH Backend:** Connects to dedicated remote Kali Linux or Parrot OS instances via Paramiko.
+- **Docker Backend:** Spawns isolated container sandboxes.
 
-- **Dynamic Model Discovery**: If an API endpoint exposes a discovery route (e.g. `GET /v1/models` or local tag listing), PickyHack queries and populates available models automatically.
-- **Manual Model Specification**: If the endpoint does not support discovery, or for custom checkpoints and fine-tunes, the operator can manually enter any Model ID via **`[Custom Model / Enter ID...]`**.
+### Built-in Tool Registry
+- `nmap`: Network port scanning and banner grabbing.
+- `nuclei`: Vulnerability template and CVE verification.
+- `ffuf`: High-speed directory and parameter fuzzing.
+- `curl`: HTTP/S banner and response inspection.
+- `browser_action`: Headless web automation (navigation, DOM extraction, screenshot evidence capture).
+- `dns_lookup`: DNS resolution (A, AAAA, MX, TXT, NS).
+- `shell`: Strictly gated command execution.
 
-> [!TIP]
-> A model list facilitates ease of use, but **never** blocks a model not present in the list. Real compatibility is determined by the API interface and provider adapter, not by the model name.
-
----
-
-## Multi-API: Orchestrating Multiple Engines
-
-The native **Multi-API Manager** allows operators to maintain multiple concurrent engine profiles:
-
-```text
-Provider A → Model A        (Primary Analyst)
-Provider B → Model B        (Secondary Opinion)
-Provider C → Custom Model   (Specialized Fuzzing)
-Provider D → Local Model    (Air-Gapped Stealth)
-```
-
-- **Switch Engines on the Fly**: Instantly switch the active engine at any moment during an assessment.
-- **Zero Context Loss**: Switching providers or models **never** clears the Project State or Context.
-- **Principle**: *The context belongs to the project, not to the model.*
+### Risk & Consent Engine (`RiskEngine`)
+Tools are classified by risk (`READ`, `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`). When high-risk or exploit commands are planned, execution pauses and an **Operator Approval Gate** appears inline in the chat stream with `[Authorize Execution]` and `[Reject]` controls.
 
 ---
 
-## The Problem PickyHack Solves
+## Portable Context Snapshots (`.pickycontext.json`)
 
-Standard, long-running LLM chat conversations suffer from critical limitations during security assessments:
-
-1. **Context Window Saturation**: Extended terminal dumps and scan logs blow up token limits and increase inference costs.
-2. **Loss of Critical Technical Facts**: Subnet ranges, credentials, exact patch levels, and failed exploit attempts vanish under message recency bias.
-3. **Provider Lock-in & Painful Switching**: Migrating an active 50-turn chat from one model or provider to another usually requires re-explaining the entire engagement from scratch.
-4. **Unreliable Chat Memory**: Chat logs are not databases; they hallucinate or omit structured findings.
-5. **Scattered Pentest Data**: Critical proof-of-concepts, remediation guidance, and attack paths remain buried across unrelated dialogue threads.
-6. **Accidental Credential Exposure**: API keys, bearer tokens, and hashes pasted during testing risk leaking into exported reports or logs.
-
-PickyHack solves this by enforcing an absolute architectural boundary:
-
-$$\text{Conversation} \neq \text{Pentest State} \neq \text{LLM}$$
+Export the complete engagement state at any time:
+- **Automated Secret Redaction:** API keys, passwords, and private SSH keys are stripped automatically before serialization.
+- **Cross-Operator Collaboration:** Share `.pickycontext.json` with a teammate to reconstruct findings, evidence, and task trees instantly.
+- **Model Handoff:** Hand over an assessment started on `claude-3-5-sonnet` to a local air-gapped `deepseek-r1` with zero setup.
 
 ---
 
-## Key Pillars & Capabilities
+## Quick Start & Installation
 
-### 1. Modern AI Conversation First
-- **Centered Conversational Workspace**: Clean, distraction-free chat canvas with instant command suggestions, Markdown rendering, and code syntax highlighting.
-- **Dedicated Copy Actions**: Instant one-click copy for command syntax, code snippets, or full synthesized analysis.
-- **Multimodal Artifact Staging**: Drag & drop Nmap outputs, HTTP request logs, PCAPs, and screenshot evidence directly into the chat prompt.
+### Prerequisites
+- Node.js 18+ (tested on Node.js v26.8.1)
+- Python 3.9+ (for execution daemon)
 
-### 2. Universal AI Provider Architecture
-- **Bring Your Own Model (BYOM)**: Seamlessly connect Cloud Providers (OpenAI, Anthropic, Google Gemini, Mistral, OpenRouter) or Local Runtimes (Ollama, LM Studio, llama.cpp, vLLM, LiteLLM).
-- **Dynamic Model Discovery**: Real-time querying of `/v1/models` to automatically detect capabilities (Vision, Reasoning, Context window, Tool calling).
-- **Hot-Swapping with Zero Context Loss**: Switch engines mid-mission without resetting target scope or losing verified findings.
-- **"Ask Multiple Models"**: Evaluate a payload or command against multiple frontier models simultaneously with side-by-side comparative cards.
-
-### 3. Open Models
-
-PickyHack can work with a wide range of open and open-weight model families when they are exposed through a supported API interface (e.g. via Ollama, LM Studio, vLLM, LiteLLM, or custom inference servers).
-
-Examples of model families that can be used with PickyHack include:
-
-- **OLMoE** (Allen Institute for AI)
-- **Llama**
-- **Qwen**
-- **DeepSeek**
-- **Mistral / Mixtral**
-- **Gemma**
-- **GLM**
-- **Phi**
-- **Nemotron**
-- **GPT-OSS**
-- *and many others.*
-
-> [!IMPORTANT]
-> **This list is illustrative, not exhaustive.**  
-> The model catalog is not a whitelist. PickyHack does not depend on a closed list of models. Any compatible model can be configured manually through Custom Model / Custom Provider. Real compatibility is determined by the API interface and the provider adapter, not by the model name.
-
-Local engines automatically display the **`[🔒 Network: Local]`** indicator, certifying zero cloud egress.
-
-### 4. Advanced Graph-Based Attack Simulation
-- **Interactive Breach Topology**: Visualizes network pathways from unauthenticated Initial Access to internal Crown Jewels.
-- **Bottleneck & Choke Point Detection**: Automatically computes defensive choke points whose remediation severs 100% of breach paths.
-- **Real-Time Telemetry**: Calculates breach probability percentages, hop distances, and estimated adversary dwell time.
-
-### 5. In-Memory Context Window Optimizer
-- **Semantic Noise Pruning**: Automatically strips repetitive ASCII banners, redundant Nmap host statistics, and verbose HTTP headers.
-- **Turn Compression**: Compresses older conversational turns while preserving verified findings, credentials, and open ports.
-- **Live Token Budget Meter**: Real-time visual tracking of token consumption and headroom.
-
-### 6. Automated Burp Suite & OWASP ZAP Ingestion Bridge
-- **Universal Scanner Ingestion**: Upload Burp Suite XML/JSON or OWASP ZAP JSON export files via drag-and-drop.
-- **Automated EPS Scoring**: Calculates Exploitability Priority Scores (0–100) based on severity, exploitability, and CISA KEV correlation.
-- **Batch Registration**: Selectively promote scanner issues into live mission findings with a single click.
-
-### 7. Export to Formal Pentest Deliverables
-- **Multi-Format Export**: Generates client-ready reports in **Print-to-PDF**, **Markdown (`.md`)**, and **Self-Contained HTML**.
-- **Comprehensive Structure**: Executive Summary, CVSS/EPS Risk Matrix, Technical Vulnerability Dossiers with PoCs, and 24h/7d/30d Remediation Roadmaps.
-- **Automated Credential Redaction**: Enforces automated scanning via `SecuritySanitizer` prior to file export.
-
-### 8. Defensive Security-by-Design
-- **Automated Secret Sanitizer (`src/security/sanitizer.js`)**: Real-time regex scanner that redacts OpenAI, Anthropic, Gemini, OpenRouter, and AWS keys, private key blocks, bearer tokens, and password fields.
-- **Strict Input Validator (`src/security/validator.js`)**: Blocks dangerous executables (`.exe`, `.sh`, `.py`, `.bat`), enforces file quotas (5 MB per file, 15 MB total), and neutralizes path traversal (`../`) and null bytes (`%00`).
-- **SSRF Hardening**: Bars cloud metadata endpoints (`169.254.169.254`, `metadata.google.internal`) from network dispatch.
-
----
-
-## User Interface & Retro Experience
-
-PickyHack wraps high-powered offensive AI workflows inside an authentic, fully functional **Windows 98 Multi-Window Workstation**:
-
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ PickyHack 98 Workstation — [Target: vpn.megacorp.internal]             _ □ ✕│
-├─────────────────────────────────────────────────────────────────────────────┤
-│ File  Edit  View  Targets  Findings  Intelligence  Notes  Multi-API  Help   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ [🎯 Scope] [📋 Findings] [📡 CVE KEV] [⛓️ Chains] [📝 Notes] [Multi-API]   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│                        ╔═══════════════════════════╗                        │
-│                        ║      What we hack ?       ║                        │
-│                        ║ Define your target below  ║                        │
-│                        ╚═══════════════════════════╝                        │
-│                                                                             │
-│   [🎯 Target & Scope]  [⚡ Web Pentest]  [⛓️ Attack Path]  [📝 Notes.txt]   │
-│                                                                             │
-│ ┌─────────────────────────────────────────────────────────────────────────┐ │
-│ │ 🤖 [PICKYHACK AI • selected-model]                                      │ │
-│ │ Target vpn.megacorp.internal is running PAN-OS 10.2.7.                  │ │
-│ │ Critical vuln detected: CVE-2024-3400 (CVSS 10.0, EPS 99/100, KEV: YES) │ │
-│ │                                                                         │ │
-│ │ [ 🔍 View CVE-2024-3400 ] [ ⛓️ Attack Path ] [ 📝 Send to Notes ]        │ │
-│ └─────────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-│ [📎 +] [Ask PickyHack a question or run a command...]         [Send] [⚖️Comp]│
-├─────────────────────────────────────────────────────────────────────────────┤
-│ ⊞ Start │ 🤖 PickyHack AI │ 📝 Notes.txt │ 📡 CISA KEV │  🤖 active-model  │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-- **Draggable & 8-Direction Resizable Windows**: Authentic window chrome, minimize/maximize/restore, and persistent geometry memory.
-- **Dynamic Taskbar & Start Menu**: Active window buttons with focus management and instant application launching.
-- **Integrated Pentest Notes (`Notes.txt`)**: Live scratchpad with one-click conversion of text into verified findings.
-
----
-
-## Project Structure (The 2-Minute Rule)
-
-PickyHack follows a clean, developer-friendly architecture where responsibilities are cleanly separated:
-
-```text
-pickyhack/
-├── src/
-│   ├── config/
-│   │   ├── app-config.js          # Global app configurations and defaults
-│   │   └── providers-catalog.js   # Universal provider taxonomy & Open Models directory
-│   ├── core/
-│   │   ├── project-state.js       # Reactive project state (targets, findings, notes)
-│   │   ├── context-engine.js      # Stateless context packet builder & token estimator
-│   │   └── snapshot-manager.js    # Markdown snapshot exporter/restorer
-│   ├── security/
-│   │   ├── sanitizer.js           # Secret detection & credential redaction engine
-│   │   └── validator.js           # File upload validator, path traversal & SSRF guards
-│   ├── providers/
-│   │   └── provider-registry.js   # Universal Provider Registry, BYOM adapters & discovery
-│   ├── modules/
-│   │   ├── attack-graph.js        # Graph attack simulator & choke point detector
-│   │   ├── token-optimizer.js     # Semantic banner pruner & memory budget manager
-│   │   ├── burp-zap-bridge.js     # Burp XML/JSON & OWASP ZAP report parser
-│   │   ├── deliverable-generator.js # Formal pentest report generator (PDF/MD/HTML)
-│   │   ├── intelligence.js        # Offline CISA KEV & CVE search engine
-│   │   └── notes-taker.js         # Pentest scratchpad & finding converter
-│   ├── ui/
-│   │   ├── window-manager.js      # Windows 98 drag, 8-direction resize & z-index
-│   │   ├── desktop-ui.js          # Desktop icons, taskbar buttons, and Start Menu
-│   │   ├── popovers.js            # Retro tooltips and hover intelligence popups
-│   │   └── chat-ui.js             # Conversational interface, model selector & compare
-│   ├── styles/
-│   │   ├── index.css              # Master Windows 98 stylesheet
-│   │   └── base.css               # Core layout and pixel font declarations
-│   ├── backend/
-│   │   └── server.py              # Lightweight development server & mock API
-│   └── app.js                     # Modular application entrypoint
-├── tests/
-│   ├── unit/                      # Unit test suites (Sanitizer, Validator, Providers, Context)
-│   ├── integration/               # Integration test suites (Deliverables, Simulation)
-│   └── run_all.js                 # Zero-dependency automated test runner
-├── docs/                          # Technical deep dives and architecture guides
-│   ├── architecture.md            # Stateless context harness design
-│   ├── providers.md               # Universal Provider System documentation
-│   ├── local-models.md            # Open Models Directory & OLMoE local inference
-│   ├── security.md                # Security-by-design, sanitization, and SSRF defenses
-│   └── development.md             # Developer workflow and contribution manual
-├── assets/
-│   └── branding/                  # Official user logo and vector assets
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml                 # Hardened multi-stage CI & verification gate
-│   │   ├── codeql.yml             # CodeQL automated security analysis (JS/Python)
-│   │   └── dependency-review.yml  # PR dependency vulnerability review
-│   ├── ISSUE_TEMPLATE/            # Bug report, feature request & security templates
-│   ├── PULL_REQUEST_TEMPLATE.md   # Standardized PR review checklist
-│   ├── CODEOWNERS                 # Repository and security component ownership
-│   └── dependabot.yml             # Automated weekly dependency updates
-├── index.html                     # Application HTML entrypoint
-├── server.py                      # Root convenience server launcher
-├── package.json                   # Project scripts and metadata
-├── LICENSE                        # MIT License
-├── SECURITY.md                    # Responsible disclosure & security policy
-└── CONTRIBUTING.md                # Code of ethics and contribution guidelines
-```
-
----
-
-## Installation & Quickstart
-
-PickyHack is lightweight, fast, and requires zero complicated build chains.
-
-### 1. Clone & Test
+### 1. Clone & Install
 ```bash
-git clone https://github.com/pickyhack/pickyhack.git
+git clone https://github.com/kalidraco/pickyhack.git
 cd pickyhack
+npm install
+```
 
-# Run the automated security & test suite
+### 2. Launch Local Daemon & Workstation
+```bash
+# Start backend daemon and open web UI at http://localhost:8088
+python3 src/backend/server.py
+```
+
+Open `http://localhost:8088` in your browser.
+
+### 3. Run Automated Quality & Benchmark Suites
+```bash
+# Run all 16 unit and integration test suites
 npm test
-```
 
-### 2. Launch Local Server
-```bash
-npm run dev
-```
+# Run Context Engine benchmark suite
+node benchmarks/context-engine/runner.js
 
-Open your browser and navigate to **`http://localhost:8000`** (or `http://localhost:8088`).
-
-### 3. Syntax Verification & Quality Checks
-```bash
-# Run syntax checks, tests, build verification, and dependency audit
+# Verify static code integrity
 npm run lint
-npm test
-npm run build
-npm run audit
 ```
 
 ---
 
-## Development Workflow
+## Documentation
 
-The `main` branch of PickyHack is protected. Direct pushes and forced updates are blocked. Every contribution follows a rigorous, verified pull request pipeline:
-
-1. **Create a branch:** Create a dedicated topic branch from `main` (`git checkout -b feature/my-feature` or `git checkout -b fix/issue-num`).
-2. **Make changes:** Keep modifications modular, well-tested, and within the respective `src/` modules.
-3. **Run tests:** Verify locally that all checks pass cleanly (`npm run lint && npm test && npm run build && npm run audit`).
-4. **Open a Pull Request:** Push your branch and open a PR against `main` using our standardized checklist.
-5. **CI runs automatically:** The GitHub Actions CI Gate executes dependency installation, linting, syntax verification across Node and Python, the full 7-suite test matrix, build verification, and dependency security audits.
-6. **Review & Discussion:** Team review and resolution of all discussion threads are required.
-7. **Merge into main:** Changes are merged with a clean linear history into `main`.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for full developer guidelines.
-
----
-
-## Security
-
-PickyHack is built for offensive security professionals and operates under strict security hygiene:
-- **Zero Secrets Policy:** Automated token sanitizer blocks credentials and API keys from leaking into context packets or exports.
-- **Push Protection:** Active GitHub secret scanning and push protection prevent accidental commits of keys or credentials.
-- **Vulnerability Reporting:** Never report vulnerabilities in public issues. For responsible disclosure instructions and response timelines, please see [SECURITY.md](SECURITY.md) or file a private [GitHub Security Advisory](https://github.com/kalidraco/pickyhack/security/advisories/new).
-
----
-
-## Documentation Index
-
-- [Architecture & Design Principles](docs/architecture.md)
-- [Universal Provider System & BYOM](docs/providers.md)
-- [Open Models Directory & OLMoE Guide](docs/local-models.md)
-- [Security by Design & Redaction Engine](docs/security.md)
-- [Developer & Testing Guide](docs/development.md)
-- [Security Policy & Responsible Disclosure](SECURITY.md)
-- [Contributing Guidelines](CONTRIBUTING.md)
+- [Context Engine Specification](docs/CONTEXT_ENGINE.md) — Mathematical utility scoring, token budgeting, and replay.
+- [Benchmark Results](docs/BENCHMARKS.md) — Empirical methodology and reproducibility.
+- [Tool Runtime & Backends](docs/TOOLS.md) — Tool registry schema, execution backends, and safety gates.
+- [Audit & Architectural Hardening](docs/AUDIT.md) — Comprehensive codebase audit and security posture.
 
 ---
 
 ## License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+MIT License. Designed and maintained for ethical offensive security professionals, penetration testers, and vulnerability researchers.

